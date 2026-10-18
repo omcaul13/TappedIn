@@ -12,11 +12,15 @@ import { YouTubeClient } from './highlights/youtube';
 import { LiveSource, recordingDir } from './espn/source';
 import { clock as fmtClock, dailyLogFile, DecisionLog, type LogEntry } from './log';
 import { startServer, type LocalServer, type PostResult } from './server/server';
+import { effectiveChannels } from './providers/lineup';
+import { createAdapter, STATE_DIR } from './providers/registry';
+import type { ProviderAdapter } from './providers/types';
 import { gameDTO, type AppState, type FeedItem, type PickerDTO, type ScreenDTO } from './server/state';
 import { attachShell, startShell, type Shell, type SigninStatus } from './shell';
 import { autoHomes, recordedFeed, synthFeed } from './sim';
 import { connect, ensureChrome } from './windows/chrome';
 import { WindowController } from './windows/controller';
+import { cacheFileFor } from './windows/tuner';
 import type { BridgeMessage, OverlayState, Popup } from './windows/screen';
 import type { SwitchTiming } from './windows/timing';
 
@@ -82,6 +86,8 @@ export class App {
   private cfg: Config;
   private lastSwitch = new Map<number, ScreenDTO['lastSwitch']>();
   private broadcastTimer: NodeJS.Timeout | null = null;
+  /** The TV service the screens play. Changing services takes a restart. */
+  private readonly adapter: ProviderAdapter;
 
   constructor(
     cfg: Config,
@@ -89,7 +95,7 @@ export class App {
   ) {
     this.fileCfg = cfg;
     this.overrides = loadOverrides();
-    this.cfg = cfg = withOverrides(cfg, this.overrides);
+    this.cfg = cfg = resolveConfig(cfg, this.overrides);
     this.engine = new Engine(cfg);
     const ytKey = process.env.YT_API_KEY?.trim();
     const youtube = ytKey
@@ -108,6 +114,7 @@ export class App {
     const file = opts.replay ? path.join(logs, `replay-${opts.replay.date}.jsonl`) : dailyLogFile(PROJECT_ROOT);
     this.labelsFile = path.join(logs, opts.replay ? `labels-replay-${opts.replay.date}.jsonl` : 'labels.jsonl');
     this.log = new DecisionLog({ file, console: true });
+    this.adapter = createAdapter(cfg.provider, { onWarning: (m) => this.info(m) });
   }
 
   get mode(): AppState['mode'] {
@@ -129,25 +136,27 @@ export class App {
       dryRun: this.mode !== 'live',
       serverUrl: this.server.url,
       stateFile: path.join(PROJECT_ROOT, '.state', 'tiles.json'),
-      cacheFile: path.join(PROJECT_ROOT, '.state', 'xfinity-urls.json'),
+      cacheFile: cacheFileFor(this.adapter.config.id, STATE_DIR),
+      adapter: this.adapter,
     };
+    const service = this.adapter.config.shortName;
     const events = {
       tuned: (s: number, i: { gameId: string; channelName: string; channel: number; path: string; ms: number }) => {
         this.info(`now on ${i.channelName} (${i.channel}) via ${i.path} in ${(i.ms / 1000).toFixed(1)}s`, s);
-        // Xfinity can still be signed in from before even when the Watch Now step timed out.
-        if (this.signin && this.signin.state !== 'ok') this.signin = { state: 'ok', detail: 'Xfinity Stream is playing' };
+        // The service can still be signed in from before even when the sign-in step timed out.
+        if (this.signin && this.signin.state !== 'ok') this.signin = { state: 'ok', detail: `${service} is playing` };
         this.pushState();
       },
       streamProblem: (s: number, i: { state: string; detail: string; hint: string }) => {
         this.info(`stream problem ${i.state}: ${i.detail} -- ${i.hint}`, s);
         if (i.state === 'LOGIN_REQUIRED' && this.shell) {
-          this.info('Xfinity Stream signed out; signing in again through Xfinity On Campus');
+          this.info(`${service} signed out; signing in again`);
           this.shell.handoff();
         }
         this.handle(this.engine.act({ type: 'streamError', screen: s, detail: `${i.state}: ${i.detail}` }, this.clock.now()));
       },
       streamRecovered: (s: number) => this.handle(this.engine.act({ type: 'streamOk', screen: s }, this.clock.now())),
-      limitLearned: (l: number, d: string) => this.info(`Xfinity stream limit hit (${d}); video on ${l} screen(s), live data on the rest`),
+      limitLearned: (l: number, d: string) => this.info(`${service} stream limit hit (${d}); video on ${l} screen(s), live data on the rest`),
       info: (t: string) => this.info(t),
       bridge: (s: number, msg: BridgeMessage) => this.onBridge(s, msg),
       switchTiming: (t: SwitchTiming) => {
@@ -161,7 +170,7 @@ export class App {
         signin: (s) => {
           const was = this.signin?.state;
           this.signin = s;
-          this.info(`Xfinity sign-in: ${s.state}${s.detail ? ` (${s.detail})` : ''}`);
+          this.info(`${service} sign-in: ${s.state}${s.detail ? ` (${s.detail})` : ''}`);
           if (s.state === 'ok' && was && was !== 'ok' && this.controller) this.controller.restoreAll();
           this.pushState();
         },
@@ -171,9 +180,9 @@ export class App {
           void this.stop().then(() => process.exit(0));
         },
         log: (t) => this.info(t),
-      });
+      }, this.adapter.config);
       await this.shell.ready;
-      const { browser, screens, spares } = await attachShell(cfg, 4);
+      const { browser, screens, spares } = await attachShell(cfg, 4, this.adapter.config);
       this.controller = new WindowController(cfg, browser, null, controllerOpts, events);
       const shell = this.shell;
       await this.controller.attach(screens, spares, (screen, view) => shell.present(screen, view));
@@ -233,7 +242,7 @@ export class App {
 
   /** Config file + settings changed in the app → every part of the app. */
   private applyConfig(): void {
-    const next = withOverrides(this.fileCfg, this.overrides);
+    const next = resolveConfig(this.fileCfg, this.overrides);
     this.cfg = next;
     this.engine.setConfig(next);
     this.source?.setConfig(next);
@@ -618,4 +627,10 @@ export class App {
     }
     this.info('replay finished');
   }
+}
+
+/** Config file + settings changed in the app, with the provider's scanned lineup (if any) as the channels. */
+function resolveConfig(file: Config, overrides: SettingsOverrides): Config {
+  const c = withOverrides(file, overrides);
+  return { ...c, channels: effectiveChannels(c, c.provider, STATE_DIR) };
 }

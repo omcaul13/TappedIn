@@ -1,3 +1,4 @@
+import type { Page } from 'playwright-core';
 import { z } from 'zod';
 
 // A provider is one TV streaming service (Xfinity On Campus, Spectrum, …). Everything fragile about its
@@ -122,4 +123,67 @@ export interface ProviderSummary {
   badge: ProviderConfig['badge'];
   search: string[];
   documentedMaxStreams: number | null;
+}
+
+// ---- adapters ------------------------------------------------------------------------------------
+
+
+/** A channel in the user's lineup, as a screen tunes to it. `number` is the engine's channel id. */
+export interface ChannelRef {
+  /** Lineup key, e.g. "ESPN2". */
+  name: string;
+  number: number;
+  /** The station's call sign, when the service shows it (Xfinity live URLs end with it). */
+  callSign: string | null;
+  /** The service's own id for the channel (Spectrum tmsid, YouTube TV watch id, Sling guid). */
+  ref: string | null;
+}
+
+export type TunePath = 'in-app' | 'cached-url' | 'guide' | 'url';
+
+export interface TuneOutcome {
+  path: TunePath;
+  ms: number;
+  url: string;
+}
+
+/** What the generic Tuner lends an adapter while it changes a channel. */
+export interface TuneTools {
+  /** Run a full page load with no other one in progress, then leave the provider's load gap. */
+  exclusive<T>(fn: () => Promise<T>): Promise<T>;
+  /** `exclusive` page.goto(url) (domcontentloaded). */
+  load(page: Page, url: string, timeoutMs?: number): Promise<void>;
+  /** The remembered URL for this channel (null when there is none or the fast path is off). */
+  cached(ch: ChannelRef): string | null;
+  remember(ch: ChannelRef, url: string): void;
+  forget(ch: ChannelRef): void;
+}
+
+/** A channel row found in the service's guide during a lineup scan. */
+export interface DiscoveredChannel {
+  label: string;
+  number: number | null;
+  callSign: string | null;
+  ref: string | null;
+}
+
+/** One streaming service's web player, driven the way a user would: URLs and its own guide. */
+export interface ProviderAdapter {
+  readonly config: ProviderConfig;
+  /** Put this view on a channel by the fastest method the service allows. */
+  tune(page: Page, ch: ChannelRef, tools: TuneTools): Promise<TuneOutcome>;
+  /** Is this URL on that channel? True when the URL can't tell. */
+  onChannel(url: string, ch: ChannelRef): boolean;
+  /** Is this URL the player (as opposed to the guide or a sign-in page)? */
+  isOnPlayer(url: string): boolean;
+  /** Parked on the guide with no stream, so the next tune is quick. */
+  isWarm(page: Page): boolean;
+  /** Park a spare view on the guide (no stream). */
+  warm(page: Page, tools: TuneTools): Promise<void>;
+  /** Stop the stream but stay in the app. False: the caller blanks the view instead. */
+  release(page: Page): Promise<boolean>;
+  /** Answer an "Are you still watching?" prompt. True when one was answered. */
+  answerIdlePrompt(page: Page): Promise<boolean>;
+  /** Read the service's guide: every channel row it shows. */
+  discoverLineup(page: Page, tools: TuneTools): Promise<DiscoveredChannel[]>;
 }

@@ -6,15 +6,17 @@ import type { Command } from '../engine/director';
 import { gridBounds, markerUrl, openWindow, setWindowBounds, workArea } from './chrome';
 import { ERROR_STATES, type StreamState } from './health';
 import { adviseOnStream, allocateVideo } from './policy';
+import { channelRef } from '../providers/lineup';
+import type { ChannelRef, ProviderAdapter } from '../providers/types';
 import { ScreenWindow, type BridgeMessage, type OverlayState, type Popup } from './screen';
 import type { SwitchTiming } from './timing';
-import { LISTINGS_URL, onCallSign, Tuner } from './tune';
+import { Tuner } from './tuner';
 
 // Turns director commands into what the four Chrome windows show, and watches the streams.
 //  - Each screen applies only its latest wanted state (a new command supersedes one in progress).
 //  - Stream problems: one quick retry, then a red error card + the director is told (it stops
 //    auto-switching that screen) and the screen keeps retrying every errorRetrySeconds.
-//  - If Xfinity reports a stream limit, the controller lowers its limit and the least exciting
+//  - If the service reports a stream limit, the controller lowers its limit and the least exciting
 //    screens show a live data tile instead of video.
 
 export type Want = { kind: 'game'; gameId: string; channel: number; channelName: string } | { kind: 'halftime' } | { kind: 'none' };
@@ -36,8 +38,10 @@ export interface ControllerOptions {
   serverUrl: string;
   /** Remembers the tile windows' target ids so a restart reuses them. */
   stateFile: string;
-  /** Remembered live URLs per channel. */
+  /** Remembered live URLs per channel (per provider: see cacheFileFor). */
   cacheFile: string;
+  /** The TV service the screens play. */
+  adapter: ProviderAdapter;
 }
 
 interface Failure {
@@ -57,7 +61,7 @@ export class WindowController {
    */
   private switching = new Map<number, { gameId: string; channelName: string; since: number; background: boolean }>();
   // One-window app standby views: a screen's own game keeps playing (muted, hidden) in `parked` while a
-  // substitute is on, so going back is a swap; free views wait in `spares` on Xfinity's guide.
+  // substitute is on, so going back is a swap; free views wait in `spares` on the service's guide.
   private presenter: ((screen: number, view: string) => void) | null = null;
   private spares: ScreenWindow[] = [];
   private parked = new Map<number, ScreenWindow>();
@@ -87,7 +91,7 @@ export class WindowController {
     private readonly opts: ControllerOptions,
     private readonly events: ControllerEvents,
   ) {
-    this.tuner = new Tuner(opts.cacheFile, { fastPath: cfg.windows.fastPath });
+    this.tuner = new Tuner(opts.adapter, opts.cacheFile, { fastPath: cfg.windows.fastPath });
     this.limit = cfg.windows.maxConcurrentStreams;
   }
 
@@ -99,7 +103,7 @@ export class WindowController {
     this.cfg = cfg;
   }
 
-  /** One-window app: drive the shell's Xfinity views (it lays them out and draws the UI itself). */
+  /** One-window app: drive the shell's video views (it lays them out and draws the UI itself). */
   async attach(views: { name: string; page: Page }[], spares: { name: string; page: Page }[] = [], present: ((screen: number, view: string) => void) | null = null): Promise<void> {
     for (const [i, v] of views.entries()) {
       const sw = new ScreenWindow(i + 1, v.page, this.tuner, this.cfg.windows, false, v.name);
@@ -110,13 +114,13 @@ export class WindowController {
     this.spares = spares.map((v) => new ScreenWindow(0, v.page, this.tuner, this.cfg.windows, false, v.name));
     this.presenter = present;
     this.standby = !!present && this.spares.length > 0 && !this.opts.dryRun;
-    // Once the screens are up, put the standby views on Xfinity's guide (no stream) so their first use is quick.
+    // Once the screens are up, put the standby views on the service's guide (no stream) so their first use is quick.
     if (this.standby) {
       setTimeout(() => {
-        for (const s of this.spares) void this.tuner.warmGuide(s.page).catch((e) => this.events.info(`standby view ${s.viewName} could not open the guide: ${String(e).split('\n')[0]}`));
-      }, 20_000).unref();
+        for (const s of this.spares) void this.tuner.warm(s.page).catch((e) => this.events.info(`standby view ${s.viewName} could not open the guide: ${String(e).split('\n')[0]}`));
+      }, this.opts.adapter.config.timing.spareWarmDelayMs).unref();
     }
-    this.events.info(`${views.length} video views attached${this.standby ? ` + ${this.spares.length} standby` : ''}${this.opts.dryRun ? ', dry run: data tiles instead of Xfinity' : ''}`);
+    this.events.info(`${views.length} video views attached${this.standby ? ` + ${this.spares.length} standby` : ''}${this.opts.dryRun ? `, dry run: data tiles instead of ${this.shortName}` : ''}`);
   }
 
   /** The channel of each screen's own game (the app updates it as homes change). */
@@ -133,7 +137,7 @@ export class WindowController {
     return this.screens.filter((s) => s.render === 'video').length + [...this.parked.values()].filter((s) => s.render === 'video').length;
   }
 
-  /** Re-apply every screen's channel (e.g. after Xfinity Stream was signed in again). */
+  /** Re-apply every screen's channel (e.g. after the service was signed in again). */
   restoreAll(): void {
     for (const s of this.screens) this.restore(s.id);
   }
@@ -172,7 +176,7 @@ export class WindowController {
     await setWindowBounds(this.panel, { left: area.left + Math.round((area.width - w) / 2), top: area.top + Math.round((area.height - h) / 2), width: w, height: h });
 
     this.saveTargets({ targets: await Promise.all(pages.map((p) => targetIdOf(p))), panel: await targetIdOf(this.panel) });
-    this.events.info(`${count} tile windows + control panel ready (${tiles[0].width}x${tiles[0].height} tiles)${this.opts.dryRun ? ', dry run: data tiles instead of Xfinity' : ''}. Alt+P shows/hides the panel.`);
+    this.events.info(`${count} tile windows + control panel ready (${tiles[0].width}x${tiles[0].height} tiles)${this.opts.dryRun ? `, dry run: data tiles instead of ${this.shortName}` : ''}. Alt+P shows/hides the panel.`);
   }
 
   /** Show or hide the control panel window (toggle when `show` is omitted). */
@@ -285,7 +289,7 @@ export class WindowController {
   private disableStandby(detail: string): void {
     if (!this.standby) return;
     this.standby = false;
-    this.events.info(`standby views off: Xfinity reported a stream limit (${detail})`);
+    this.events.info(`standby views off: ${this.shortName} reported a stream limit (${detail})`);
     for (const screen of [...this.parked.keys()]) this.unpark(screen, 'stream limit');
   }
 
@@ -371,7 +375,7 @@ export class WindowController {
     const beforeSrc = sw.render === 'video' ? await sw.currentSrc() : null;
     let out;
     try {
-      out = await sw.tuneChannel(want.channel, this.callSignOf(want.channel));
+      out = await sw.tuneChannel(this.refOf(want));
     } catch (err) {
       this.switching.delete(screen);
       this.events.switchTiming(timing);
@@ -421,7 +425,7 @@ export class WindowController {
     this.tuneGeneration.set(screen, gen);
     this.switching.set(screen, { gameId: want.gameId, channelName: want.channelName, since: commandedAt, background: true });
     try {
-      const out = await spare.tuneChannel(want.channel, this.callSignOf(want.channel));
+      const out = await spare.tuneChannel(this.refOf(want));
       timing.path = `standby ${out.path}`;
       timing.navCommittedAt = Date.now();
       await spare.setMuted(true);
@@ -463,18 +467,18 @@ export class WindowController {
     return true;
   }
 
-  /** A free standby view, preferring one already on Xfinity's guide (its channel change is an in-app click). */
+  /** A free standby view, preferring one already on the service's guide (its channel change is an in-app click). */
   private takeSpare(): ScreenWindow {
-    const i = this.spares.findIndex((s) => s.page.url().startsWith(LISTINGS_URL));
+    const i = this.spares.findIndex((s) => this.opts.adapter.isWarm(s.page));
     return this.spares.splice(i >= 0 ? i : 0, 1)[0];
   }
 
-  /** Free a view: stop its stream, put it back on Xfinity's guide, and make it available again. */
+  /** Free a view: stop its stream, put it back on the service's guide, and make it available again. */
   private releaseView(sw: ScreenWindow): void {
     sw.id = 0;
     void sw
       .release()
-      .then(() => this.tuner.warmGuide(sw.page))
+      .then(() => this.tuner.warm(sw.page))
       .catch(() => {})
       .finally(() => this.spares.push(sw));
   }
@@ -491,19 +495,24 @@ export class WindowController {
     prev.lastHealth = null;
   }
 
-  private callSignOf(channel: number): string | null {
-    return Object.values(this.cfg.channels).find((c) => c.number === channel)?.callSign ?? null;
+  private get shortName(): string {
+    return this.opts.adapter.config.shortName;
+  }
+
+  /** The lineup entry for a wanted channel (a channel missing from the lineup still tunes by number). */
+  private refOf(want: { channel: number; channelName: string }): ChannelRef {
+    return channelRef(this.cfg.channels, want.channel) ?? { name: want.channelName, number: want.channel, callSign: null, ref: null };
   }
 
   private async checkScreen(sw: ScreenWindow, now: number): Promise<void> {
     if (this.running.has(sw.id)) return;
-    // The Xfinity page moved itself to another channel (pages loading together can follow each other).
+    // The page moved itself to another channel (Xfinity pages loading together can follow each other).
     const url = sw.page.url();
-    if (sw.render === 'video' && sw.callSign && url.includes('/stream/live/') && !onCallSign(url, sw.callSign)) {
+    if (sw.render === 'video' && sw.ref && this.opts.adapter.isOnPlayer(url) && !this.opts.adapter.onChannel(url, sw.ref)) {
       const last = this.driftFixedAt.get(sw.id) ?? 0;
       if (now - last > 20_000) {
         this.driftFixedAt.set(sw.id, now);
-        this.events.info(`S${sw.id} drifted to ${url.split('/').pop()} instead of ${sw.callSign}; tuning it back`);
+        this.events.info(`S${sw.id} drifted to ${url.split('/').pop()} instead of ${sw.ref.callSign ?? sw.ref.ref ?? sw.ref.name}; tuning it back`);
         sw.lastHealth = null;
         this.restore(sw.id);
         return;
@@ -524,7 +533,7 @@ export class WindowController {
       }
       return;
     }
-    if (h.state === 'IDLE_PROMPT') return this.events.info(`S${sw.id} answered Xfinity's "Are you still watching?" prompt`);
+    if (h.state === 'IDLE_PROMPT') return this.events.info(`S${sw.id} answered ${this.shortName}'s "Are you still watching?" prompt`);
     if (f?.failed && f.retryAt !== null && now >= f.retryAt) return this.retry(sw, now);
     if (!f?.failed) this.noteFailure(sw.id, h.state, h.detail, now);
   }
@@ -532,7 +541,7 @@ export class WindowController {
   private noteFailure(screen: number, state: StreamState, detail: string, now: number): void {
     const f: Failure = this.failures.get(screen) ?? { state, attempts: 0, failed: false, retryAt: null };
     f.state = state;
-    const advice = adviseOnStream(state, f.attempts, this.cfg.windows.errorRetrySeconds);
+    const advice = adviseOnStream(state, f.attempts, this.cfg.windows.errorRetrySeconds, this.shortName);
     if (advice.action === 'none') return;
     this.failures.set(screen, f);
     const sw = this.screens[screen - 1];

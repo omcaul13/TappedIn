@@ -4,6 +4,7 @@ import path from 'node:path';
 import { createInterface } from 'node:readline';
 import { chromium, type Browser, type Page } from 'playwright-core';
 import { PROJECT_ROOT, type Config } from './config';
+import type { ProviderConfig } from './providers/types';
 
 // Starts the one-window app shell (electron/main.cjs) and finds its Xfinity views over the local
 // debugging port, so the window controller can drive them like the Chrome tiles.
@@ -34,7 +35,12 @@ const require = createRequire(import.meta.url);
 // Chromium chatter on stderr that isn't ours.
 const NOISE = /^\[\d+:\d+:\d+\/\d+\.\d+:(INFO|WARNING|ERROR|VERBOSE\d?):|^DevTools listening|^\s*$/;
 
-export async function startShell(cfg: Config, uiUrl: string, events: ShellEvents): Promise<Shell> {
+/** Standby views to create: a setting changed in the app or the config file wins, else the service's default. */
+export function effectiveStandby(cfg: Config, provider: ProviderConfig): number {
+  return cfg.electron.standbyViews ?? provider.defaults.standbyViews;
+}
+
+export async function startShell(cfg: Config, uiUrl: string, events: ShellEvents, provider: ProviderConfig): Promise<Shell> {
   if (await debugPortOpen(cfg.electron.debugPort)) {
     throw new Error(`Something already uses port ${cfg.electron.debugPort} (an open RedZone window?). Close it and start again.`);
   }
@@ -46,7 +52,7 @@ export async function startShell(cfg: Config, uiUrl: string, events: ShellEvents
     `--ui=${uiUrl}`,
     `--user-data=${cfg.electron.userDataDir}`,
     '--screens=4',
-    `--spares=${cfg.electron.standbyViews}`,
+    `--spares=${effectiveStandby(cfg, provider)}`,
     ...(cfg.electron.disableDirectComposition ? ['--no-dcomp'] : []),
   ];
   // The app runs under tsx, whose NODE_OPTIONS loader would make Electron exit at once.
@@ -92,10 +98,10 @@ export interface ShellView {
 }
 
 /** Attach to the shell and return its Xfinity views (found by their marker titles): screens in order, then spares. */
-export async function attachShell(cfg: Config, count: number, timeoutMs = 30_000): Promise<{ browser: Browser; screens: ShellView[]; spares: ShellView[] }> {
+export async function attachShell(cfg: Config, count: number, provider: ProviderConfig, timeoutMs = 30_000): Promise<{ browser: Browser; screens: ShellView[]; spares: ShellView[] }> {
   const browser = await chromium.connectOverCDP(`http://127.0.0.1:${cfg.electron.debugPort}`);
   const deadline = Date.now() + timeoutMs;
-  const spareCount = cfg.electron.standbyViews;
+  const spareCount = effectiveStandby(cfg, provider);
   while (Date.now() < deadline) {
     const byTitle = new Map<string, Page>();
     for (const c of browser.contexts()) for (const p of c.pages()) byTitle.set(await p.title().catch(() => ''), p);

@@ -2,7 +2,8 @@ import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
 import { PROJECT_ROOT } from '../config';
-import { compileRegex, ProviderConfigSchema, type ProviderConfig, type ProviderSummary } from './types';
+import { createComcastAdapter } from './comcast/adapter';
+import { compileRegex, ProviderConfigSchema, type ProviderAdapter, type ProviderConfig, type ProviderSummary } from './types';
 
 export { compileRegex };
 
@@ -78,6 +79,20 @@ function readOverride(id: string, opts: LoadOptions): Record<string, unknown> | 
     opts.onWarning?.(`.state/providers/${id}.json: not valid JSON (${String(err).split('\n')[0]}); ignoring it`);
   }
   return null;
+}
+
+/** The adapter for a provider, built from its (merged) config. */
+export function createAdapter(id: string, opts: LoadOptions = {}): ProviderAdapter {
+  return adapterFor(loadProviderConfig(id, opts));
+}
+
+export function adapterFor(config: ProviderConfig): ProviderAdapter {
+  switch (config.family) {
+    case 'comcast':
+      return createComcastAdapter(config);
+    default:
+      throw new Error(`${config.name}: no adapter for the "${config.family}" family yet`);
+  }
 }
 
 /** Objects merge key by key; anything else (arrays, strings, numbers) replaces. */
