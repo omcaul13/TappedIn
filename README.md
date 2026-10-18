@@ -15,7 +15,7 @@ Personal use only. The app plays Xfinity in castLabs' Widevine-licensed Electron
 | v2.1 | **One app window** (Electron) with per-screen overlays, settings drawer, team colors and logos | ✅ done (live-tested 10/17) |
 | v2.2 | **Faster switching:** standby views, in-window switching card, faster play-by-play for on-screen games | ✅ done (live-tested 10/17) |
 | v2.3 | **Switch less:** break forecast from 76 recorded games, Low/Medium/High sensitivity, hysteresis | ✅ done (replayed 10/10 and 10/17) |
-| v3.0 | **Other TV services:** provider adapters with per-service config files (Stage 2 of [the plan](docs/superpowers/plans/2026-10-18-provider-adapters.md)) | 🚧 in progress: Xfinity live re-check pending |
+| v3.0 | **Other TV services:** provider adapters with per-service config files (Stage 2 of [the plan](docs/superpowers/plans/2026-10-18-provider-adapters.md)) | 🚧 Xfinity tuning re-verified live 10/18 (6 channels, 4 views); full app check on a game day pending |
 
 ## TV services
 
