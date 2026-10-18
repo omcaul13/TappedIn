@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import css from './style.css';
 import { FullscreenIcon, GearIcon } from './icons';
 import { Screen } from './screen';
+import { Diagnostics } from './diagnostics';
 import { Onboarding } from './onboarding';
 import { Settings } from './settings';
 import { act, post, type AppState, type GameDTO } from './util';
@@ -134,6 +135,7 @@ function App() {
       </header>
 
       {st.setup && <Onboarding st={st} onError={setToast} />}
+      {st.diag && <Diagnostics st={st} onError={setToast} />}
       <main class={`grid n${st.screens.length}`} style={st.setup ? { visibility: 'hidden' } : undefined}>
         {st.screens.map((sc) => (
           <Screen
