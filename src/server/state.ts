@@ -91,6 +91,22 @@ export interface FeedItem {
 import type { ProviderSummary } from '../providers/types';
 import type { SetupView } from '../setup/runner';
 
+export interface ServiceDTO {
+  id: string;
+  name: string;
+  status: 'stable' | 'experimental' | 'unsupported';
+  documentedMaxStreams: number | null;
+  measuredStreams: number | null;
+  screens: number;
+  standbyViews: number;
+  /** Each college-football network and the guide row it's mapped to. */
+  lineup: { key: string; row: number | null; label: string | null; number: number | null }[];
+  /** Guide rows from the last scan (empty before the first scan). */
+  rows: { index: number; label: string; number: number | null }[];
+  lineupAt: string | null;
+  testedAt: string | null;
+}
+
 export interface AppState {
   now: number;
   mode: 'live' | 'dry-run' | 'replay';
@@ -99,6 +115,8 @@ export interface AppState {
   setup: SetupView | null;
   /** Every service RedZone has an adapter for (the picker lists them). */
   providers: ProviderSummary[];
+  /** The settings page's "TV service" tab. */
+  service: ServiceDTO;
   /** The TV service the screens play. */
   provider: { id: string; name: string; shortName: string; status: 'stable' | 'experimental' | 'unsupported' };
   /** The service's sign-in progress (one-window app). */

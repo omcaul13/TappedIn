@@ -1,6 +1,6 @@
 import type { Config } from '../config';
 import { channelRef } from '../providers/lineup';
-import { CFB_NETWORKS, matchLineup } from '../providers/networks';
+import { lineupFromScan } from './lineupEdit';
 import type { ChannelRef, DiscoveredChannel, ProviderSummary } from '../providers/types';
 import type { SigninStatus } from '../shell';
 import { ERROR_STATES, type StreamState } from '../windows/health';
@@ -83,6 +83,14 @@ export class SetupRunner {
     }
   }
 
+  /** Re-run playback and stream tests for a service that's already signed in and scanned (settings page). */
+  async resume(id: string): Promise<void> {
+    const provider = this.deps.providers().find((p) => p.id === id) ?? null;
+    this.set({ provider, signin: { state: 'ok', detail: '' }, scan: null, error: null });
+    await this.playTest();
+    if (this.v.playback?.state === 'PLAYING') await this.streamTest();
+  }
+
   retrySignin(): void {
     this.set({ step: 'signin', error: null, signin: null });
     this.deps.retrySignin();
@@ -101,9 +109,7 @@ export class SetupRunner {
     this.set({ step: 'channels', busy: 'Reading your channel guide…', error: null });
     try {
       const rows = await this.deps.discover();
-      const lineup = matchLineup(rows);
-      const found = CFB_NETWORKS.filter((n) => lineup[n.key]?.number !== null).map((n) => n.key);
-      const missing = CFB_NETWORKS.filter((n) => lineup[n.key]?.number === null).map((n) => n.key);
+      const { lineup, found, missing } = lineupFromScan(rows);
       if (!found.length) {
         // Never replace a good lineup with an empty one: the guide probably didn't load or its layout changed.
         this.set({ busy: null, scan: null, error: `No college-football channels found in the guide (${plural(rows.length, 'row')} read). The guide may not have loaded, or the service changed its page: open Diagnostics.` });

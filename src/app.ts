@@ -18,7 +18,9 @@ import { lineupFile } from './providers/lineup';
 import { listProviders } from './providers/registry';
 import type { DiscoveredChannel } from './providers/types';
 import { demoDeps } from './setup/demo';
+import { applyMapping, lineupFromScan, mappingRows } from './setup/lineupEdit';
 import { SetupRunner, type SetupDeps } from './setup/runner';
+import { readFileSync } from 'node:fs';
 import { loadSetup, migrateOwner, needsSetup, saveSetup, type SetupState } from './setup/state';
 import { createAdapter, STATE_DIR } from './providers/registry';
 import type { ProviderAdapter } from './providers/types';
@@ -306,10 +308,8 @@ export class App {
 
   /** Save a scanned lineup (and the raw guide rows, for the channel mapping editor) and use it at once. */
   private saveLineup(lineup: Config['channels'], rows: DiscoveredChannel[]): void {
-    const file = lineupFile(this.adapter.config.id, STATE_DIR);
-    mkdirp(path.dirname(file), { recursive: true });
-    writeFileSync(file, JSON.stringify(lineup, null, 2));
-    writeFileSync(file.replace(/\.json$/, '.scan.json'), JSON.stringify(rows, null, 2));
+    this.writeLineup(lineup);
+    writeFileSync(lineupFile(this.adapter.config.id, STATE_DIR).replace(/\.json$/, '.scan.json'), JSON.stringify(rows, null, 2));
     this.applyConfig();
   }
 
@@ -422,6 +422,13 @@ export class App {
       }
       case '/api/settings':
         return this.changeSettings(body);
+      case '/api/service/switch':
+      case '/api/service/logout':
+      case '/api/service/rescan':
+      case '/api/service/map':
+      case '/api/service/streams':
+      case '/api/service/standby':
+        return this.serviceAction(p.slice('/api/service/'.length), body);
       case '/api/setup/go':
       case '/api/setup/choose':
       case '/api/setup/signin':
@@ -439,6 +446,138 @@ export class App {
       default:
         return { ok: false, message: 'unknown endpoint' };
     }
+  }
+
+  // ---- the settings page's "TV service" tab -------------------------------------------------
+
+  private scanRows(): DiscoveredChannel[] {
+    try {
+      return JSON.parse(readFileSync(lineupFile(this.adapter.config.id, STATE_DIR).replace(/\.json$/, '.scan.json'), 'utf8'));
+    } catch {
+      return [];
+    }
+  }
+
+  private serviceDTO(): AppState['service'] {
+    const c = this.adapter.config;
+    const rows = this.scanRows();
+    return {
+      id: c.id,
+      name: c.name,
+      status: c.status,
+      documentedMaxStreams: c.documentedMaxStreams,
+      measuredStreams: this.setupState.measuredStreams,
+      screens: this.screenCount,
+      standbyViews: effectiveStandby(this.cfg, c),
+      lineup: mappingRows(this.cfg.channels, rows),
+      rows: rows.map((r, index) => ({ index, label: r.label, number: r.number })),
+      lineupAt: this.setupState.lineupAt,
+      testedAt: this.setupState.testedAt,
+    };
+  }
+
+  /** Leave the app proper (ESPN polling, engine ticks, window checks) while setup steps use the screens. */
+  private stopNormal(): void {
+    for (const t of this.timers) clearInterval(t);
+    this.timers = [];
+    this.source?.stop();
+    this.source = null;
+  }
+
+  /** Back to first-run setup with all four views (switch service, log out, re-test streams). */
+  private enterSetup(): SetupRunner {
+    this.stopNormal();
+    this.screenCount = 4;
+    this.engine.resizeScreens(4);
+    this.setupRunner = new SetupRunner(this.setupDeps());
+    this.pushState();
+    return this.setupRunner;
+  }
+
+  /** After a configure (new controller), re-apply what every screen is supposed to show. */
+  private resyncController(): void {
+    const views = this.engine.views();
+    for (const sc of this.engine.director.screens) {
+      if (sc.showing.kind === 'game') this.controller.execute({ type: 'tune', screen: sc.id, gameId: sc.showing.gameId, channel: sc.showing.channel, channelName: views.get(sc.showing.gameId)?.channel?.name ?? String(sc.showing.channel) });
+      else if (sc.showing.kind === 'halftime') this.controller.execute({ type: 'showHalftime', screen: sc.id, homeGameId: sc.homeGameId ?? '' });
+    }
+  }
+
+  private serviceAction(action: string, body: Record<string, unknown>): PostResult | Promise<PostResult> {
+    if (!this.shell) return { ok: false, message: 'only in the RedZone window (npm start)' };
+    if (this.setupRunner && action !== 'map') return { ok: false, message: 'finish the setup first' };
+    const bg = (what: string, p: Promise<unknown>) => void p.catch((e) => this.info(`${what} failed: ${e}`));
+    switch (action) {
+      case 'switch': {
+        const id = String(body.id ?? '');
+        if (!listProviders().some((p) => p.id === id && p.status !== 'unsupported')) return { ok: false, message: 'pick a supported service' };
+        bg('switching service', this.enterSetup().choose(id));
+        return { ok: true };
+      }
+      case 'logout': {
+        const id = this.adapter.config.id;
+        const runner = this.enterSetup();
+        bg('logging out', this.shell.logout().then(() => runner.choose(id)));
+        this.info(`signed out of ${this.adapter.config.name} (its cookies in RedZone's browser profile were cleared)`);
+        return { ok: true };
+      }
+      case 'rescan':
+        return this.rescan();
+      case 'map': {
+        const key = String(body.key ?? '');
+        const row = body.row === null ? null : Number(body.row);
+        if (row !== null && !Number.isInteger(row)) return { ok: false, message: 'bad row' };
+        try {
+          const rows = this.scanRows();
+          this.writeLineup(applyMapping(this.cfg.channels, rows, key, row));
+          this.applyConfig();
+          this.info(`channel mapping: ${key} → ${row === null ? 'not in my lineup' : rows[row]?.label}`);
+          return { ok: true };
+        } catch (err) {
+          return { ok: false, message: String(err instanceof Error ? err.message : err) };
+        }
+      }
+      case 'streams': {
+        const id = this.adapter.config.id;
+        const runner = this.enterSetup();
+        bg('stream test', this.shell.configure({ provider: this.adapter.config, screens: 4, spares: 0, signin: 'defer' }).then(() => this.attachController()).then(() => runner.resume(id)));
+        return { ok: true };
+      }
+      case 'standby': {
+        const n = Number(body.n);
+        if (!Number.isInteger(n) || n < 0 || n > 2) return { ok: false, message: 'standby views: 0, 1 or 2' };
+        this.overrides = { ...this.overrides, standbyViews: n };
+        saveOverrides(this.overrides);
+        this.applyConfig();
+        bg('standby change', this.shell.configure({ provider: this.adapter.config, screens: this.screenCount, spares: n, signin: 'defer' }).then(() => this.attachController()).then(() => this.resyncController()));
+        this.info(`standby views: ${n}`);
+        return { ok: true };
+      }
+    }
+    return { ok: false, message: 'unknown service action' };
+  }
+
+  /** Read the guide again on screen 1 (it shows the guide for a few seconds), then put screen 1 back. */
+  private async rescan(): Promise<PostResult> {
+    try {
+      const rows = await this.adapter.discoverLineup(this.controller.screens[0].page, this.controller.tools);
+      const r = lineupFromScan(rows);
+      if (!r.found.length) return { ok: false, message: `No college-football channels found (${rows.length} guide rows read); kept your current lineup. Try Diagnostics.` };
+      this.saveLineup(r.lineup, rows);
+      this.setupState = { ...this.setupState, lineupAt: new Date().toISOString() };
+      saveSetup(this.setupState);
+      return { ok: true, message: `Found ${r.found.length} networks; missing ${r.missing.join(', ') || 'none'}` };
+    } catch (err) {
+      return { ok: false, message: `Couldn't read the guide: ${String(err instanceof Error ? err.message : err).split('\n')[0]}` };
+    } finally {
+      this.controller.restore(1);
+    }
+  }
+
+  private writeLineup(lineup: Config['channels']): void {
+    const file = lineupFile(this.adapter.config.id, STATE_DIR);
+    mkdirp(path.dirname(file), { recursive: true });
+    writeFileSync(file, JSON.stringify(lineup, null, 2));
   }
 
   /** First-run setup buttons. Long steps run in the background; the UI follows the state. */
@@ -716,6 +855,7 @@ export class App {
       shell: this.opts.shell,
       setup: this.setupRunner?.view() ?? null,
       providers: listProviders(),
+      service: this.serviceDTO(),
       provider: { id: this.adapter.config.id, name: this.adapter.config.name, shortName: this.adapter.config.shortName, status: this.adapter.config.status },
       signin: this.signin,
       streamLimit: this.controller?.streamLimit ?? c.windows.maxConcurrentStreams,

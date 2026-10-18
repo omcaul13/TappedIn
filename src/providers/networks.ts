@@ -74,10 +74,19 @@ function score(ch: DiscoveredChannel, norm: string, net: CfbNetwork, affiliate: 
  * get stable synthetic numbers in guide order. `localAffiliates` maps a network to the call sign of
  * the user's local station (e.g. { ABC: 'WCVB' }).
  */
-export function matchLineup(found: DiscoveredChannel[], localAffiliates: Record<string, string> = {}): Config['channels'] {
+/**
+ * The engine channel number for each guide row: its own number, or (services without channel
+ * numbers) a stable synthetic one after the highest real number, in guide order.
+ */
+export function rowNumbers(found: DiscoveredChannel[]): number[] {
   const real = found.map((f) => f.number).filter((n): n is number => n !== null && n > 0);
   const base = real.length ? Math.max(...real) : 0;
-  const rows = found.map((f, i) => ({ f, i, number: f.number && f.number > 0 ? f.number : base + i + 1, norm: normalizeGuideName(f.label), hd: /\bhd\b/i.test(f.label) }));
+  return found.map((f, i) => (f.number && f.number > 0 ? f.number : base + i + 1));
+}
+
+export function matchLineup(found: DiscoveredChannel[], localAffiliates: Record<string, string> = {}): Config['channels'] {
+  const numbers = rowNumbers(found);
+  const rows = found.map((f, i) => ({ f, i, number: numbers[i], norm: normalizeGuideName(f.label), hd: /\bhd\b/i.test(f.label) }));
 
   const picks = new Map<string, { row: (typeof rows)[number]; score: number }[]>();
   for (const row of rows) {
