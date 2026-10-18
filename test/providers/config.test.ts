@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { PROJECT_ROOT } from '../../src/config';
-import { compileRegex, listProviders, loadProviderConfig } from '../../src/providers/registry';
+import { compileRegex, createAdapter, listProviders, loadProviderConfig } from '../../src/providers/registry';
 
 const PROVIDERS_DIR = path.join(PROJECT_ROOT, 'config', 'providers');
 
@@ -74,6 +74,38 @@ describe('provider config', () => {
     const xoc = listProviders().find((p) => p.id === 'xfinity-on-campus');
     expect(xoc).toMatchObject({ name: 'Xfinity On Campus', status: 'stable', kind: 'campus' });
     expect(xoc?.badge.initials.length).toBeLessThanOrEqual(3);
+  });
+
+  it('only Xfinity On Campus ever auto-clicks a sign-in button', () => {
+    for (const p of listProviders()) {
+      const c = loadProviderConfig(p.id, { stateDir: mkdtempSync(path.join(tmpdir(), 'rz-empty-')) });
+      if (p.id === 'xfinity-on-campus') expect(c.signin.autoClick).not.toBeNull();
+      else expect(c.signin.autoClick).toBeNull();
+    }
+  });
+
+  it('every shipped provider builds an adapter, except ones marked unsupported', () => {
+    for (const p of listProviders()) {
+      if (p.status === 'unsupported') continue;
+      expect(createAdapter(p.id, { stateDir: mkdtempSync(path.join(tmpdir(), 'rz-empty-')) }).config.id).toBe(p.id);
+    }
+  });
+
+  it('experimental providers default to no standby views and get their own sign-in partition', () => {
+    const partitions = new Set<string>();
+    for (const p of listProviders()) {
+      const c = loadProviderConfig(p.id, { stateDir: mkdtempSync(path.join(tmpdir(), 'rz-empty-')) });
+      expect(c.defaults.standbyViews).toBe(0);
+      expect(partitions.has(c.shell.partition)).toBe(false);
+      partitions.add(c.shell.partition);
+    }
+  });
+
+  it('xfinity-stream is the consumer Xfinity app with its own sign-in', () => {
+    const c = loadProviderConfig('xfinity-stream', { stateDir: mkdtempSync(path.join(tmpdir(), 'rz-empty-')) });
+    expect(c).toMatchObject({ family: 'comcast', kind: 'consumer', status: 'experimental', shortName: 'Xfinity', documentedMaxStreams: 5 });
+    expect(c.signin.portalUrl).toBeNull();
+    expect(c.tuning).toEqual(loadProviderConfig('xfinity-on-campus').tuning);
   });
 
   it('unknown provider id throws a readable error', () => {
