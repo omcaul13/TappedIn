@@ -3,6 +3,8 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import css from './style.css';
 import { FullscreenIcon, GearIcon } from './icons';
 import { Screen } from './screen';
+import { Diagnostics } from './diagnostics';
+import { Onboarding } from './onboarding';
 import { Settings } from './settings';
 import { act, post, type AppState, type GameDTO } from './util';
 
@@ -87,7 +89,7 @@ function App() {
   const liveCount = st.games.filter((g) => g.phase === 'LIVE').length;
   const si = st.signin;
   return (
-    <div class={`app${fullscreen ? ' fullscreen' : ''}`}>
+    <div class={`app${fullscreen ? ' fullscreen' : ''}${st.setup ? ' setup-mode' : ''}`}>
       <header class="topbar">
         <div class="brand">
           <span class="mark">RZ</span>
@@ -103,7 +105,7 @@ function App() {
         {si && si.state !== 'ok' && (
           <span class={`chip ${si.state === 'failed' ? 'bad' : 'warn'}`} title={si.detail}>
             <span class="dot" />
-            {si.state === 'signing-in' ? 'Signing in to Xfinity…' : si.state === 'needed' ? 'Sign in to Xfinity' : 'Xfinity sign-in failed'}
+            {si.state === 'signing-in' ? `Signing in to ${st.provider.shortName}…` : si.state === 'needed' ? `Sign in to ${st.provider.shortName}` : `${st.provider.shortName} sign-in failed`}
           </span>
         )}
         <span class="spacer" />
@@ -132,7 +134,9 @@ function App() {
         </button>
       </header>
 
-      <main class="grid">
+      {st.setup && <Onboarding st={st} onError={setToast} />}
+      {st.diag && <Diagnostics st={st} onError={setToast} />}
+      <main class={`grid n${st.screens.length}`} style={st.setup ? { visibility: 'hidden' } : undefined}>
         {st.screens.map((sc) => (
           <Screen
             key={sc.id}
@@ -152,7 +156,7 @@ function App() {
 
       {settings && <Settings st={st} onClose={() => setSettings(false)} onError={setToast} />}
       {!connected && <div class="banner bad">Lost contact with the RedZone app. Reconnecting…</div>}
-      {connected && si?.state === 'needed' && <div class="banner">Sign in to Xfinity On Campus in the window that opened, then click Watch Now.</div>}
+      {connected && si?.state === 'needed' && <div class="banner">{si.detail.replace(/\.?$/, '.')}</div>}
       {toast && <div class="toast">{toast}</div>}
     </div>
   );

@@ -1,0 +1,98 @@
+{
+  "id": "xfinity-stream",
+  "name": "Xfinity Stream",
+  "shortName": "Xfinity",
+  "family": "comcast",
+  "kind": "consumer",
+  "status": "experimental",
+  "badge": {
+    "initials": "XS",
+    "color": "#57534e"
+  },
+  "search": [
+    "Comcast",
+    "Xfinity TV",
+    "Xfinity Stream",
+    "Instant TV",
+    "cable"
+  ],
+  "documentedMaxStreams": 5,
+  "defaults": {
+    "standbyViews": 0
+  },
+  "notes": "For Xfinity TV customers (not On Campus). Comcast documents 5 streams at home on most TV plans, 3 away from home, 2 on Instant TV. The full lineup needs your home Xfinity network; away from home you get the smaller TV Go lineup. Same web app as Xfinity On Campus, so tuning is shared; only sign-in differs (untested).",
+  "shell": {
+    "partition": "persist:xfinity-stream",
+    "userAgent": "chrome",
+    "appUrl": "^https://www\\.xfinity\\.com/stream",
+    "playerUrl": "/stream/live/",
+    "hideCss": ""
+  },
+  "signin": {
+    "checkUrl": "https://www.xfinity.com/stream/",
+    "signedOutPattern": "/\\bSign In\\b/",
+    "portalUrl": null,
+    "autoClick": null,
+    "instructions": "Sign in with your Xfinity ID in the window that opened. RedZone continues once the Xfinity Stream guide appears",
+    "windowTitle": "RedZone: sign in to Xfinity Stream",
+    "checkTimeoutMs": 20000,
+    "portalTimeoutMs": 30000,
+    "checkSettleMs": 4000,
+    "handoffSettleMs": 5000,
+    "autoClickTries": 30,
+    "autoClickIntervalMs": 500,
+    "waitAfterClickMs": 40000,
+    "waitForUserMs": 600000
+  },
+  "errors": {
+    "probePatterns": [
+      "maximum number of",
+      "too many (devices|streams)",
+      "stream(ing)? limit",
+      "already (watching|streaming)",
+      "not available in your (area|location)",
+      "only available (on|when connected to)",
+      "outside (of )?(your )?(home|campus)",
+      "sign in",
+      "log in",
+      "session (has )?expired",
+      "something went wrong",
+      "error code",
+      "unable to play",
+      "playback error",
+      "not authorized",
+      "not entitled",
+      "try again later",
+      "still (watching|there)"
+    ],
+    "loginUrl": "(login|signin|sign-in|oauth|sso|idp|saml|shibboleth|microsoftonline|okta|duosecurity|auth\\.)",
+    "limit": "(maximum number of|too many|limit|already (watching|streaming))",
+    "unavailable": "(not available|only available|outside|not authorized|not entitled)",
+    "loginText": "(sign in|log in|session)",
+    "idlePrompt": "still (watching|there)"
+  },
+  "timing": {
+    "loadGapMs": 3500,
+    "maxParallelTunes": 2,
+    "spareWarmDelayMs": 20000,
+    "hidePollMs": 500
+  },
+  "tuning": {
+    "listingsUrl": "https://www.xfinity.com/stream/listings",
+    "livePath": "/stream/live/",
+    "rowButton": "tv-grid-row a[role=button]",
+    "channelNumber": "tv-grid-row span.channel-number",
+    "closePlayer": "#player button[aria-label=\"Close Player\"]",
+    "continueWatching": "#player button[aria-label^=\"Are you still watching? Continue\"]",
+    "guideErrorPattern": "[^\\n]*TVAPP-\\d+[^\\n]*|Something went wrong[^\\n]*",
+    "inAppTimeoutMs": 8000,
+    "guideTimeoutMs": 20000,
+    "pageTimeoutMs": 30000,
+    "closePlayerTimeoutMs": 5000,
+    "findRowMaxSteps": 30,
+    "findRowSettleMs": 180,
+    "findRowHitSettleMs": 120,
+    "findRowEmptyWaitMs": 250,
+    "callSignInUrl": true
+  }
+}

@@ -21,6 +21,8 @@ export interface SimOptions {
   toMs?: number;
   /** Home game ids for screens 1–4; picked automatically at `from` when omitted. */
   homes?: string[];
+  /** Screens in the grid (default 4). */
+  screens?: number;
   onEntry?: (e: LogEntry) => void;
   /** Record what every screen shows at every tick (for the before/after metrics). */
   captureTimeline?: boolean;
@@ -56,15 +58,15 @@ export function etTime(date: string, hhmm: string): number {
   return guess - hours * 3600_000;
 }
 
-/** Pick up to four watchable games: live ones with the closest scores, then the next kickoffs. */
-export function autoHomes(views: Map<string, GameView>, now: number): string[] {
+/** Pick up to `count` (four) watchable games: live ones with the closest scores, then the next kickoffs. */
+export function autoHomes(views: Map<string, GameView>, now: number, count = 4): string[] {
   const watchable = [...views.values()].filter((v) => v.channel);
   const live = watchable.filter((v) => v.game.phase === 'LIVE' || v.game.phase === 'HALFTIME').sort((a, b) => Math.abs(a.game.home.score - a.game.away.score) - Math.abs(b.game.home.score - b.game.away.score));
   const soon = watchable.filter((v) => v.game.phase === 'PRE' && v.game.startTime && Date.parse(v.game.startTime) - now < 45 * 60_000).sort((a, b) => (a.game.startTime ?? '').localeCompare(b.game.startTime ?? ''));
   const picked: GameView[] = [];
   const channels = new Set<number>();
   for (const v of [...live, ...soon]) {
-    if (picked.length === 4 || channels.has(v.channel!.number)) continue;
+    if (picked.length === count || channels.has(v.channel!.number)) continue;
     picked.push(v);
     channels.add(v.channel!.number);
   }
@@ -90,7 +92,8 @@ export async function* synthFeed(dir: string, cfg: Config, toMs?: number): Feed 
 }
 
 export async function runSim(cfg: Config, opts: SimOptions): Promise<SimResult> {
-  const engine = new Engine(cfg);
+  const screenCount = opts.screens ?? 4;
+  const engine = new Engine(cfg, screenCount);
   const checker = new InvariantChecker(cfg);
   const dir = opts.dir ?? recordingDir(opts.root, opts.date);
   const feed = opts.synth ? synthFeed(dir, cfg, opts.toMs) : recordedFeed(dir, opts.toMs);
@@ -129,11 +132,11 @@ export async function runSim(cfg: Config, opts: SimOptions): Promise<SimResult> 
     result.ticks++;
     collect(res, now);
     if (!homesSet && (opts.fromMs === undefined || now >= opts.fromMs)) {
-      const homes = opts.homes?.length ? opts.homes : autoHomes(engine.views(), now);
+      const homes = opts.homes?.length ? opts.homes : autoHomes(engine.views(), now, screenCount);
       if (!homes.length) return;
       homesSet = true;
       result.startedAt = now;
-      homes.slice(0, 4).forEach((gameId, i) => {
+      homes.slice(0, screenCount).forEach((gameId, i) => {
         const r = engine.act({ type: 'setHome', screen: i + 1, gameId }, now);
         result.homes.push({ screen: i + 1, gameId, game: engine.views().get(gameId)?.game.shortName ?? gameId });
         collect(r, now);

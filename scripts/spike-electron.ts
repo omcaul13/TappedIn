@@ -6,7 +6,9 @@ import { chromium, type Page } from 'playwright-core';
 import { parseFlags } from '../src/cli';
 import { loadConfig, PROJECT_ROOT } from '../src/config';
 import { HealthTracker, probePage, WIDEVINE_JS } from '../src/windows/health';
-import { Tuner } from '../src/windows/tune';
+import { channelRef } from '../src/providers/lineup';
+import { createAdapter } from '../src/providers/registry';
+import { Tuner } from '../src/windows/tuner';
 import { resolveChannelArg, sleep, ts, writeReport } from './spike-lib';
 
 const { positional, flags } = parseFlags(process.argv.slice(2));
@@ -30,7 +32,7 @@ titled.sort((a, b) => a.n - b.n);
 console.log(`${ts()} attached to ${titled.length} view(s): ${titled.map((t) => `RZ-SPIKE-${t.n}`).join(', ')}`);
 if (titled.length < channels.length) console.warn(`only ${titled.length} views for ${channels.length} channels`);
 
-const tuner = new Tuner(path.join(PROJECT_ROOT, '.state', 'xfinity-urls.json'), { fastPath: true });
+const tuner = new Tuner(createAdapter('xfinity-on-campus'), path.join(PROJECT_ROOT, '.state', 'xfinity-urls.json'), { fastPath: true });
 const results: Record<string, unknown>[] = [];
 const trackers: HealthTracker[] = [];
 
@@ -41,7 +43,7 @@ async function tuneOne(page: Page, idx: number) {
   const t0 = Date.now();
   const r: Record<string, unknown> = { view: idx + 1, channel: ch.name };
   try {
-    const out = await tuner.tune(page, ch.number!);
+    const out = await tuner.tune(page, channelRef(cfg.channels, ch.number!) ?? { name: ch.name, number: ch.number!, callSign: null, ref: null });
     r.path = out.path;
     r.pageSec = +((Date.now() - t0) / 1000).toFixed(1);
     r.url = page.url();

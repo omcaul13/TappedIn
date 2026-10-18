@@ -34,13 +34,18 @@ const preset = (minBreakSeconds: number, confidence: number, replaceIfHomeRemain
     })
     .prefault({});
 
-const ChannelSchema = z.object({
+export const ChannelSchema = z.object({
   number: z.number().int().positive().nullable(),
   callSign: z.string().optional(),
+  /** The service's own id for the channel (Spectrum tmsid, YouTube TV watch id, Sling guid). */
+  ref: z.string().optional(),
   aliases: z.array(z.string()).default([]),
 });
 
 export const ConfigSchema = z.object({
+  /** Which TV service the screens play (config/providers/<id>.json). */
+  provider: z.string().default('xfinity-on-campus'),
+
   chrome: z
     .object({
       executablePath: z.string().default('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'),
@@ -62,9 +67,10 @@ export const ConfigSchema = z.object({
       /**
        * Extra hidden Xfinity views. A substitute loads in one while the screen keeps showing its game, and
        * the screen's own game keeps playing (muted, hidden) so going back is instant. Each one can be an
-       * extra stream: 6 at once worked on 10/17/2026. 0 turns this off.
+       * extra stream: 6 at once worked on 10/17/2026. 0 turns this off. Leave it out to use the
+       * service's default (0: most services allow only a few streams).
        */
-      standbyViews: z.number().int().min(0).max(4).default(2),
+      standbyViews: z.number().int().min(0).max(4).optional(),
     })
     .prefault({}),
 
@@ -319,6 +325,8 @@ const OverridesSchema = z
     summarySeconds: z.number().min(5).max(60).optional(),
     hotSummarySeconds: z.number().min(3).max(30).optional(),
     allowDuplicates: z.boolean().optional(),
+    provider: z.string().regex(/^[a-z0-9-]+$/).optional(),
+    standbyViews: z.number().int().min(0).max(4).optional(),
   })
   .strict();
 export type SettingsOverrides = z.infer<typeof OverridesSchema>;
@@ -352,6 +360,8 @@ export function withOverrides(cfg: Config, o: SettingsOverrides): Config {
   if (o.summarySeconds !== undefined) c.espn.summarySeconds = o.summarySeconds;
   if (o.hotSummarySeconds !== undefined) c.espn.hotSummarySeconds = o.hotSummarySeconds;
   if (o.allowDuplicates !== undefined) c.director.allowDuplicates = o.allowDuplicates;
+  if (o.provider) c.provider = o.provider;
+  if (o.standbyViews !== undefined) c.electron.standbyViews = o.standbyViews;
   return c;
 }
 

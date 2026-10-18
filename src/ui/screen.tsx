@@ -258,7 +258,7 @@ function GameMenu({ st, sc, games, onClose, run }: { st: AppState; sc: ScreenDTO
     run(act('setHome', sc.id, { gameId: g.id }));
     onClose();
   };
-  const rows = (list: GameDTO[]) => list.map((g) => <GameRow g={g} current={g.id === sc.homeGameId} tag={tagOf(g)} disabledReason={g.channel ? null : (g.unavailable ?? 'Not in your Xfinity lineup')} onPick={() => pick(g)} />);
+  const rows = (list: GameDTO[]) => list.map((g) => <GameRow g={g} current={g.id === sc.homeGameId} tag={tagOf(g)} disabledReason={g.channel ? null : (g.unavailable ?? `Not in your ${st.provider.shortName} lineup`)} onPick={() => pick(g)} />);
   return (
     <div class="menu" ref={ref}>
       <input autoFocus placeholder="Search teams or networks" value={q} onInput={(e) => setQ((e.target as HTMLInputElement).value)} />

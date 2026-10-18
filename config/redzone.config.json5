@@ -12,10 +12,12 @@
     debugPort: 9335,
     // On this laptop (Intel Arc + NVIDIA) Windows' DirectComposition video path left some tiles black.
     disableDirectComposition: true,
-    // Hidden extra Xfinity views. A substitute loads in one while the screen keeps showing its game,
+    // Hidden extra video views. A substitute loads in one while the screen keeps showing its game,
     // and the screen's own game keeps playing (muted, hidden) so going back is instant. Each can be an
-    // extra stream: 6 at once worked on 10/17/2026. 0 turns this off.
-    standbyViews: 2,
+    // extra stream: 6 at once worked on Xfinity On Campus on 10/17/2026, but most services allow only
+    // a few. Left out, the service's default is used (0). Your own value can also live in
+    // .state/settings.json ("standbyViews"), which wins over this file.
+    // standbyViews: 2,
   },
 
   // The original Chrome tiles (npm run start:chrome).

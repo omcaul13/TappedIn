@@ -21,6 +21,8 @@ if (existsSync(envFile)) process.loadEnvFile(envFile);
 const { flags } = parseFlags(process.argv.slice(2));
 const replayDate = typeof flags.replay === 'string' ? flags.replay : null;
 const app = new App(loadConfig(), {
+  setup: flags.setup === true,
+  setupDemo: flags['setup-demo'] === true,
   dryRun: flags['dry-run'] === true || replayDate !== null,
   replay: replayDate
     ? { date: replayDate, fromMs: etTime(replayDate, typeof flags.from === 'string' ? flags.from : '19:00'), speed: Number(flags.speed ?? 10), synth: flags.synth === true }

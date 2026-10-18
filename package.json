@@ -10,7 +10,9 @@
   "scripts": {
     "start": "tsx scripts/start.ts",
     "start:chrome": "tsx scripts/start.ts --chrome",
-    "sign-electron": "python -m castlabs_evs.vmp sign-pkg node_modules/electron/dist",
+    "sign-electron": "tsx scripts/sign-electron.ts",
+    "doctor": "tsx scripts/doctor.ts",
+    "postinstall": "tsx scripts/postinstall.ts || exit 0",
     "espn:probe": "tsx scripts/espn-probe.ts",
     "record": "tsx scripts/record.ts",
     "login": "tsx scripts/login.ts",
@@ -27,7 +29,8 @@
     "build-break-model": "tsx scripts/build-break-model.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "provider-check": "tsx scripts/provider-check.ts"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",

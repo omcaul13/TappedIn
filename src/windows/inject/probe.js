@@ -1,13 +1,7 @@
-// Evaluated inside every frame of a tile window. Plain JS (not TypeScript) so nothing is
-// transformed before it reaches the page. Returns a JSON-safe health snapshot.
-(() => {
-  const ERROR_PATTERNS = [
-    'maximum number of', 'too many (devices|streams)', 'stream(ing)? limit', 'already (watching|streaming)',
-    'not available in your (area|location)', 'only available (on|when connected to)', 'outside (of )?(your )?(home|campus)',
-    'sign in', 'log in', 'session (has )?expired', 'something went wrong', 'error code', 'unable to play',
-    'playback error', 'not authorized', 'not entitled', 'try again later',
-    'still (watching|there)',
-  ];
+// Evaluated inside every frame of a tile window as `(<this file>)(patterns)`. Plain JS (not TypeScript)
+// so nothing is transformed before it reaches the page. `patterns` are the provider's error-text
+// regexes (config/providers/<id>.json errors.probePatterns). Returns a JSON-safe health snapshot.
+(ERROR_PATTERNS) => {
 
   // Walk open shadow roots too: some players render <video> inside web components.
   const videos = [];
@@ -76,4 +70,4 @@
     errorLines,
     overlay: !!document.getElementById('rz-overlay-host'),
   };
-})()
+}

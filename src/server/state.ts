@@ -88,11 +88,53 @@ export interface FeedItem {
   text: string;
 }
 
+import type { ProviderSummary } from '../providers/types';
+import type { SetupView } from '../setup/runner';
+
+export interface DiagDTO {
+  providerId: string;
+  providerName: string;
+  status: 'stable' | 'experimental' | 'unsupported';
+  results: Partial<Record<'signin' | 'scan' | 'tune' | 'playback' | 'hide', import('../setup/diagnostics').DiagResult>>;
+  /** Editable values for each step's fields (current merged config). */
+  values: Record<string, unknown>;
+  /** The saved user override for this provider. */
+  override: Record<string, unknown>;
+  running: string | null;
+  exportPath: string | null;
+}
+
+export interface ServiceDTO {
+  id: string;
+  name: string;
+  status: 'stable' | 'experimental' | 'unsupported';
+  documentedMaxStreams: number | null;
+  measuredStreams: number | null;
+  screens: number;
+  standbyViews: number;
+  /** Each college-football network and the guide row it's mapped to. */
+  lineup: { key: string; row: number | null; label: string | null; number: number | null }[];
+  /** Guide rows from the last scan (empty before the first scan). */
+  rows: { index: number; label: string; number: number | null }[];
+  lineupAt: string | null;
+  testedAt: string | null;
+}
+
 export interface AppState {
   now: number;
   mode: 'live' | 'dry-run' | 'replay';
   shell: 'electron' | 'chrome';
-  /** Xfinity sign-in progress (one-window app). */
+  /** First-run setup in progress (the UI shows it instead of the screens), else null. */
+  setup: SetupView | null;
+  /** Every service RedZone has an adapter for (the picker lists them). */
+  providers: ProviderSummary[];
+  /** The settings page's "TV service" tab. */
+  service: ServiceDTO;
+  /** Diagnostics mode, when open. */
+  diag: DiagDTO | null;
+  /** The TV service the screens play. */
+  provider: { id: string; name: string; shortName: string; status: 'stable' | 'experimental' | 'unsupported' };
+  /** The service's sign-in progress (one-window app). */
   signin: { state: 'signing-in' | 'needed' | 'ok' | 'failed'; detail: string } | null;
   streamLimit: number;
   screens: ScreenDTO[];

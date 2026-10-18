@@ -1,0 +1,93 @@
+{
+  "id": "sling",
+  "name": "Sling TV",
+  "shortName": "Sling",
+  "family": "url",
+  "kind": "consumer",
+  "status": "experimental",
+  "badge": {
+    "initials": "SL",
+    "color": "#9a3412"
+  },
+  "search": [
+    "Sling",
+    "Sling Orange",
+    "Sling Blue",
+    "Dish"
+  ],
+  "documentedMaxStreams": null,
+  "defaults": {
+    "standbyViews": 0
+  },
+  "notes": "Streams depend on the plan: Orange 1, Blue 3, Orange & Blue 4 (Orange channels always 1). No CBS, CW or CBS Sports Network on any plan. Channel ids (guids) come from the guide data the page downloads while scrolling. UNVERIFIED: projects disagree on whether watch.sling.com/1/channel/<guid>/watch is a stable channel URL. If a \"Who's watching?\" profile picker appears, pick your profile yourself. Untested.",
+  "shell": {
+    "partition": "persist:sling",
+    "userAgent": "chrome",
+    "appUrl": "^https://watch\\.sling\\.com/",
+    "playerUrl": "/watch",
+    "hideCss": ""
+  },
+  "signin": {
+    "portalUrl": null,
+    "autoClick": null,
+    "startUrl": null,
+    "checkUrl": "https://watch.sling.com/dashboard/home",
+    "signedOutPattern": "\\b(sign in|log in|get started)\\b",
+    "instructions": "Sign in to Sling in the window that opened (and pick your profile if asked). RedZone continues once your Sling home page appears",
+    "windowTitle": "RedZone: sign in to Sling TV"
+  },
+  "errors": {
+    "probePatterns": [
+      "maximum number of",
+      "too many (devices|streams)",
+      "stream(ing)? limit",
+      "already (watching|streaming)",
+      "not available in your (area|location)",
+      "only available (on|when connected to)",
+      "outside (of )?(your )?(home|campus)",
+      "sign in",
+      "log in",
+      "session (has )?expired",
+      "something went wrong",
+      "error code",
+      "unable to play",
+      "playback error",
+      "not authorized",
+      "not entitled",
+      "try again later",
+      "still (watching|there)"
+    ],
+    "loginUrl": "(login|signin|sign-in|oauth|sso|idp|saml|shibboleth|microsoftonline|okta|duosecurity|auth\\.)",
+    "limit": "(maximum number of|too many|limit|already (watching|streaming))",
+    "unavailable": "(not available|only available|outside|not authorized|not entitled)",
+    "loginText": "(sign in|log in|session)",
+    "idlePrompt": "still (watching|there)"
+  },
+  "timing": {
+    "loadGapMs": 3500,
+    "maxParallelTunes": 2,
+    "spareWarmDelayMs": 20000,
+    "hidePollMs": 500
+  },
+  "tuning": {
+    "watchUrl": "https://watch.sling.com/1/channel/{ref}/watch",
+    "refInUrl": "/channel/([0-9a-f]{32})/",
+    "pageTimeoutMs": 30000,
+    "idlePromptButton": null,
+    "lineup": {
+      "mode": "response",
+      "guideUrl": "https://watch.sling.com/dashboard/grid_guide/grid_guide_a_z",
+      "responseUrl": "pres/grid_guide_a_z",
+      "items": "ribbons[]",
+      "ref": "stitch_id",
+      "label": "tiles[].actions.DETAIL_VIEW.adobe.ChannelName",
+      "number": null,
+      "refPattern": "^([0-9a-f]{32})$",
+      "require": "tiles[].actions.PLAY_CONTENT",
+      "scrollContainer": ".guide-cell",
+      "settleMs": 300,
+      "maxScrolls": 120,
+      "timeoutMs": 30000
+    }
+  }
+}

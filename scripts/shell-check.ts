@@ -2,15 +2,18 @@
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
 import path from 'node:path';
-import { loadConfig, PROJECT_ROOT } from '../src/config';
+import { loadConfig, loadOverrides, PROJECT_ROOT, withOverrides } from '../src/config';
+import { loadProviderConfig } from '../src/providers/registry';
+import { writeShellProvider } from '../src/shell';
 
-const cfg = loadConfig();
+const cfg = withOverrides(loadConfig(), loadOverrides());
+const provider = loadProviderConfig(cfg.provider);
 const require = createRequire(import.meta.url);
 const electronPath = require('electron') as string;
 const env = { ...process.env };
 delete env.NODE_OPTIONS;
 console.log('node-ish env:', Object.keys(env).filter((k) => /^(NODE|TSX|ELECTRON|npm_config_node)/i.test(k)).join(', ') || 'none');
-const args = [path.join(PROJECT_ROOT, 'electron', 'main.cjs'), `--port=${cfg.electron.debugPort}`, '--ui=about:blank', `--user-data=${cfg.electron.userDataDir}`, '--screens=4', '--no-dcomp'];
+const args = [path.join(PROJECT_ROOT, 'electron', 'main.cjs'), `--port=${cfg.electron.debugPort}`, '--ui=about:blank', `--user-data=${cfg.electron.userDataDir}`, '--screens=4', '--no-dcomp', `--provider=${writeShellProvider(provider)}`];
 console.log('spawn', electronPath, args.join(' '));
 const child = spawn(electronPath, args, { cwd: PROJECT_ROOT, env, stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
 child.stdout?.on('data', (d) => process.stdout.write(`[out] ${d}`));

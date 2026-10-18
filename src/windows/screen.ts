@@ -2,8 +2,9 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Page } from 'playwright-core';
 import type { WindowsConfig } from '../config';
-import { HealthTracker, probePage, setMuted, type Health } from './health';
-import { closePlayer, continueWatching, type TuneOutcome, type Tuner } from './tune';
+import type { ChannelRef, TuneOutcome } from '../providers/types';
+import { errorRules, HealthTracker, probePage, setMuted, type ErrorRules, type Health } from './health';
+import type { Tuner } from './tuner';
 
 // One tile window: what it renders, its stream health, its sound, its overlay and its hotkeys.
 
@@ -46,6 +47,7 @@ export class ScreenWindow {
   /** False when the pop-up couldn't be drawn over the player (fullscreen etc.). */
   popupVisible = true;
   readonly tracker: HealthTracker;
+  private readonly rules: ErrorRules;
   private wantMuted = true;
   private overlay: OverlayState = { badge: null, error: null, popup: null };
   private overlayDrawn = '';
@@ -62,7 +64,8 @@ export class ScreenWindow {
     /** The app window's name for this view (S1..S4, X1..), when it has one. */
     readonly viewName: string | null = null,
   ) {
-    this.tracker = new HealthTracker({ startupSeconds: cfg.startupTimeoutSeconds, stallSeconds: cfg.stallSeconds });
+    this.rules = errorRules(tuner.adapter.config);
+    this.tracker = new HealthTracker({ startupSeconds: cfg.startupTimeoutSeconds, stallSeconds: cfg.stallSeconds }, this.rules);
   }
 
   /** Hotkeys + pop-up clicks reach the app through a page binding (survives navigations). */
@@ -74,14 +77,14 @@ export class ScreenWindow {
     await this.page.evaluate(HOTKEYS_JS).catch(() => {});
   }
 
-  /** Call sign this screen should be on (end of the live URL), when the lineup config knows it. */
-  callSign: string | null = null;
+  /** The lineup channel this screen should be on (its call sign / service id let drift be spotted). */
+  ref: ChannelRef | null = null;
 
-  async tuneChannel(channel: number, callSign: string | null = null): Promise<TuneOutcome> {
-    const out = await this.tuner.tune(this.page, channel, callSign);
+  async tuneChannel(ch: ChannelRef): Promise<TuneOutcome> {
+    const out = await this.tuner.tune(this.page, ch);
     this.render = 'video';
-    this.channel = channel;
-    this.callSign = callSign;
+    this.channel = ch.number;
+    this.ref = ch;
     this.localUrl = null;
     this.lastTune = out;
     this.lastHealth = null;
@@ -94,7 +97,7 @@ export class ScreenWindow {
   /** Source of the largest video right now (to recognise a *new* stream after a tune). */
   async currentSrc(): Promise<string | null> {
     try {
-      const v = (await probePage(this.page)).flatMap((f) => f.videos).sort((a, b) => b.rect.w * b.rect.h - a.rect.w * a.rect.h)[0];
+      const v = (await probePage(this.page, this.rules.probePatterns)).flatMap((f) => f.videos).sort((a, b) => b.rect.w * b.rect.h - a.rect.w * a.rect.h)[0];
       return v?.src || null;
     } catch {
       return null;
@@ -113,7 +116,7 @@ export class ScreenWindow {
       if (!stillCurrent()) return { firstFrameAt, playingAt: null, outcome: 'superseded' };
       let v;
       try {
-        v = (await probePage(this.page)).flatMap((f) => f.videos).sort((a, b) => b.rect.w * b.rect.h - a.rect.w * a.rect.h)[0];
+        v = (await probePage(this.page, this.rules.probePatterns)).flatMap((f) => f.videos).sort((a, b) => b.rect.w * b.rect.h - a.rect.w * a.rect.h)[0];
       } catch {
         v = undefined;
       }
@@ -127,14 +130,14 @@ export class ScreenWindow {
     return { firstFrameAt, playingAt: null, outcome: 'timeout' };
   }
 
-  /** Stop this view's stream but keep the Xfinity app loaded (its guide), ready for a quick in-app tune. */
+  /** Stop this view's stream but keep the service's app loaded (its guide), ready for a quick in-app tune. */
   async release(): Promise<void> {
     await this.setMuted(true);
-    const back = await closePlayer(this.page).catch(() => false);
+    const back = await this.tuner.adapter.release(this.page).catch(() => false);
     if (!back) await this.page.goto('about:blank').catch(() => {});
     this.render = 'none';
     this.channel = null;
-    this.callSign = null;
+    this.ref = null;
     this.localUrl = null;
     this.lastHealth = null;
     this.tracker.reset();
@@ -145,7 +148,7 @@ export class ScreenWindow {
     await this.page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
     this.render = 'local';
     this.channel = null;
-    this.callSign = null;
+    this.ref = null;
     this.localUrl = url;
     this.lastHealth = null;
     this.overlayDrawn = '';
@@ -154,11 +157,11 @@ export class ScreenWindow {
   /** Probe the stream (video tiles only), keep sound and overlay in the wanted state. */
   async checkHealth(): Promise<Health | null> {
     if (this.render !== 'video') return null;
-    const frames = await probePage(this.page);
+    const frames = await probePage(this.page, this.rules.probePatterns);
     const h = this.tracker.update(frames);
     this.lastHealth = h;
     if (h.video && h.video.muted !== this.wantMuted) await setMuted(this.page, this.wantMuted);
-    if (h.state === 'IDLE_PROMPT') await continueWatching(this.page);
+    if (h.state === 'IDLE_PROMPT') await this.tuner.adapter.answerIdlePrompt(this.page);
     if (h.state === 'PAUSED') await this.page.evaluate(`document.querySelectorAll('video').forEach((v) => v.paused && v.play().catch(() => {}))`).catch(() => {});
     if (!frames.some((f) => f.overlay)) this.overlayDrawn = '';
     await this.drawOverlay();
@@ -179,7 +182,7 @@ export class ScreenWindow {
     await this.drawOverlay();
   }
 
-  /** Overlays only go on Xfinity tiles; local pages draw their own UI. */
+  /** Overlays only go on video tiles; local pages draw their own UI. */
   private async drawOverlay(): Promise<void> {
     if (this.render !== 'video' || !this.inPageUi) return;
     const key = JSON.stringify(this.overlay);

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
+import { ServicePanel } from './service';
 import { post, type AppState } from './util';
 
 // Collapsible settings drawer: switch sensitivity, sound mode, dwell, time on a substitute, ESPN poll
@@ -33,11 +34,23 @@ export function Settings({ st, onClose, onError }: { st: AppState; onClose(): vo
     if (!r.ok) onError(r.message ?? 'could not change that setting');
   };
   const feed = st.feed.filter((f) => f.kind === 'switch' || f.kind === 'audio').slice(-25).reverse();
+  const [tab, setTab] = useState<'switching' | 'service'>('switching');
   return (
     <>
       <div class="scrim" onClick={onClose} />
       <aside class="drawer">
         <h3>Settings</h3>
+        <div class="seg tabs">
+          <button class={tab === 'switching' ? 'on' : ''} onClick={() => setTab('switching')}>
+            Switching
+          </button>
+          <button class={tab === 'service' ? 'on' : ''} onClick={() => setTab('service')}>
+            TV service
+          </button>
+        </div>
+        {tab === 'service' && <ServicePanel st={st} onError={onError} />}
+        {tab === 'switching' && (
+          <>
         <div class="note">Changes apply right away and are saved for next time.</div>
 
         <h5>Switch sensitivity</h5>
@@ -114,6 +127,8 @@ export function Settings({ st, onClose, onError }: { st: AppState; onClose(): vo
           <kbd>F11</kbd>
           <span>Full screen</span>
         </div>
+          </>
+        )}
       </aside>
     </>
   );

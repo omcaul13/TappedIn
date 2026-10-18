@@ -1,13 +1,18 @@
 # RedZone Director
 
-A personal "RedZone" for college football. One app window shows four Xfinity Stream (Xfinity On Campus) channels in a 2×2 grid. A director watches ESPN's live game data and changes each screen's channel:
+A "RedZone" for college football, on the TV service you already have. One app window shows up to four channels in a grid. A director watches ESPN's live game data and changes each screen's channel:
 
 - **Long commercial break on a screen's game:** the screen fills in with the best live game, red-zone games first.
 - **Play resumes:** the screen goes back to its game.
 - **Halftime:** the screen plays a highlights reel.
 - **Game ends:** a game picker appears in that screen.
 
-Personal use only. The app plays Xfinity in castLabs' Widevine-licensed Electron and clicks channels in Xfinity's guide the way you would. It never extracts or redistributes streams, never touches DRM, and never types your credentials.
+RedZone plays your service's own web player in castLabs' Widevine-licensed Electron and changes channels the way you would: by its channel addresses or by clicking its guide.
+- It never extracts or redistributes streams and never touches DRM.
+- You sign in on the service's real page. RedZone never sees, stores or sends your password.
+- Everything runs on your computer. Nothing is sent anywhere except to your TV service and ESPN's public scores.
+
+RedZone isn't affiliated with or endorsed by any TV service, school, league or network, and each service's terms of use apply to your account.
 
 | Phase | What | Status |
 |---|---|---|
@@ -15,10 +20,44 @@ Personal use only. The app plays Xfinity in castLabs' Widevine-licensed Electron
 | v2.1 | **One app window** (Electron) with per-screen overlays, settings drawer, team colors and logos | ✅ done (live-tested 10/17) |
 | v2.2 | **Faster switching:** standby views, in-window switching card, faster play-by-play for on-screen games | ✅ done (live-tested 10/17) |
 | v2.3 | **Switch less:** break forecast from 76 recorded games, Low/Medium/High sensitivity, hysteresis | ✅ done (replayed 10/10 and 10/17) |
+| v3.0 | **Other TV services:** provider adapters with per-service config files | ✅ Xfinity re-verified live 10/18 through the adapter; full app check on a game day pending |
+| v3.1 | **Setup for everyone:** one-click installer, first-run setup, TV service settings, diagnostics | ✅ setup run live on Xfinity On Campus 10/18 (sign-in, scan 17 networks, playback, 4 streams); installer checked in check-only mode |
 
-## Setup
+## Supported TV services
 
-Requirements: Windows, Node 22+ (tested on 24), Python 3.12 (only to sign Electron, once), and an Xfinity On Campus account. Live TV generally only works on the campus network.
+| Service | Status | Changes channels by | Documented streams |
+|---|---|---|---|
+| Xfinity On Campus | **Tested** | guide clicks, remembered addresses | 1 (6 worked at Northeastern, 10/17) |
+| Xfinity Stream (Xfinity TV customers) | Experimental | same as On Campus | 5 at home, 3 away |
+| SpectrumU / Spectrum TV | Experimental | an address per channel | several on campus / unlimited at home, 3 away |
+| Cox Contour on Campus / Cox Contour | Experimental | guide clicks | 1 / — |
+| YouTube TV | Experimental (sign-in not yet tested) | an address per channel | 3 |
+| Sling TV | Experimental | an address per channel | Orange 1, Blue 3, both 4 |
+
+- **Tested:** used with a real account.
+- **Experimental:** built from the service's documentation and from open-source projects that drive the same web players, but nobody has tested it with a real account yet. If it doesn't work for you, the app's **Diagnostics** can usually fix it, and you can send the fix back: see [CONTRIBUTING.md](CONTRIBUTING.md).
+- **Not supported yet:**
+  - Apogee Stream2 (USC, George Mason, Rochester, Wake Forest and others), Hulu + Live TV, Fubo, DIRECTV.
+  - Philo, which carries no sports networks.
+- The research behind this list is in [docs/research/streaming-services.md](docs/research/streaming-services.md).
+
+## Install (Windows)
+
+1. Download this project (green **Code** button → **Download ZIP**, then unzip it, or `git clone` it).
+2. Double-click **`Setup RedZone.cmd`**. It:
+   - checks for Node.js and Python, and offers to install them (only if you type **Y**);
+   - installs RedZone's parts;
+   - walks you through castLabs' free EVS sign-up (castLabs' own prompts: RedZone never sees what you type);
+   - signs the video player, then checks everything;
+   - adds a **RedZone** shortcut to the Start menu and desktop, and opens the app.
+3. The first start opens **setup**: pick your service, sign in, and RedZone checks your channels and how many streams your plan plays at once (about two minutes).
+
+Run **`Update RedZone.cmd`** to update; it re-signs the player only when it changed. `npm run doctor` checks an install and says how to fix anything wrong.
+
+<details>
+<summary>Doing it by hand (developers)</summary>
+
+Requirements: Windows, Node 22+ (tested on 24), Python 3.12 (only to sign Electron).
 
 ```bash
 npm install
@@ -28,24 +67,55 @@ npm install
 npm test
 ```
 
-### Sign the Electron app for Widevine (once, and after every Electron update)
-
-The app uses castLabs' Electron build ("ECS"), which includes Google's Widevine. Out of the box it is signed for development only, and Xfinity's license server refuses it (`Failed to acquire a license -9000:502`). castLabs' free EVS service signs it for streaming:
-
+**Sign the Electron app for Widevine** (once, and after every Electron update). The app uses castLabs' Electron build ("ECS"), which includes Google's Widevine. Out of the box it is signed for development only, and services' license servers refuse it (Xfinity: `Failed to acquire a license -9000:502`). castLabs' free EVS service signs it for streaming:
 1. `pip install castlabs-evs`, then create a free account: `python -m castlabs_evs.account signup` (you type your details; it emails a code).
-2. Sign: `npm run sign-electron` (uploads the Electron binary to castLabs and writes `electron.exe.sig`; the signature lasts about 3.7 years).
+2. Sign: `npm run sign-electron`. It uploads the Electron binary to castLabs and writes `electron.exe.sig`; the signature lasts about 3.7 years.
 
-**Norton or other antivirus "web shield":** if Python reports `CERTIFICATE_VERIFY_FAILED`, the antivirus is re-signing HTTPS. Point Python at a certificate bundle that includes its root, for example `$env:AWS_CA_BUNDLE` and `$env:REQUESTS_CA_BUNDLE` set to `%LOCALAPPDATA%\RedZone\ca-bundle.pem` (Python's `certifi` bundle plus the antivirus root exported from Windows' certificate store).
+**Norton or another antivirus "web shield":** if Python reports `CERTIFICATE_VERIFY_FAILED`, the antivirus is re-signing HTTPS. The setup file handles this by having Python trust Windows' certificate store (the `truststore` package). By hand, point Python at a certificate bundle that includes the antivirus root: set `$env:AWS_CA_BUNDLE` and `$env:REQUESTS_CA_BUNDLE` to `%LOCALAPPDATA%\RedZone\ca-bundle.pem`, which is Python's `certifi` bundle plus the antivirus root exported from Windows' certificate store.
 
-### Signing in to Xfinity
+</details>
 
-The first time, run `npm start`. If Xfinity On Campus needs you, a "RedZone: sign in" window opens: sign in with your school account, accept Xfinity's **Terms of Activation** if asked (your call; the app never clicks it), and click **Watch Now**.
+## First-run setup
 
-After that, the app signs itself in at every start:
-1. It checks whether Xfinity Stream is still signed in.
-2. If not, it opens your Xfinity On Campus page in a hidden window and clicks **Watch Now**, exactly what you'd click. Your Xfinity On Campus sign-in persists in `%LOCALAPPDATA%\RedZone\electron`; Xfinity Stream's own session doesn't survive a restart.
+`npm start` (or the RedZone shortcut) opens setup the first time, and again whenever you switch services:
 
-Xfinity rejects Electron's browser identifier ("update your browser"), so the app presents the matching Chrome identifier.
+1. **Welcome**, then **pick your service.**
+   - Campus TV comes with your housing.
+   - The search box also finds your school ("Northeastern" → Xfinity On Campus).
+2. **Sign in** on the service's own page, in a window RedZone opens.
+   - School sign-in (SSO, Duo) works there as usual.
+   - Accepting a service's terms (such as Xfinity's Terms of Activation) is your call; RedZone never clicks them.
+   - Only the browser's normal session cookies are kept, on this computer, separately for each service.
+3. **Channels.** RedZone reads the service's guide and shows which college-football networks you get. Games on networks you don't get are greyed out and never picked.
+4. **Playback.** One channel plays on screen 1.
+5. **Streams.**
+   - RedZone adds screens one at a time until one won't play.
+   - Then it sizes the grid (1, 2, 3 or 4 screens) and explains any limit, e.g. "Your plan played 2 streams at once (Xfinity documents 1). RedZone will use 2 screens."
+
+Xfinity On Campus signs itself in at every later start. Its On Campus sign-in persists, and RedZone presses the **Watch Now** button on your On Campus page in a hidden window, exactly what you'd click. Xfinity rejects Electron's browser identifier ("update your browser"), so the app presents the matching Chrome identifier.
+
+## Settings → TV service
+
+- **The service:** its status, how many streams played in the last test, and the screen count.
+- **Re-scan channels**, **Re-test streams**, **Log out** (clears only that service's sign-in), and **Diagnostics**.
+- **Standby views** (0–2): extra hidden streams that make switching instant. They're off by default because each one counts against your plan's stream limit.
+- **Channels:** point each network at a different guide channel, or mark it "Not in my lineup".
+- **Another service:** runs setup for it. Each service keeps its own sign-in.
+
+## Diagnostics
+
+For a service that doesn't work right (most likely an experimental one), from setup ("Having trouble?") or Settings → TV service.
+
+**The steps.** Diagnostics runs each part on its own, with screen 1 left visible, and shows pass or fail and what it saw:
+- sign-in detection
+- channel guide
+- tuning
+- playback
+- full-screen video
+
+**Fixing a step.** When a step fails, the settings it depends on (page addresses, selectors, patterns) appear right there. Change them and press **Save & retry**. Fixes are checked before saving and kept in `.state/providers/<id>.json`, on top of the built-in `config/providers/<id>.json`.
+
+**Sharing the fix.** **Export config** writes your fixes and the results to `Documents\RedZone`. The file has no passwords, cookies or page text, and addresses are cut to the site and page. Send it in so everyone gets the fix ([CONTRIBUTING.md](CONTRIBUTING.md)).
 
 ## Running it
 
@@ -53,7 +123,7 @@ Xfinity rejects Electron's browser identifier ("update your browser"), so the ap
 npm start
 ```
 
-One RedZone window opens maximized: a slim top bar and four screens edge to edge. **F11** toggles full screen. It picks four watchable home games to start; change them from each screen's game list. Close the window (or Ctrl+C in the terminal) to stop.
+One RedZone window opens maximized: a slim top bar and your screens (four, or what setup found your plan plays) edge to edge. **F11** toggles full screen. It picks four watchable home games to start; change them from each screen's game list. Close the window (or Ctrl+C in the terminal) to stop.
 
 | Mode | Command | What you see |
 |---|---|---|
@@ -212,6 +282,10 @@ Every screen is checked every 2 s: is the video advancing, is it on the right ch
 | Command | What it does |
 |---|---|
 | `npm start` / `npm run start:chrome` | The app (one window / Chrome tiles) |
+| `npm start -- --setup` | Run first-run setup again |
+| `npm start -- --setup-demo` | Click through setup with nothing real behind it (no window, no streams): open <http://localhost:7480/ui> |
+| `npm run provider-check -- <service> [--scan [--save]] [--tune ESPN,FS1] [--views N]` | Try one service's adapter without the engine: sign in, read the guide, tune channels (screenshots when something doesn't play) |
+| `npm run doctor` | Checks the install and says how to fix what's wrong |
 | `npm run sim -- --day 20261017 [--from 19:30 --to 22:00] [--compare] [--sensitivity low\|medium\|high] [--model classic]` | Replays a recorded day through the real engine. `--compare` prints before/after switching metrics |
 | `npm run fetch-day -- 20261010` then `npm run sim -- --day 20261010 --synth` | Rebuilds **any past Saturday** from final play-by-play and simulates it |
 | `npm run build-break-model` | Rebuilds the break forecast from every recorded game |
@@ -219,7 +293,7 @@ Every screen is checked every 2 s: is the video advancing, is it on the right ch
 | `npm run analyze-log` | Detector vs your labels, switching stats |
 | `npm run record` | Records a game day's ESPN data to `recordings/<date>/` (about 30 MB/hour) |
 | `npm run espn:probe` | Today's slate, networks, and whether you can watch each game |
-| `npm run sign-electron` | castLabs EVS signing (see Setup) |
+| `npm run sign-electron` | castLabs EVS signing (see Install) |
 | `npx electron electron/spike.cjs --views 4 --overlay --hide-ui --ua-chrome` + `npx tsx scripts/spike-electron.ts ESPN ESPN2 ABC FOX` | The Electron feasibility spike |
 | `npx tsx scripts/shell-check.ts` | Starts the app window alone and prints everything it says |
 
@@ -229,26 +303,34 @@ The old control panel still works at <http://localhost:7480/panel>.
 
 ```text
 config/redzone.config.json5   the one editable file
+config/providers/<id>.json    one per TV service: URLs, selectors, timings, error text, sign-in rules
+config/schools.json           school → campus TV service, for setup's search
 config/break-model.json       stoppage-length model (npm run build-break-model)
-electron/main.cjs             app window: frameless window, Xfinity views + standby views, UI layer, Watch Now sign-in
+electron/main.cjs             app window: frameless window, video views + standby views, UI layer, sign-in;
+                              configure/logout/sign-in check requests from the app
+electron/layout.cjs           where each screen sits for 1-4 screens (the UI mirrors it)
 electron/ui-preload.cjs       the UI's only shell access: full screen
 electron/spike.cjs            Option A feasibility spike
 src/app.ts                    the app: ESPN data -> engine -> window controller, UI state + API, settings, labels
 src/shell.ts                  starts the app window and finds its views over the local debugging port
 src/ui/                       the window's UI (Preact, bundled on the fly by esbuild): top bar, screen overlays,
-                              game list, switching card, game-over panel, settings drawer
+                              game list, switching card, game-over panel, settings drawer, setup, diagnostics
+src/providers/                TV service adapters (comcast: guide clicks; url: an address per channel), registry,
+                              lineup and network matching
+src/setup/                    first-run setup steps, setup state, diagnostics, export, channel mapping
 src/engine/                   gameStore, forecast + forecastDetector (switch less), breakDetector (classic),
                               ranker, director, audio, engine, invariants
 src/espn/                     client, normalize (incl. team colors/logos), source (two-tier live poller + replay),
                               recording, synth
 src/highlights/               halftime reel sources
-src/windows/                  tune (guide, in-app, cached URLs, one load at a time), health, screen (one view),
+src/windows/                  tuner (parallel tunes, one page load at a time, remembered URLs), health, screen (one view),
                               controller (commands, standby views, retries, drift, stream limits), chrome (Chrome shell)
 src/server/                   localhost: UI page + live state (server-sent events), data tile, halftime reel, old panel
 src/sim.ts, src/simMetrics.ts replay + before/after metrics
 scripts/                      the npm run commands above
 test/                         vitest: forecast, break detector, director (incl. switch-less rules), ranker, replay guards…
-.state/                       remembered channel URLs, settings changed in the app, YouTube cache (safe to delete)
+.state/                       setup state, scanned lineups, your adapter fixes (providers/), remembered channel URLs,
+                              settings changed in the app, YouTube cache
 ```
 
 ## Findings worth knowing (10/17/2026)

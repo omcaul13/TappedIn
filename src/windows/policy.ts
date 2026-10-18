@@ -10,8 +10,8 @@ export interface ErrorAdvice {
   hint: string;
 }
 
-/** What to do about a stream state, given how many times this screen already retried. */
-export function adviseOnStream(state: StreamState, attempts: number, retrySeconds: number): ErrorAdvice {
+/** What to do about a stream state, given how many times this screen already retried. `shortName` names the service in messages. */
+export function adviseOnStream(state: StreamState, attempts: number, retrySeconds: number, shortName = 'Xfinity'): ErrorAdvice {
   const none: ErrorAdvice = { action: 'none', retryAfterSeconds: null, title: '', hint: '' };
   switch (state) {
     case 'PLAYING':
@@ -21,11 +21,11 @@ export function adviseOnStream(state: StreamState, attempts: number, retrySecond
     case 'IDLE_PROMPT':
       return none;
     case 'STREAM_LIMIT':
-      return { action: 'dataTile', retryAfterSeconds: null, title: 'Xfinity stream limit reached', hint: 'Showing live game data on this screen instead. Video returns to the most exciting games.' };
+      return { action: 'dataTile', retryAfterSeconds: null, title: `${shortName} stream limit reached`, hint: 'Showing live game data on this screen instead. Video returns to the most exciting games.' };
     case 'LOGIN_REQUIRED':
-      return { action: 'fail', retryAfterSeconds: retrySeconds * 2, title: 'Signed out of Xfinity', hint: 'Run "npm run login" and sign in again; this screen retries on its own.' };
+      return { action: 'fail', retryAfterSeconds: retrySeconds * 2, title: `Signed out of ${shortName}`, hint: 'Run "npm run login" and sign in again; this screen retries on its own.' };
     case 'CHANNEL_UNAVAILABLE':
-      return { action: 'fail', retryAfterSeconds: retrySeconds * 5, title: 'Channel not available', hint: 'Xfinity says this channel can\'t play here. Live TV needs the campus network; check the channel number in the config.' };
+      return { action: 'fail', retryAfterSeconds: retrySeconds * 5, title: 'Channel not available', hint: shortName === 'Xfinity' ? 'Xfinity says this channel can\'t play here. Live TV needs the campus network; check the channel number in the config.' : `${shortName} says this channel can't play here. It may not be in your plan, or may only play on your home network; check the channel in your lineup.` };
     case 'DRM_ERROR':
       return attempts < 1 ? { ...none, action: 'retry' } : { action: 'fail', retryAfterSeconds: retrySeconds, title: 'Playback protection (Widevine) error', hint: 'Make sure this is Google Chrome (not Chromium) and up to date. Retrying periodically.' };
     case 'STALLED':
@@ -36,7 +36,7 @@ export function adviseOnStream(state: StreamState, attempts: number, retrySecond
 }
 
 /**
- * Which screens get real video when Xfinity allows fewer streams than screens. The most exciting
+ * Which screens get real video when the service allows fewer streams than screens. The most exciting
  * screens win; screens that already have video get a bonus so the allocation doesn't flap.
  */
 export function allocateVideo(screens: { id: number; wantsVideo: boolean; excitement: number }[], limit: number, current: ReadonlySet<number>, stickiness = 15): Set<number> {

@@ -5,3 +5,4 @@ spike-report/
 .chrome-profile/
 .state/
 .env
+.venv-evs/

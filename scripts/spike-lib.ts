@@ -5,7 +5,12 @@ import path from 'node:path';
 import type { Browser, BrowserContext, Page } from 'playwright-core';
 import { PROJECT_ROOT, type Config } from '../src/config';
 import { HealthTracker, probePage, type Health } from '../src/windows/health';
-import { LISTINGS_URL, tuneByGuide } from '../src/windows/tune';
+import { ComcastTuningSchema, TvApp } from '../src/providers/comcast/tvapp';
+import { loadProviderConfig } from '../src/providers/registry';
+
+// The spikes predate provider adapters and only ever drove Xfinity.
+const xfinity = new TvApp(ComcastTuningSchema.parse(loadProviderConfig('xfinity-on-campus').tuning), 'Xfinity');
+const LISTINGS_URL = xfinity.t.listingsUrl;
 
 export const REPORT_DIR = path.join(PROJECT_ROOT, 'spike-report');
 
@@ -49,7 +54,7 @@ export async function parkOtherPlayers(context: BrowserContext): Promise<number>
 /** Start tuning a page to a channel. Returns how long the guide step took (ms), if used. */
 export async function tune(page: Page, ch: ChannelRef): Promise<{ guideMs: number | null; url: string }> {
   if (ch.number !== undefined) {
-    const r = await tuneByGuide(page, ch.number);
+    const r = await xfinity.tuneByGuide(page, ch.number);
     return { guideMs: r.ms, url: r.url };
   }
   await page.goto(ch.url!, { waitUntil: 'domcontentloaded', timeout: 45000 });

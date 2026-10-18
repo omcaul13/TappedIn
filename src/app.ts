@@ -12,11 +12,28 @@ import { YouTubeClient } from './highlights/youtube';
 import { LiveSource, recordingDir } from './espn/source';
 import { clock as fmtClock, dailyLogFile, DecisionLog, type LogEntry } from './log';
 import { startServer, type LocalServer, type PostResult } from './server/server';
+import { effectiveChannels } from './providers/lineup';
+import { mkdirSync as mkdirp, writeFileSync } from 'node:fs';
+import { lineupFile } from './providers/lineup';
+import { listProviders } from './providers/registry';
+import type { DiscoveredChannel } from './providers/types';
+import { demoDeps } from './setup/demo';
+import { applyMapping, lineupFromScan, mappingRows } from './setup/lineupEdit';
+import { carriedChannels, SetupRunner, type SetupDeps } from './setup/runner';
+import { DIAG_STEPS, fieldsFor, getPath, HIDE_PROBE_JS, runStep, type DiagResult, type DiagStep } from './setup/diagnostics';
+import { buildExport, writeExport } from './setup/export';
+import { compileRegex } from './providers/types';
+import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import { loadSetup, migrateOwner, needsSetup, saveSetup, type SetupState } from './setup/state';
+import { createAdapter, previewOverride, readOverrideFile, saveOverride, STATE_DIR } from './providers/registry';
+import type { ProviderAdapter } from './providers/types';
 import { gameDTO, type AppState, type FeedItem, type PickerDTO, type ScreenDTO } from './server/state';
-import { attachShell, startShell, type Shell, type SigninStatus } from './shell';
+import { attachShell, effectiveStandby, startShell, type Shell, type SigninStatus } from './shell';
 import { autoHomes, recordedFeed, synthFeed } from './sim';
 import { connect, ensureChrome } from './windows/chrome';
 import { WindowController } from './windows/controller';
+import { cacheFileFor } from './windows/tuner';
 import type { BridgeMessage, OverlayState, Popup } from './windows/screen';
 import type { SwitchTiming } from './windows/timing';
 
@@ -30,6 +47,10 @@ import type { SwitchTiming } from './windows/timing';
 
 export interface AppOptions {
   dryRun: boolean;
+  /** Run the first-run setup even if it was done before. */
+  setup?: boolean;
+  /** The first-run setup with nothing real behind it (no window, no streams), for UI work. */
+  setupDemo?: boolean;
   replay?: { date: string; fromMs: number; speed: number; synth: boolean };
   homes?: string[];
   /** Pick four home games automatically at start (you can change them in the panel). */
@@ -82,6 +103,17 @@ export class App {
   private cfg: Config;
   private lastSwitch = new Map<number, ScreenDTO['lastSwitch']>();
   private broadcastTimer: NodeJS.Timeout | null = null;
+  /** The TV service the screens play (first-run setup and the settings page can switch it). */
+  private adapter: ProviderAdapter;
+  /** First-run setup in progress, else null. */
+  private setupRunner: SetupRunner | null = null;
+  /** Diagnostics mode, when open. */
+  private diag: { results: Partial<Record<DiagStep, DiagResult>>; running: string | null; exportPath: string | null } | null = null;
+  private browser: import('playwright-core').Browser | null = null;
+  /** First-run setup: done or not, and what it found. */
+  private setupState: SetupState;
+  /** Screens in the grid (1-4): the setup's choice once setup is done, 4 while it runs. */
+  private screenCount: number;
 
   constructor(
     cfg: Config,
@@ -89,8 +121,10 @@ export class App {
   ) {
     this.fileCfg = cfg;
     this.overrides = loadOverrides();
-    this.cfg = cfg = withOverrides(cfg, this.overrides);
-    this.engine = new Engine(cfg);
+    this.cfg = cfg = resolveConfig(cfg, this.overrides);
+    this.setupState = migrateOwner(STATE_DIR, cfg) ?? loadSetup();
+    this.screenCount = needsSetup(this.setupState, cfg) || opts.setup || opts.setupDemo ? 4 : this.setupState.screens;
+    this.engine = new Engine(cfg, this.screenCount);
     const ytKey = process.env.YT_API_KEY?.trim();
     const youtube = ytKey
       ? new YouTubeClient({
@@ -108,6 +142,7 @@ export class App {
     const file = opts.replay ? path.join(logs, `replay-${opts.replay.date}.jsonl`) : dailyLogFile(PROJECT_ROOT);
     this.labelsFile = path.join(logs, opts.replay ? `labels-replay-${opts.replay.date}.jsonl` : 'labels.jsonl');
     this.log = new DecisionLog({ file, console: true });
+    this.adapter = createAdapter(cfg.provider, { onWarning: (m) => this.info(m) });
   }
 
   get mode(): AppState['mode'] {
@@ -125,67 +160,61 @@ export class App {
     this.info(`RedZone ${this.mode} mode (${this.opts.shell === 'electron' ? 'one window' : 'Chrome tiles'}); switch sensitivity ${cfg.switching.sensitivity}`);
     this.info(`halftime highlights: ESPN clips ${cfg.highlights.espnClips ? 'on' : 'off'}, YouTube ${this.highlights.youtubeEnabled ? 'on' : 'off (set YT_API_KEY in .env to enable)'}`);
 
-    const controllerOpts = {
-      dryRun: this.mode !== 'live',
-      serverUrl: this.server.url,
-      stateFile: path.join(PROJECT_ROOT, '.state', 'tiles.json'),
-      cacheFile: path.join(PROJECT_ROOT, '.state', 'xfinity-urls.json'),
-    };
-    const events = {
-      tuned: (s: number, i: { gameId: string; channelName: string; channel: number; path: string; ms: number }) => {
-        this.info(`now on ${i.channelName} (${i.channel}) via ${i.path} in ${(i.ms / 1000).toFixed(1)}s`, s);
-        // Xfinity can still be signed in from before even when the Watch Now step timed out.
-        if (this.signin && this.signin.state !== 'ok') this.signin = { state: 'ok', detail: 'Xfinity Stream is playing' };
-        this.pushState();
-      },
-      streamProblem: (s: number, i: { state: string; detail: string; hint: string }) => {
-        this.info(`stream problem ${i.state}: ${i.detail} -- ${i.hint}`, s);
-        if (i.state === 'LOGIN_REQUIRED' && this.shell) {
-          this.info('Xfinity Stream signed out; signing in again through Xfinity On Campus');
-          this.shell.handoff();
-        }
-        this.handle(this.engine.act({ type: 'streamError', screen: s, detail: `${i.state}: ${i.detail}` }, this.clock.now()));
-      },
-      streamRecovered: (s: number) => this.handle(this.engine.act({ type: 'streamOk', screen: s }, this.clock.now())),
-      limitLearned: (l: number, d: string) => this.info(`Xfinity stream limit hit (${d}); video on ${l} screen(s), live data on the rest`),
-      info: (t: string) => this.info(t),
-      bridge: (s: number, msg: BridgeMessage) => this.onBridge(s, msg),
-      switchTiming: (t: SwitchTiming) => {
-        this.log.write({ type: 'timing', at: Date.now(), ...t });
-        this.pushState();
-      },
-    };
+    if (this.opts.setupDemo) {
+      this.setupRunner = new SetupRunner(
+        demoDeps({
+          onChange: () => this.pushState(),
+          signin: (s) => void this.setupRunner?.onSignin(s),
+          finished: (n) => this.info(`setup demo finished with ${n} screen(s); a real run would start the app now`),
+        }),
+      );
+      this.info(`setup demo: open ${this.server.url}/ui in a browser (no window, no streams)`);
+      return;
+    }
+    const inSetup = this.opts.shell === 'electron' && (this.opts.setup || needsSetup(this.setupState, cfg));
 
     if (this.opts.shell === 'electron') {
       this.shell = await startShell(cfg, `${this.server.url}/ui`, {
-        signin: (s) => {
-          const was = this.signin?.state;
-          this.signin = s;
-          this.info(`Xfinity sign-in: ${s.state}${s.detail ? ` (${s.detail})` : ''}`);
-          if (s.state === 'ok' && was && was !== 'ok' && this.controller) this.controller.restoreAll();
-          this.pushState();
-        },
+        signin: (s) => this.onSignin(s),
         exit: (code) => {
           if (this.stopped) return;
           this.info(`the RedZone window closed${code ? ` (exit ${code})` : ''}; stopping`);
           void this.stop().then(() => process.exit(0));
         },
         log: (t) => this.info(t),
-      });
+      }, { provider: this.adapter.config, screens: this.screenCount, spares: inSetup ? 0 : effectiveStandby(cfg, this.adapter.config), signin: inSetup ? 'defer' : 'now' });
       await this.shell.ready;
-      const { browser, screens, spares } = await attachShell(cfg, 4);
-      this.controller = new WindowController(cfg, browser, null, controllerOpts, events);
-      const shell = this.shell;
-      await this.controller.attach(screens, spares, (screen, view) => shell.present(screen, view));
+      await this.attachController();
     } else {
       const { launched } = await ensureChrome(cfg);
       if (launched && this.mode === 'live') this.info('Started RedZone Chrome. If a tile shows "Signed out of Xfinity", run "npm run login" and sign in.');
       const { browser, context } = await connect(cfg);
-      this.controller = new WindowController(cfg, browser, context, controllerOpts, events);
-      await this.controller.open(4);
+      this.controller = new WindowController(cfg, browser, context, this.controllerOpts(), this.controllerEvents());
+      await this.controller.open(this.screenCount);
       this.info(`control panel at ${this.server.url}/panel (Alt+P)`);
     }
 
+    this.stopWatching = watchConfig(
+      (next) => {
+        this.fileCfg = next;
+        this.applyConfig();
+        this.info(`config reloaded${Object.keys(this.overrides).length ? ` (settings changed in the app still win: ${Object.keys(this.overrides).join(', ')})` : ''}`);
+      },
+      (msg) => this.info(`config NOT reloaded: ${msg}`),
+    );
+
+    if (inSetup) {
+      this.setupRunner = new SetupRunner(this.setupDeps());
+      this.info('first-run setup: pick your TV service in the RedZone window');
+      this.pushState();
+      return;
+    }
+    this.startNormal();
+  }
+
+  /** ESPN data, the engine's ticks and the window checks: the app proper (after setup). */
+  private startNormal(): void {
+    const cfg = this.cfg;
     if (this.opts.replay) void this.runReplay(this.opts.replay);
     else {
       this.source = new LiveSource(
@@ -208,16 +237,124 @@ export class App {
       this.source.start();
       this.startTicking();
     }
-    this.timers.push(setInterval(() => void this.controller.tick().catch((e) => this.info(`window check failed: ${e}`)), 2000));
+    this.timers.push(setInterval(() => void this.controller?.tick().catch((e) => this.info(`window check failed: ${e}`)), 2000));
+  }
 
-    this.stopWatching = watchConfig(
-      (next) => {
-        this.fileCfg = next;
-        this.applyConfig();
-        this.info(`config reloaded${Object.keys(this.overrides).length ? ` (settings changed in the app still win: ${Object.keys(this.overrides).join(', ')})` : ''}`);
+  private onSignin(s: SigninStatus): void {
+    const was = this.signin?.state;
+    this.signin = s;
+    this.info(`${this.adapter.config.shortName} sign-in: ${s.state}${s.detail ? ` (${s.detail})` : ''}`);
+    if (this.setupRunner) void this.setupRunner.onSignin(s);
+    else if (s.state === 'ok' && was && was !== 'ok' && this.controller) this.controller.restoreAll();
+    this.pushState();
+  }
+
+  /** (Re)attach the window controller to the shell's current views (after start or a configure). */
+  private async attachController(): Promise<void> {
+    const shell = this.shell!;
+    const { browser, screens, spares } = await attachShell(this.cfg, shell.layout, 30_000, this.browser ?? undefined);
+    this.browser = browser;
+    this.controller = new WindowController(this.cfg, browser, null, this.controllerOpts(), this.controllerEvents());
+    await this.controller.attach(screens, spares, (screen, view) => shell.present(screen, view));
+  }
+
+  /** Switch to another TV service: the window rebuilds its views in that service's own browser profile and signs in. */
+  private async switchProvider(id: string): Promise<void> {
+    this.overrides = { ...this.overrides, provider: id };
+    saveOverrides(this.overrides);
+    this.cfg = resolveConfig(this.fileCfg, this.overrides);
+    this.adapter = createAdapter(id, { onWarning: (m) => this.info(m) });
+    this.signin = null;
+    await this.shell!.configure({ provider: this.adapter.config, screens: this.screenCount, spares: 0, signin: 'now' });
+    await this.attachController();
+    this.applyConfig();
+  }
+
+  /** First-run setup is done: size the grid, add standby views if wanted, and start the app proper. */
+  private async finishSetup(screens: number): Promise<void> {
+    this.setupState = loadSetup();
+    this.screenCount = screens;
+    this.engine.resizeScreens(screens);
+    this.setupRunner = null;
+    await this.shell!.configure({ provider: this.adapter.config, screens, spares: effectiveStandby(this.cfg, this.adapter.config), signin: 'defer' });
+    await this.attachController();
+    this.homesSet = false;
+    if (!this.timers.length) this.startNormal();
+    this.info(`setup done: ${this.adapter.config.name}, ${screens} screen(s)`);
+    this.pushState();
+  }
+
+  private setupDeps(): SetupDeps {
+    return {
+      providers: () => listProviders(),
+      useProvider: (id) => this.switchProvider(id),
+      retrySignin: () => this.shell?.handoff(),
+      discover: async () => this.adapter.discoverLineup(this.controller.screens[0].page, this.controller.tools),
+      screens: () =>
+        this.controller.screens.map((sw) => ({
+          tune: (ch) => sw.tuneChannel(ch),
+          health: async () => {
+            const h = await sw.checkHealth();
+            return h ? { state: h.state, detail: h.detail } : null;
+          },
+          release: () => sw.release(),
+        })),
+      channels: () => this.cfg.channels,
+      saveLineup: (lineup, rows) => this.saveLineup(lineup, rows),
+      saveSetup: (patch) => {
+        this.setupState = { ...this.setupState, ...patch };
+        saveSetup(this.setupState);
       },
-      (msg) => this.info(`config NOT reloaded: ${msg}`),
-    );
+      finished: (n) => this.finishSetup(n),
+      startupTimeoutMs: this.cfg.windows.startupTimeoutSeconds * 1000,
+      sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
+      onChange: () => this.pushState(),
+    };
+  }
+
+  /** Save a scanned lineup (and the raw guide rows, for the channel mapping editor) and use it at once. */
+  private saveLineup(lineup: Config['channels'], rows: DiscoveredChannel[]): void {
+    this.writeLineup(lineup);
+    writeFileSync(lineupFile(this.adapter.config.id, STATE_DIR).replace(/\.json$/, '.scan.json'), JSON.stringify(rows, null, 2));
+    this.applyConfig();
+  }
+
+  private controllerOpts() {
+    return {
+      dryRun: this.mode !== 'live',
+      serverUrl: this.server.url,
+      stateFile: path.join(PROJECT_ROOT, '.state', 'tiles.json'),
+      cacheFile: cacheFileFor(this.adapter.config.id, STATE_DIR),
+      adapter: this.adapter,
+    };
+  }
+
+  private controllerEvents() {
+    const service = () => this.adapter.config.shortName;
+    return {
+      tuned: (s: number, i: { gameId: string; channelName: string; channel: number; path: string; ms: number }) => {
+        this.info(`now on ${i.channelName} (${i.channel}) via ${i.path} in ${(i.ms / 1000).toFixed(1)}s`, s);
+        // The service can still be signed in from before even when the sign-in step timed out.
+        if (this.signin && this.signin.state !== 'ok') this.signin = { state: 'ok', detail: `${service()} is playing` };
+        this.pushState();
+      },
+      streamProblem: (s: number, i: { state: string; detail: string; hint: string }) => {
+        this.info(`stream problem ${i.state}: ${i.detail} -- ${i.hint}`, s);
+        if (i.state === 'LOGIN_REQUIRED' && this.shell) {
+          this.info(`${service()} signed out; signing in again`);
+          this.shell.handoff();
+        }
+        this.handle(this.engine.act({ type: 'streamError', screen: s, detail: `${i.state}: ${i.detail}` }, this.clock.now()));
+      },
+      streamRecovered: (s: number) => this.handle(this.engine.act({ type: 'streamOk', screen: s }, this.clock.now())),
+      limitLearned: (l: number, d: string) => this.info(`${service()} stream limit hit (${d}); video on ${l} screen(s), live data on the rest`),
+      info: (t: string) => this.info(t),
+      bridge: (s: number, msg: BridgeMessage) => this.onBridge(s, msg),
+      switchTiming: (t: SwitchTiming) => {
+        this.log.write({ type: 'timing', at: Date.now(), ...t });
+        this.pushState();
+      },
+    };
   }
 
   async stop(): Promise<void> {
@@ -233,7 +370,7 @@ export class App {
 
   /** Config file + settings changed in the app → every part of the app. */
   private applyConfig(): void {
-    const next = withOverrides(this.fileCfg, this.overrides);
+    const next = resolveConfig(this.fileCfg, this.overrides);
     this.cfg = next;
     this.engine.setConfig(next);
     this.source?.setConfig(next);
@@ -244,8 +381,10 @@ export class App {
 
   private changeSettings(body: Record<string, unknown>): PostResult {
     if (body.reset === true) {
-      this.overrides = {};
-      saveOverrides({});
+      // Setup choices (which service, how many standby streams) aren't tuning: reset keeps them.
+      const { provider, standbyViews } = this.overrides;
+      this.overrides = { ...(provider ? { provider } : {}), ...(standbyViews !== undefined ? { standbyViews } : {}) };
+      saveOverrides(this.overrides);
       this.applyConfig();
       this.info('settings reset to the config file');
       return { ok: true };
@@ -267,7 +406,7 @@ export class App {
 
   private async post(p: string, body: Record<string, unknown>): Promise<PostResult> {
     const screen = Number(body.screen);
-    const validScreen = Number.isInteger(screen) && screen >= 1 && screen <= 4;
+    const validScreen = Number.isInteger(screen) && screen >= 1 && screen <= this.screenCount;
     switch (p) {
       case '/api/action': {
         const type = String(body.type);
@@ -282,13 +421,35 @@ export class App {
         }
         // { screen: n } puts sound on screen n; 0 mutes every screen.
         const focus = Number(body.screen ?? body.focus);
-        if (Number.isInteger(focus) && focus >= 0 && focus <= 4) this.focusAudio(focus);
+        if (Number.isInteger(focus) && focus >= 0 && focus <= this.screenCount) this.focusAudio(focus);
         this.refreshOverlays();
         this.pushState();
         return { ok: true };
       }
       case '/api/settings':
         return this.changeSettings(body);
+      case '/api/diag/open':
+      case '/api/diag/close':
+      case '/api/diag/run':
+      case '/api/diag/preview':
+      case '/api/diag/save':
+      case '/api/diag/export':
+        return this.diagAction(p.slice('/api/diag/'.length), body);
+      case '/api/service/switch':
+      case '/api/service/logout':
+      case '/api/service/rescan':
+      case '/api/service/map':
+      case '/api/service/streams':
+      case '/api/service/standby':
+        return this.serviceAction(p.slice('/api/service/'.length), body);
+      case '/api/setup/go':
+      case '/api/setup/choose':
+      case '/api/setup/signin':
+      case '/api/setup/scan':
+      case '/api/setup/play':
+      case '/api/setup/streams':
+      case '/api/setup/finish':
+        return this.setupAction(p.slice('/api/setup/'.length), body);
       case '/api/label':
         if (!validScreen || (body.label !== 'break' && body.label !== 'live')) return { ok: false, message: 'bad label' };
         return this.label(screen, body.label);
@@ -298,6 +459,289 @@ export class App {
       default:
         return { ok: false, message: 'unknown endpoint' };
     }
+  }
+
+  // ---- the settings page's "TV service" tab -------------------------------------------------
+
+  private scanRows(): DiscoveredChannel[] {
+    try {
+      return JSON.parse(readFileSync(lineupFile(this.adapter.config.id, STATE_DIR).replace(/\.json$/, '.scan.json'), 'utf8'));
+    } catch {
+      return [];
+    }
+  }
+
+  private serviceDTO(): AppState['service'] {
+    const c = this.adapter.config;
+    const rows = this.scanRows();
+    return {
+      id: c.id,
+      name: c.name,
+      status: c.status,
+      documentedMaxStreams: c.documentedMaxStreams,
+      measuredStreams: this.setupState.measuredStreams,
+      screens: this.screenCount,
+      standbyViews: effectiveStandby(this.cfg, c),
+      lineup: mappingRows(this.cfg.channels, rows),
+      rows: rows.map((r, index) => ({ index, label: r.label, number: r.number })),
+      lineupAt: this.setupState.lineupAt,
+      testedAt: this.setupState.testedAt,
+    };
+  }
+
+  /** Leave the app proper (ESPN polling, engine ticks, window checks) while setup steps use the screens. */
+  private stopNormal(): void {
+    for (const t of this.timers) clearInterval(t);
+    this.timers = [];
+    this.source?.stop();
+    this.source = null;
+  }
+
+  /** Back to first-run setup with all four views (switch service, log out, re-test streams). */
+  private enterSetup(): SetupRunner {
+    this.stopNormal();
+    this.screenCount = 4;
+    this.engine.resizeScreens(4);
+    this.setupRunner = new SetupRunner(this.setupDeps());
+    this.pushState();
+    return this.setupRunner;
+  }
+
+  /** After a configure (new controller), re-apply what every screen is supposed to show. */
+  private resyncController(): void {
+    const views = this.engine.views();
+    for (const sc of this.engine.director.screens) {
+      if (sc.showing.kind === 'game') this.controller.execute({ type: 'tune', screen: sc.id, gameId: sc.showing.gameId, channel: sc.showing.channel, channelName: views.get(sc.showing.gameId)?.channel?.name ?? String(sc.showing.channel) });
+      else if (sc.showing.kind === 'halftime') this.controller.execute({ type: 'showHalftime', screen: sc.id, homeGameId: sc.homeGameId ?? '' });
+    }
+  }
+
+  private serviceAction(action: string, body: Record<string, unknown>): PostResult | Promise<PostResult> {
+    if (!this.shell) return { ok: false, message: 'only in the RedZone window (npm start)' };
+    if (this.setupRunner && action !== 'map') return { ok: false, message: 'finish the setup first' };
+    const bg = (what: string, p: Promise<unknown>) => void p.catch((e) => this.info(`${what} failed: ${e}`));
+    switch (action) {
+      case 'switch': {
+        const id = String(body.id ?? '');
+        if (!listProviders().some((p) => p.id === id && p.status !== 'unsupported')) return { ok: false, message: 'pick a supported service' };
+        bg('switching service', this.enterSetup().choose(id));
+        return { ok: true };
+      }
+      case 'logout': {
+        const id = this.adapter.config.id;
+        const runner = this.enterSetup();
+        bg('logging out', this.shell.logout().then(() => runner.choose(id)));
+        this.info(`signed out of ${this.adapter.config.name} (its cookies in RedZone's browser profile were cleared)`);
+        return { ok: true };
+      }
+      case 'rescan':
+        return this.rescan();
+      case 'map': {
+        const key = String(body.key ?? '');
+        const row = body.row === null ? null : Number(body.row);
+        if (row !== null && !Number.isInteger(row)) return { ok: false, message: 'bad row' };
+        try {
+          const rows = this.scanRows();
+          this.writeLineup(applyMapping(this.cfg.channels, rows, key, row));
+          this.applyConfig();
+          this.info(`channel mapping: ${key} → ${row === null ? 'not in my lineup' : rows[row]?.label}`);
+          return { ok: true };
+        } catch (err) {
+          return { ok: false, message: String(err instanceof Error ? err.message : err) };
+        }
+      }
+      case 'streams': {
+        const id = this.adapter.config.id;
+        const runner = this.enterSetup();
+        bg('stream test', this.shell.configure({ provider: this.adapter.config, screens: 4, spares: 0, signin: 'defer' }).then(() => this.attachController()).then(() => runner.resume(id)));
+        return { ok: true };
+      }
+      case 'standby': {
+        const n = Number(body.n);
+        if (!Number.isInteger(n) || n < 0 || n > 2) return { ok: false, message: 'standby views: 0, 1 or 2' };
+        this.overrides = { ...this.overrides, standbyViews: n };
+        saveOverrides(this.overrides);
+        this.applyConfig();
+        bg('standby change', this.shell.configure({ provider: this.adapter.config, screens: this.screenCount, spares: n, signin: 'defer' }).then(() => this.attachController()).then(() => this.resyncController()));
+        this.info(`standby views: ${n}`);
+        return { ok: true };
+      }
+    }
+    return { ok: false, message: 'unknown service action' };
+  }
+
+  // ---- diagnostics ---------------------------------------------------------------------------
+
+  private diagDTO(): AppState['diag'] {
+    if (!this.diag) return null;
+    const c = this.adapter.config;
+    const values: Record<string, unknown> = {};
+    for (const step of DIAG_STEPS) for (const f of fieldsFor(step, c)) values[f] = getPath(c, f);
+    return { providerId: c.id, providerName: c.name, status: c.status, results: this.diag.results, values, override: readOverrideFile(c.id), running: this.diag.running, exportPath: this.diag.exportPath };
+  }
+
+  private async diagAction(action: string, body: Record<string, unknown>): Promise<PostResult> {
+    if (!this.shell) return { ok: false, message: 'only in the RedZone window (npm start)' };
+    switch (action) {
+      case 'open':
+        if (!this.diag) {
+          if (!this.setupRunner) this.stopNormal(); // auto-switching pauses: the steps use screen 1
+          this.diag = { results: {}, running: null, exportPath: null };
+        }
+        this.pushState();
+        return { ok: true };
+      case 'close':
+        this.diag = null;
+        if (!this.setupRunner && !this.timers.length) {
+          this.controller.restoreAll();
+          this.resyncController();
+          this.startNormal();
+        }
+        this.pushState();
+        return { ok: true };
+      case 'run': {
+        if (!this.diag) return { ok: false, message: 'open diagnostics first' };
+        const step = String(body.step) as DiagStep;
+        if (!DIAG_STEPS.includes(step)) return { ok: false, message: 'unknown step' };
+        if (this.diag.running) return { ok: false, message: `busy: ${this.diag.running}` };
+        this.diag.running = step;
+        this.pushState();
+        void runStep(step, this.diagDeps()).then((r) => {
+          if (!this.diag) return;
+          this.diag.results[step] = r;
+          this.diag.running = null;
+          this.info(`diagnostics ${step}: ${r.pass ? 'pass' : 'FAIL'} (${r.summary})`);
+          this.pushState();
+        });
+        return { ok: true };
+      }
+      case 'preview':
+      case 'save': {
+        const override = body.override;
+        if (!override || typeof override !== 'object' || Array.isArray(override)) return { ok: false, message: 'the override must be a JSON object' };
+        const id = this.adapter.config.id;
+        if (action === 'preview') {
+          const { warnings } = previewOverride(id, override as Record<string, unknown>);
+          return warnings.length ? { ok: false, message: warnings.join('; ') } : { ok: true, message: 'looks good' };
+        }
+        try {
+          saveOverride(id, override as Record<string, unknown>);
+        } catch (err) {
+          return { ok: false, message: String(err instanceof Error ? err.message : err) };
+        }
+        await this.reloadProvider();
+        this.info(`diagnostics: saved your fixes for ${this.adapter.config.name} in .state/providers/${id}.json`);
+        return { ok: true, message: 'saved' };
+      }
+      case 'export': {
+        if (!this.diag) return { ok: false, message: 'open diagnostics first' };
+        const c = this.adapter.config;
+        const data = buildExport({ provider: { id: c.id, name: c.name, status: c.status }, override: readOverrideFile(c.id), results: Object.values(this.diag.results), appVersion: appVersion(), gitCommit: gitCommit() });
+        const { documents } = await this.shell.paths();
+        const file = writeExport(data, documents, c.id);
+        this.diag.exportPath = file;
+        await this.shell.reveal(file).catch((e) => this.info(`couldn't open the folder: ${e}`));
+        this.pushState();
+        return { ok: true, message: file };
+      }
+    }
+    return { ok: false, message: 'unknown diagnostics action' };
+  }
+
+  /** The provider's config changed (diagnostics fixes): rebuild the adapter and the window's views. */
+  private async reloadProvider(): Promise<void> {
+    this.adapter = createAdapter(this.adapter.config.id, { onWarning: (m) => this.info(m) });
+    await this.shell!.configure({ provider: this.adapter.config, screens: this.screenCount, spares: this.shell!.layout.spares, signin: 'defer' });
+    await this.attachController();
+    this.pushState();
+  }
+
+  private diagDeps() {
+    const sw = () => this.controller.screens[0];
+    const channel = () => carriedChannels(this.cfg.channels)[0];
+    return {
+      config: this.adapter.config,
+      signinCheck: () => this.shell!.signinCheck(),
+      discover: () => this.adapter.discoverLineup(sw().page, this.controller.tools),
+      tune: async () => {
+        const ch = channel();
+        if (!ch) throw new Error('no channels in the lineup: run the channel scan first');
+        const out = await sw().tuneChannel(ch);
+        return { path: out.path, ms: out.ms, url: sw().page.url(), onChannel: this.adapter.onChannel(sw().page.url(), ch), channel: ch.name };
+      },
+      watch: async () => {
+        let last: { state: import('./windows/health').StreamState; detail: string } = { state: 'NO_VIDEO', detail: 'waiting for the player' };
+        const until = Date.now() + this.cfg.windows.startupTimeoutSeconds * 1000;
+        while (Date.now() < until) {
+          const h = await sw().checkHealth().catch(() => null);
+          if (h) last = { state: h.state, detail: h.detail };
+          if (last.state === 'PLAYING') break;
+          await new Promise((r) => setTimeout(r, 1000));
+        }
+        return last;
+      },
+      hideProbe: async () => {
+        const re = compileRegex(this.adapter.config.shell.playerUrl);
+        return (await sw().page.evaluate(HIDE_PROBE_JS(re.source, re.flags))) as import('./setup/diagnostics').HideProbe;
+      },
+    };
+  }
+
+  /** Read the guide again on screen 1 (it shows the guide for a few seconds), then put screen 1 back. */
+  private async rescan(): Promise<PostResult> {
+    try {
+      const rows = await this.adapter.discoverLineup(this.controller.screens[0].page, this.controller.tools);
+      const r = lineupFromScan(rows);
+      if (!r.found.length) return { ok: false, message: `No college-football channels found (${rows.length} guide rows read); kept your current lineup. Try Diagnostics.` };
+      this.saveLineup(r.lineup, rows);
+      this.setupState = { ...this.setupState, lineupAt: new Date().toISOString() };
+      saveSetup(this.setupState);
+      return { ok: true, message: `Found ${r.found.length} networks; missing ${r.missing.join(', ') || 'none'}` };
+    } catch (err) {
+      return { ok: false, message: `Couldn't read the guide: ${String(err instanceof Error ? err.message : err).split('\n')[0]}` };
+    } finally {
+      this.controller.restore(1);
+    }
+  }
+
+  private writeLineup(lineup: Config['channels']): void {
+    const file = lineupFile(this.adapter.config.id, STATE_DIR);
+    mkdirp(path.dirname(file), { recursive: true });
+    writeFileSync(file, JSON.stringify(lineup, null, 2));
+  }
+
+  /** First-run setup buttons. Long steps run in the background; the UI follows the state. */
+  private setupAction(action: string, body: Record<string, unknown>): PostResult {
+    const r = this.setupRunner;
+    if (!r) return { ok: false, message: 'setup is not running' };
+    if (r.view().busy && action !== 'go') return { ok: false, message: `busy: ${r.view().busy}` };
+    const bg = (p: Promise<void>) => void p.catch((e) => this.info(`setup ${action} failed: ${e}`));
+    switch (action) {
+      case 'go':
+        if (body.step !== 'welcome' && body.step !== 'service') return { ok: false, message: 'bad step' };
+        r.go(body.step);
+        return { ok: true };
+      case 'choose':
+        if (typeof body.id !== 'string' || !listProviders().some((p) => p.id === body.id && p.status !== 'unsupported')) return { ok: false, message: 'pick a supported service' };
+        bg(r.choose(body.id));
+        return { ok: true };
+      case 'signin':
+        r.retrySignin();
+        return { ok: true };
+      case 'scan':
+        bg(r.scan());
+        return { ok: true };
+      case 'play':
+        bg(r.playTest());
+        return { ok: true };
+      case 'streams':
+        bg(r.streamTest());
+        return { ok: true };
+      case 'finish':
+        bg(r.finish(Number(body.screens) || 1));
+        return { ok: true };
+    }
+    return { ok: false, message: 'unknown setup action' };
   }
 
   private onBridge(screen: number, msg: BridgeMessage): void {
@@ -400,8 +844,8 @@ export class App {
     this.highlights.noteGames(this.snapshots(), now);
     if (!this.homesSet && this.engine.store.all().length) {
       this.homesSet = true;
-      const homes = this.opts.homes?.length ? this.opts.homes : this.opts.autoHomes ? autoHomes(this.engine.views(), now) : [];
-      homes.slice(0, 4).forEach((gameId, i) => this.handle(this.engine.act({ type: 'setHome', screen: i + 1, gameId }, now)));
+      const homes = this.opts.homes?.length ? this.opts.homes : this.opts.autoHomes ? autoHomes(this.engine.views(), now, this.screenCount) : [];
+      homes.slice(0, this.screenCount).forEach((gameId, i) => this.handle(this.engine.act({ type: 'setHome', screen: i + 1, gameId }, now)));
       if (!homes.length) this.info('No home games yet: pick them in the control panel (Alt+P).');
     }
     if (this.engine.audio.focus !== this.focus) {
@@ -539,6 +983,11 @@ export class App {
       now: this.clock.now(),
       mode: this.mode,
       shell: this.opts.shell,
+      setup: this.setupRunner?.view() ?? null,
+      providers: listProviders(),
+      service: this.serviceDTO(),
+      diag: this.diagDTO(),
+      provider: { id: this.adapter.config.id, name: this.adapter.config.name, shortName: this.adapter.config.shortName, status: this.adapter.config.status },
       signin: this.signin,
       streamLimit: this.controller?.streamLimit ?? c.windows.maxConcurrentStreams,
       audio: { mode: this.engine.audio.mode, focus: this.engine.audio.focus },
@@ -617,5 +1066,27 @@ export class App {
       item.apply(this.engine);
     }
     this.info('replay finished');
+  }
+}
+
+/** Config file + settings changed in the app, with the provider's scanned lineup (if any) as the channels. */
+function resolveConfig(file: Config, overrides: SettingsOverrides): Config {
+  const c = withOverrides(file, overrides);
+  return { ...c, channels: effectiveChannels(c, c.provider, STATE_DIR) };
+}
+
+function appVersion(): string {
+  try {
+    return JSON.parse(readFileSync(path.join(PROJECT_ROOT, 'package.json'), 'utf8')).version ?? 'unknown';
+  } catch {
+    return 'unknown';
+  }
+}
+
+function gitCommit(): string | null {
+  try {
+    return execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: PROJECT_ROOT, encoding: 'utf8', windowsHide: true }).trim() || null;
+  } catch {
+    return null;
   }
 }

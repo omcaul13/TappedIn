@@ -1,0 +1,74 @@
+{
+  "id": "xfinity-on-campus",
+  "name": "Xfinity On Campus",
+  "shortName": "Xfinity",
+  "family": "comcast",
+  "kind": "campus",
+  "status": "stable",
+  "badge": { "initials": "XoC", "color": "#475569" },
+  "search": ["Comcast", "Northeastern", "MIT", "Carnegie Mellon", "Penn", "Temple", "Drexel", "Towson", "Tennessee", "Northwestern", "Michigan State", "UC Davis", "Salisbury", "Simmons", "St. Thomas"],
+  "documentedMaxStreams": 1,
+  "defaults": { "standbyViews": 0 },
+  "notes": "Comcast documents 1 stream for On Campus; 6 played at Northeastern on 10/17/2026. Live TV generally needs the campus network.",
+  "shell": {
+    "partition": "persist:xfinity",
+    "userAgent": "chrome",
+    "appUrl": "^https://www\\.xfinity\\.com/stream",
+    "playerUrl": "/stream/live/",
+    "hideCss": ""
+  },
+  "signin": {
+    "checkUrl": "https://www.xfinity.com/stream/",
+    "signedOutPattern": "/\\bSign In\\b/",
+    "portalUrl": "https://www.xfinityoncampus.com/",
+    "autoClick": { "selector": "a.watch-now-btn", "text": "watch now" },
+    "instructions": "Sign in to Xfinity On Campus in the window that opened, then click Watch Now",
+    "windowTitle": "RedZone: sign in to Xfinity On Campus",
+    "checkTimeoutMs": 20000,
+    "portalTimeoutMs": 30000,
+    "checkSettleMs": 4000,
+    "handoffSettleMs": 5000,
+    "autoClickTries": 30,
+    "autoClickIntervalMs": 500,
+    "waitAfterClickMs": 40000,
+    "waitForUserMs": 600000
+  },
+  "errors": {
+    "probePatterns": [
+      "maximum number of", "too many (devices|streams)", "stream(ing)? limit", "already (watching|streaming)",
+      "not available in your (area|location)", "only available (on|when connected to)", "outside (of )?(your )?(home|campus)",
+      "sign in", "log in", "session (has )?expired", "something went wrong", "error code", "unable to play",
+      "playback error", "not authorized", "not entitled", "try again later",
+      "still (watching|there)"
+    ],
+    "loginUrl": "(login|signin|sign-in|oauth|sso|idp|saml|shibboleth|microsoftonline|okta|duosecurity|auth\\.)",
+    "limit": "(maximum number of|too many|limit|already (watching|streaming))",
+    "unavailable": "(not available|only available|outside|not authorized|not entitled)",
+    "loginText": "(sign in|log in|session)",
+    "idlePrompt": "still (watching|there)"
+  },
+  "timing": {
+    "loadGapMs": 3500,
+    "maxParallelTunes": 2,
+    "spareWarmDelayMs": 20000,
+    "hidePollMs": 500
+  },
+  "tuning": {
+    "listingsUrl": "https://www.xfinity.com/stream/listings",
+    "livePath": "/stream/live/",
+    "rowButton": "tv-grid-row a[role=button]",
+    "channelNumber": "tv-grid-row span.channel-number",
+    "closePlayer": "#player button[aria-label=\"Close Player\"]",
+    "continueWatching": "#player button[aria-label^=\"Are you still watching? Continue\"]",
+    "guideErrorPattern": "[^\\n]*TVAPP-\\d+[^\\n]*|Something went wrong[^\\n]*",
+    "inAppTimeoutMs": 8000,
+    "guideTimeoutMs": 20000,
+    "pageTimeoutMs": 30000,
+    "closePlayerTimeoutMs": 5000,
+    "findRowMaxSteps": 30,
+    "findRowSettleMs": 180,
+    "findRowHitSettleMs": 120,
+    "findRowEmptyWaitMs": 250,
+    "callSignInUrl": true
+  }
+}
