@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import css from './style.css';
 import { FullscreenIcon, GearIcon } from './icons';
 import { Screen } from './screen';
+import { Onboarding } from './onboarding';
 import { Settings } from './settings';
 import { act, post, type AppState, type GameDTO } from './util';
 
@@ -87,7 +88,7 @@ function App() {
   const liveCount = st.games.filter((g) => g.phase === 'LIVE').length;
   const si = st.signin;
   return (
-    <div class={`app${fullscreen ? ' fullscreen' : ''}`}>
+    <div class={`app${fullscreen ? ' fullscreen' : ''}${st.setup ? ' setup-mode' : ''}`}>
       <header class="topbar">
         <div class="brand">
           <span class="mark">RZ</span>
@@ -132,7 +133,8 @@ function App() {
         </button>
       </header>
 
-      <main class={`grid n${st.screens.length}`}>
+      {st.setup && <Onboarding st={st} onError={setToast} />}
+      <main class={`grid n${st.screens.length}`} style={st.setup ? { visibility: 'hidden' } : undefined}>
         {st.screens.map((sc) => (
           <Screen
             key={sc.id}
