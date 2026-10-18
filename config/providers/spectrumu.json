@@ -1,0 +1,109 @@
+{
+  "id": "spectrumu",
+  "name": "SpectrumU",
+  "shortName": "Spectrum",
+  "family": "url",
+  "kind": "campus",
+  "status": "experimental",
+  "badge": {
+    "initials": "SU",
+    "color": "#1e3a8a"
+  },
+  "documentedMaxStreams": null,
+  "defaults": {
+    "standbyViews": 0
+  },
+  "shell": {
+    "partition": "persist:spectrumu",
+    "userAgent": "chrome",
+    "appUrl": "^https://watch\\.spectrum(utv)?\\.net/",
+    "playerUrl": "/livetv",
+    "hideCss": ""
+  },
+  "signin": {
+    "portalUrl": null,
+    "autoClick": null,
+    "startUrl": null,
+    "checkUrl": "https://watch.spectrum.net/guide",
+    "signedOutPattern": "/\\bSign In\\b/",
+    "windowTitle": "RedZone: sign in to SpectrumU",
+    "instructions": "Click \"Sign In to SpectrumU\" at the bottom of the page, find your school and sign in with your school account. RedZone continues once the guide appears. Live TV usually needs the campus network"
+  },
+  "errors": {
+    "probePatterns": [
+      "maximum number of",
+      "too many (devices|streams)",
+      "stream(ing)? limit",
+      "already (watching|streaming)",
+      "not available in your (area|location)",
+      "only available (on|when connected to)",
+      "outside (of )?(your )?(home|campus)",
+      "sign in",
+      "log in",
+      "session (has )?expired",
+      "something went wrong",
+      "error code",
+      "unable to play",
+      "playback error",
+      "not authorized",
+      "not entitled",
+      "try again later",
+      "still (watching|there)"
+    ],
+    "loginUrl": "(login|signin|sign-in|oauth|sso|idp|saml|shibboleth|microsoftonline|okta|duosecurity|auth\\.)",
+    "limit": "(maximum number of|too many|limit|already (watching|streaming))",
+    "unavailable": "(not available|only available|outside|not authorized|not entitled)",
+    "loginText": "(sign in|log in|session)",
+    "idlePrompt": "still (watching|there)"
+  },
+  "timing": {
+    "loadGapMs": 3500,
+    "maxParallelTunes": 2,
+    "spareWarmDelayMs": 20000,
+    "hidePollMs": 500
+  },
+  "tuning": {
+    "watchUrl": "https://watch.spectrum.net/livetv?tmsid={ref}",
+    "refInUrl": "[?&]tmsid=(\\d+)",
+    "pageTimeoutMs": 30000,
+    "idlePromptButton": null,
+    "lineup": {
+      "mode": "dom",
+      "guideUrl": "https://watch.spectrum.net/guide",
+      "row": "li.channel-header-row:not(.nonstreamable)",
+      "label": {
+        "selector": null,
+        "attr": null,
+        "pattern": null
+      },
+      "number": {
+        "selector": "p.channel-number",
+        "attr": null
+      },
+      "ref": {
+        "selector": "img.channel-logo",
+        "attr": "src",
+        "pattern": "/guide/(\\d+)\\?"
+      },
+      "scrollContainer": null,
+      "settleMs": 300,
+      "maxScrolls": 0
+    }
+  },
+  "search": [
+    "Charter",
+    "Spectrum",
+    "Spectrum U",
+    "Columbia",
+    "UC San Diego",
+    "Cal Poly",
+    "Binghamton",
+    "Michigan Tech",
+    "Colby",
+    "Hobart and William Smith",
+    "Morehead State",
+    "Wofford",
+    "CSUN"
+  ],
+  "notes": "Same web app as Spectrum TV (watch.spectrum.net); school SSO via \"Sign In to SpectrumU\". Schools report several streams on the campus network and one off campus. UNVERIFIED: whether ?tmsid= channel URLs work for SpectrumU accounts. Untested."
+}

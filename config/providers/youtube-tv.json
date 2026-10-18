@@ -1,0 +1,96 @@
+{
+  "id": "youtube-tv",
+  "name": "YouTube TV",
+  "shortName": "YouTube TV",
+  "family": "url",
+  "kind": "consumer",
+  "status": "experimental",
+  "badge": {
+    "initials": "YT",
+    "color": "#7f1d1d"
+  },
+  "search": [
+    "Google",
+    "YouTube",
+    "YTTV"
+  ],
+  "documentedMaxStreams": 3,
+  "defaults": {
+    "standbyViews": 0
+  },
+  "notes": "Each channel has a stable URL (tv.youtube.com/watch/<id>) read from the /live guide (not virtualized). 3 streams per account (unlimited at home with 4K Plus). Away from your home area you get local channels for where you are. Google may refuse sign-in inside embedded or automated browsers (\"This browser or app may not be secure\"); if it does, this service is marked unsupported. RedZone never works around that. Untested.",
+  "shell": {
+    "partition": "persist:youtube-tv",
+    "userAgent": "default",
+    "appUrl": "^https://tv\\.youtube\\.com/",
+    "playerUrl": "/watch/",
+    "hideCss": ""
+  },
+  "signin": {
+    "portalUrl": null,
+    "autoClick": null,
+    "startUrl": null,
+    "checkUrl": "https://tv.youtube.com/live",
+    "signedOutPattern": "/\\bSign in\\b/",
+    "instructions": "Sign in with your Google account in the window that opened. RedZone continues once the YouTube TV guide appears",
+    "windowTitle": "RedZone: sign in to YouTube TV"
+  },
+  "errors": {
+    "probePatterns": [
+      "maximum number of",
+      "too many (devices|streams)",
+      "stream(ing)? limit",
+      "already (watching|streaming)",
+      "not available in your (area|location)",
+      "only available (on|when connected to)",
+      "outside (of )?(your )?(home|campus)",
+      "sign in",
+      "log in",
+      "session (has )?expired",
+      "something went wrong",
+      "error code",
+      "unable to play",
+      "playback error",
+      "not authorized",
+      "not entitled",
+      "try again later",
+      "still (watching|there)"
+    ],
+    "loginUrl": "(login|signin|sign-in|oauth|sso|idp|saml|shibboleth|microsoftonline|okta|duosecurity|auth\\.)",
+    "limit": "(maximum number of|too many|limit|already (watching|streaming))",
+    "unavailable": "(not available|only available|outside|not authorized|not entitled)",
+    "loginText": "(sign in|log in|session)",
+    "idlePrompt": "still (watching|there)"
+  },
+  "timing": {
+    "loadGapMs": 3500,
+    "maxParallelTunes": 2,
+    "spareWarmDelayMs": 20000,
+    "hidePollMs": 500
+  },
+  "tuning": {
+    "watchUrl": "https://tv.youtube.com/watch/{ref}",
+    "refInUrl": "/watch/([A-Za-z0-9_-]+)",
+    "pageTimeoutMs": 30000,
+    "idlePromptButton": null,
+    "lineup": {
+      "mode": "dom",
+      "guideUrl": "https://tv.youtube.com/live",
+      "row": "ytu-endpoint.tenx-thumb[aria-label^=\"watch \"]",
+      "label": {
+        "selector": null,
+        "attr": "aria-label",
+        "pattern": "^watch (.+)$"
+      },
+      "number": null,
+      "ref": {
+        "selector": "a",
+        "attr": "href",
+        "pattern": "^/?watch/([A-Za-z0-9_-]+)"
+      },
+      "scrollContainer": null,
+      "settleMs": 300,
+      "maxScrolls": 0
+    }
+  }
+}

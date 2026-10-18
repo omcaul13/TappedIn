@@ -1,0 +1,99 @@
+{
+  "id": "spectrum-tv",
+  "name": "Spectrum TV",
+  "shortName": "Spectrum",
+  "family": "url",
+  "kind": "consumer",
+  "status": "experimental",
+  "badge": {
+    "initials": "ST",
+    "color": "#1e3a8a"
+  },
+  "documentedMaxStreams": null,
+  "defaults": {
+    "standbyViews": 0
+  },
+  "shell": {
+    "partition": "persist:spectrum-tv",
+    "userAgent": "chrome",
+    "appUrl": "^https://watch\\.spectrum(utv)?\\.net/",
+    "playerUrl": "/livetv",
+    "hideCss": ""
+  },
+  "signin": {
+    "portalUrl": null,
+    "autoClick": null,
+    "startUrl": null,
+    "checkUrl": "https://watch.spectrum.net/guide",
+    "signedOutPattern": "/\\bSign In\\b/",
+    "windowTitle": "RedZone: sign in to Spectrum TV",
+    "instructions": "Sign in with your Spectrum username in the window that opened. RedZone continues once the guide appears"
+  },
+  "errors": {
+    "probePatterns": [
+      "maximum number of",
+      "too many (devices|streams)",
+      "stream(ing)? limit",
+      "already (watching|streaming)",
+      "not available in your (area|location)",
+      "only available (on|when connected to)",
+      "outside (of )?(your )?(home|campus)",
+      "sign in",
+      "log in",
+      "session (has )?expired",
+      "something went wrong",
+      "error code",
+      "unable to play",
+      "playback error",
+      "not authorized",
+      "not entitled",
+      "try again later",
+      "still (watching|there)"
+    ],
+    "loginUrl": "(login|signin|sign-in|oauth|sso|idp|saml|shibboleth|microsoftonline|okta|duosecurity|auth\\.)",
+    "limit": "(maximum number of|too many|limit|already (watching|streaming))",
+    "unavailable": "(not available|only available|outside|not authorized|not entitled)",
+    "loginText": "(sign in|log in|session)",
+    "idlePrompt": "still (watching|there)"
+  },
+  "timing": {
+    "loadGapMs": 3500,
+    "maxParallelTunes": 2,
+    "spareWarmDelayMs": 20000,
+    "hidePollMs": 500
+  },
+  "tuning": {
+    "watchUrl": "https://watch.spectrum.net/livetv?tmsid={ref}",
+    "refInUrl": "[?&]tmsid=(\\d+)",
+    "pageTimeoutMs": 30000,
+    "idlePromptButton": null,
+    "lineup": {
+      "mode": "dom",
+      "guideUrl": "https://watch.spectrum.net/guide",
+      "row": "li.channel-header-row:not(.nonstreamable)",
+      "label": {
+        "selector": null,
+        "attr": null,
+        "pattern": null
+      },
+      "number": {
+        "selector": "p.channel-number",
+        "attr": null
+      },
+      "ref": {
+        "selector": "img.channel-logo",
+        "attr": "src",
+        "pattern": "/guide/(\\d+)\\?"
+      },
+      "scrollContainer": null,
+      "settleMs": 300,
+      "maxScrolls": 0
+    }
+  },
+  "search": [
+    "Charter",
+    "Spectrum",
+    "cable"
+  ],
+  "notes": "Each channel has a stable URL (watch.spectrum.net/livetv?tmsid=<station id>); a lineup scan reads the ids from the guide logos (the guide is not virtualized). Spectrum documents unlimited streams at home and 3 away. Untested."
+}
