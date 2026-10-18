@@ -1,8 +1,8 @@
-import type { AppState, GameDTO, ScreenDTO, TeamDTO } from '../server/state';
+import type { AppState, GameDTO, ScreenDTO, SportDTO, TeamDTO } from '../server/state';
 
 // Small helpers shared by the UI components.
 
-export type { AppState, GameDTO, ScreenDTO, TeamDTO };
+export type { AppState, GameDTO, ScreenDTO, SportDTO, TeamDTO };
 
 export async function post(path: string, body: Record<string, unknown>): Promise<{ ok: boolean; message?: string }> {
   try {
@@ -21,13 +21,29 @@ export const kickoff = (iso: string | null) => (iso ? new Date(iso).toLocaleTime
 
 export const teamColor = (t: TeamDTO | undefined, fallback = '334155') => `#${t?.color || fallback}`;
 
-/** Quarter and clock without ESPN's "10:00 - 2nd" ordering: "Q2 10:00", "Half", "Final". */
+/** Period and clock without ESPN's "10:00 - 2nd" ordering: "2nd 10:00", "Bot 7th · 2 out", "Halftime", "Final". */
 export function gameClock(g: GameDTO): string {
   if (g.phase === 'PRE') return kickoff(g.startTime);
-  if (g.phase === 'HALFTIME') return 'Halftime';
-  if (g.phase === 'FINAL') return /OT/.test(g.detail) ? 'Final/OT' : 'Final';
-  const m = /^(\d{1,2}:\d{2}) - (\w+)/.exec(g.detail);
+  if (g.phase === 'HALFTIME') return g.family === 'hockey' ? 'Intermission' : 'Halftime';
+  if (g.phase === 'FINAL') return /OT|SO/.test(g.detail) ? `Final/${/SO/.test(g.detail) ? 'SO' : 'OT'}` : /\/\d+/.test(g.detail) ? g.detail : 'Final';
+  if (g.family === 'baseball') {
+    const b = g.live?.family === 'baseball' ? g.live : null;
+    return b && b.outs !== null && (b.half === 'top' || b.half === 'bottom') ? `${g.detail} · ${b.outs} out` : g.detail;
+  }
+  if (g.family === 'football') {
+    const m = /^(\d{1,2}:\d{2}) - (\w+)/.exec(g.detail);
+    return m ? `${m[2]} ${m[1]}` : g.detail;
+  }
+  const m = /^([\d:.]+) - (.+)$/.exec(g.detail);
   return m ? `${m[2]} ${m[1]}` : g.detail;
+}
+
+/** The tier and reason of the last automatic pick: "Same sport: red zone, margin 7, 2:10 - 4th". */
+export function pickReason(sc: ScreenDTO): string | null {
+  const r = sc.lastSwitch?.reasons.find((x) => x.startsWith('pick: '));
+  const m = r ? /^pick: .+? — (.+)$/.exec(r) : null;
+  // "margin 3" is for the log; the score line already shows it.
+  return m ? m[1].replace(/(: |, )margin \d+(, )?/, (_, a: string, b?: string) => (b ? a : '')).replace(/, already on another screen$/, ' (also on another screen)') : null;
 }
 
 export const network = (g: GameDTO) => (g.channel ? `${g.channel.name} ${g.channel.number}` : g.networks.join('/') || 'TBA');
@@ -67,3 +83,6 @@ export function substituteReason(sc: ScreenDTO, home: GameDTO | undefined, on: G
 }
 
 export const scoreLine = (g: GameDTO) => `${g.away.abbr} ${g.away.score}–${g.home.score} ${g.home.abbr}`;
+
+/** Games still to watch today (not over). */
+export const watchableToday = (g: GameDTO) => g.phase !== 'FINAL' && g.phase !== 'CANCELED' && g.phase !== 'POSTPONED';

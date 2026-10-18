@@ -1,4 +1,5 @@
-import type { Assessment, GameSnapshot } from '../engine/types';
+import type { Assessment, GameSnapshot, LiveDetail, SportFamily, SportId } from '../engine/types';
+import { sportOf } from '../sports';
 
 // What the app window's UI and the local pages (data tiles, halftime, picker, control panel) see. Plain JSON.
 
@@ -14,6 +15,10 @@ export interface TeamDTO {
 
 export interface GameDTO {
   id: string;
+  sport: SportId;
+  /** "NHL", "MCBB" (header label). */
+  sportShort: string;
+  family: SportFamily;
   shortName: string;
   name: string;
   phase: GameSnapshot['phase'];
@@ -23,7 +28,7 @@ export interface GameDTO {
   home: TeamDTO;
   away: TeamDTO;
   networks: string[];
-  channel: { name: string; number: number } | null;
+  channel: { name: string; number: number; regional?: 'confirmed' | 'unconfirmed' } | null;
   /** Why it can't be watched (streaming-only, not in lineup), when channel is null. */
   unavailable: string | null;
   situation: {
@@ -33,18 +38,41 @@ export interface GameDTO {
     isRedZone: boolean;
     lastPlay: string | null;
   } | null;
+  /** Other sports' live situation (power play, bases, count) for tiles. */
+  live: LiveDetail | null;
+  /** The sport's hot moment right now ("red zone", "power play", "clutch time"), or null. */
+  hot: string | null;
+  /** 0–100, comparable across sports. */
+  excitement: number;
   assessment: Pick<Assessment, 'state' | 'score' | 'reasons' | 'since' | 'forecast'> | null;
+}
+
+/** One sport in the picker: how many games today, how many live, and its switching level. */
+export interface SportDTO {
+  id: SportId;
+  name: string;
+  short: string;
+  family: SportFamily;
+  level: 'pro' | 'college';
+  games: number;
+  live: number;
+  /** Followed (polled, offered, used as fill-ins). */
+  enabled: boolean;
+  /** This sport's own sensitivity, or null for "same as global". */
+  sensitivity: 'low' | 'medium' | 'high' | null;
 }
 
 /** Game-over picker: live games (score, quarter) and later games (kickoff, network), watchable only. */
 export interface PickerDTO {
   title: string;
-  live: { id: string; label: string; detail: string }[];
-  later: { id: string; label: string; detail: string }[];
+  live: { id: string; label: string; detail: string; sport: SportId }[];
+  later: { id: string; label: string; detail: string; sport: SportId }[];
 }
 
 export interface ScreenDTO {
   id: number;
+  /** The screen's sport: its home game's, or the one you chose before picking a game. */
+  sport: SportId | null;
   mode: string;
   homeGameId: string | null;
   showingGameId: string | null;
@@ -139,6 +167,8 @@ export interface AppState {
   streamLimit: number;
   screens: ScreenDTO[];
   games: GameDTO[];
+  /** Every supported sport, in picker order, with today's game counts. */
+  sports: SportDTO[];
   /** focus 0 = all muted. */
   audio: { mode: 'manual' | 'auto'; focus: number };
   feed: FeedItem[];
@@ -148,8 +178,13 @@ export interface AppState {
 
 export function gameDTO(g: GameSnapshot, a: Assessment | undefined, channel: GameDTO['channel'], unavailable: string | null): GameDTO {
   const s = g.situation;
+  const mod = sportOf(g.sport);
+  const x = mod.excitement(g);
   return {
     id: g.id,
+    sport: mod.id,
+    sportShort: mod.short,
+    family: mod.family,
     shortName: g.shortName,
     name: g.name,
     phase: g.phase,
@@ -162,6 +197,9 @@ export function gameDTO(g: GameSnapshot, a: Assessment | undefined, channel: Gam
     channel,
     unavailable: channel ? null : unavailable,
     situation: s ? { possessionTeamId: s.possessionTeamId, downDistanceText: s.downDistanceText, yardsToEndzone: s.yardsToEndzone, isRedZone: s.isRedZone, lastPlay: s.lastPlay?.text ?? null } : null,
+    live: g.live ?? null,
+    hot: g.phase === 'LIVE' ? (x.hot?.label ?? null) : null,
+    excitement: x.score,
     assessment: a ? { state: a.state, score: a.score, reasons: a.reasons, since: a.since, forecast: a.forecast } : null,
   };
 }

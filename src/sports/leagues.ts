@@ -18,6 +18,7 @@ export const mcbb = basketballLeague(
     clock: { periods: 2, periodSeconds: 20 * 60, lateSeconds: 4 * 60, lateMargin: 6, lateLabel: 'crunch time' },
     presets: { low: preset(60, 0.8, 120, false), medium: preset(60, 0.72, 90, false), high: preset(45, 0.65, 60, true) },
     halftimeMaxSeconds: 1500,
+    highlights: { query: "men's basketball", youtubeChannels: ['ESPN', 'CBS Sports', 'FOX Sports', 'Big Ten Network', 'ACC Digital Network', 'SEC Network', 'Big East', 'NCAA March Madness'] },
   },
   clockSynth({ plays: basketballSummaryPlays, periodName: half, intermissionAfter: [1] }),
 );
@@ -33,6 +34,7 @@ export const nba = basketballLeague(
     clock: { periods: 4, periodSeconds: 12 * 60, lateSeconds: 5 * 60, lateMargin: 5, lateLabel: 'clutch time' },
     presets: { low: preset(60, 0.8, 120, false), medium: preset(60, 0.72, 90, false), high: preset(45, 0.65, 60, true) },
     halftimeMaxSeconds: 1200,
+    highlights: { query: 'NBA', youtubeChannels: ['NBA', 'ESPN', 'NBC Sports', 'Bleacher Report'] },
   },
   clockSynth({ plays: basketballSummaryPlays, periodName: quarter, intermissionAfter: [2] }),
 );
@@ -48,6 +50,7 @@ export const wcbb = basketballLeague(
     clock: { periods: 4, periodSeconds: 10 * 60, lateSeconds: 4 * 60, lateMargin: 6, lateLabel: 'crunch time' },
     presets: { low: preset(60, 0.8, 120, false), medium: preset(60, 0.72, 90, false), high: preset(45, 0.65, 60, true) },
     halftimeMaxSeconds: 1500,
+    highlights: { query: "women's basketball", youtubeChannels: ['ESPN', 'NCAA March Madness', 'Big Ten Network', 'SEC Network', 'ACC Digital Network', 'FOX Sports'] },
   },
   clockSynth({ plays: basketballSummaryPlays, periodName: quarter, intermissionAfter: [2] }),
 );
@@ -63,6 +66,7 @@ export const wnba = basketballLeague(
     clock: { periods: 4, periodSeconds: 10 * 60, lateSeconds: 5 * 60, lateMargin: 5, lateLabel: 'clutch time' },
     presets: { low: preset(60, 0.8, 120, false), medium: preset(60, 0.72, 90, false), high: preset(45, 0.65, 60, true) },
     halftimeMaxSeconds: 1200,
+    highlights: { query: 'WNBA', youtubeChannels: ['WNBA', 'ESPN', 'CBS Sports', 'ION'] },
   },
   clockSynth({ plays: basketballSummaryPlays, periodName: quarter, intermissionAfter: [2] }),
 );

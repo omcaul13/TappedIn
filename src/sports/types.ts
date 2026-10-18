@@ -116,6 +116,10 @@ export interface SportModule {
   /** Order of two same-sport fill-in candidates (best first). */
   compare(a: RankedCandidate, b: RankedCandidate): number;
 
+  // ---- halftime / intermission reel ----------------------------------------------------------
+  /** YouTube search words after "<away> vs <home> highlights" ("NBA"), and channels whose packages count. */
+  highlights?: { query: string; youtubeChannels: string[] };
+
   // ---- simulation ---------------------------------------------------------------------------
   /** Rebuilds this sport's games from final play-by-play (`npm run sim -- --synth`). */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

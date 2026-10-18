@@ -239,6 +239,7 @@ export const mlb: SportModule = {
     // "Mid 4th" / "End 4th" on the scoreboard before the End Inning play arrives.
     if (snap.endOfPeriod && !prev.endOfPeriod) ctx.setLastPlay({ playId: null, at: ctx.est, order: ctx.order(), kind: 'endPeriod', typeText: 'End Inning', text: snap.detail, period: snap.period, isTurnover: false });
   },
+  highlights: { query: 'MLB', youtubeChannels: ['MLB', 'FOX Sports', 'TBS', 'ESPN'] },
   breaks: {
     categories: BASEBALL_CATEGORIES,
     labels: LABELS,

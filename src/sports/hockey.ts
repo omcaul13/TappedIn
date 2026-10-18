@@ -132,6 +132,7 @@ export const nhl: SportModule = {
   inferFirstSeen: inference.first,
   inferChange: inference.change,
   liveFromPlays: hockeyLiveFromPlays,
+  highlights: { query: 'NHL', youtubeChannels: ['NHL', 'Sportsnet', 'TNT Sports', 'ESPN'] },
   breaks: {
     categories: HOCKEY_CATEGORIES,
     labels: LABELS,

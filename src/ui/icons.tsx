@@ -34,3 +34,39 @@ export const BackIcon = () => (
     <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
   </svg>
 );
+
+/** A neutral glyph per sport family (no league logos). */
+export const SportIcon = ({ family }: { family: string }) => (
+  <svg viewBox="0 0 24 24" {...P} class="sport-icon">
+    {family === 'football' && (
+      <>
+        <ellipse cx="12" cy="12" rx="9" ry="5.5" transform="rotate(-35 12 12)" />
+        <path d="M9.5 14.5l5-5M10.5 11l2.5 2.5M12 9.5l2.5 2.5" />
+      </>
+    )}
+    {family === 'basketball' && (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M3 12h18M12 3v18M5.6 5.6c3 3 3 9.8 0 12.8M18.4 5.6c-3 3-3 9.8 0 12.8" />
+      </>
+    )}
+    {family === 'hockey' && (
+      <>
+        <ellipse cx="12" cy="9" rx="8" ry="3" />
+        <path d="M4 9v5c0 1.7 3.6 3 8 3s8-1.3 8-3V9" />
+      </>
+    )}
+    {family === 'baseball' && (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M7.5 4.5c2 2.2 2 12.8 0 15M16.5 4.5c-2 2.2-2 12.8 0 15" />
+      </>
+    )}
+    {family === 'soccer' && (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7.5l3.5 2.5-1.3 4h-4.4l-1.3-4zM12 3v4.5M15.5 10l4.8-1.5M14.2 14l2.8 4M9.8 14L7 18M8.5 10L3.7 8.5" />
+      </>
+    )}
+  </svg>
+);

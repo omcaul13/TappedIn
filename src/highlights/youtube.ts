@@ -33,6 +33,8 @@ interface Cache {
 }
 
 export interface SearchGame {
+  /** Words after "highlights" in the search (the league: "NBA"); none for college football. */
+  league?: string;
   id: string;
   /** e.g. "Florida State Seminoles at Miami Hurricanes" */
   name: string;
@@ -88,7 +90,7 @@ export class YouTubeClient {
       type: 'video',
       videoEmbeddable: 'true',
       maxResults: '8',
-      q: `${game.name.replace(/ at /, ' vs ')} highlights`,
+      q: `${game.name.replace(/ at /, ' vs ')} highlights${game.league ? ` ${game.league}` : ''}`,
       publishedAfter: new Date(game.finalSeenAt - 6 * 3600_000).toISOString(),
       key: this.opts.apiKey,
     });

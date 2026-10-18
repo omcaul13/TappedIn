@@ -67,11 +67,13 @@ export function tilePage(screen: number): string {
     const fill=sc.mode==='GAME_OVER'?'game over':sc.mode==='LOCKED'?'locked':sc.showingGameId!==sc.homeGameId&&homeG?'filling in for '+homeG.shortName:'';
     let ball='';if(s&&s.yardsToEndzone!=null&&s.possessionTeamId){const homeAttacksRight=s.possessionTeamId===g.home.id;const x=homeAttacksRight?100-s.yardsToEndzone:s.yardsToEndzone;ball='<div class="ball" style="left:'+x+'%"></div>';}
     const rzSide=s&&s.possessionTeamId===g.home.id?'right:0':'left:0';
+    const fb=g.family==='football';const L=g.live;let sit='';
+    if(!fb){const parts=[];if(g.hot)parts.push(g.hot.toUpperCase());if(L&&L.family==='baseball'&&(L.half==='top'||L.half==='bottom')){const b=[L.onFirst?'1st':'',L.onSecond?'2nd':'',L.onThird?'3rd':''].filter(Boolean);parts.push((b.length?'on '+b.join(', '):'bases empty')+(L.outs!=null?' \\u00b7 '+L.outs+' out':'')+(L.balls!=null&&L.strikes!=null?' \\u00b7 '+L.balls+'-'+L.strikes:''));}sit=parts.join(' \\u00b7 ');}
     root.className='';root.style.display='contents';
     root.innerHTML='<div class="top"><span><span class="chip" style="background:'+(TONE[a.state]||'var(--fin)')+'">'+stateLabel(a.state)+'</span> &nbsp;'+esc(g.channel?g.channel.name+' '+g.channel.number:g.networks.join('/'))+(sc.audio?' &#128266;':'')+'</span><span>'+esc([fill,why,st.mode!=='live'?st.mode.toUpperCase():''].filter(Boolean).join(' \\u00b7 '))+'</span></div>'+
-      '<div class="teams'+(s&&s.isRedZone?' redzone':'')+'">'+[g.away,g.home].map((t)=>'<div class="team"><span class="abbr'+(s&&s.possessionTeamId===t.id?' pos':'')+'">'+esc(t.abbr)+'</span><span class="name">'+esc(t.name)+'</span><span class="score">'+t.score+'</span></div>').join('')+'</div>'+
-      '<div class="mid"><span>'+esc(g.detail)+'</span><span style="color:'+(s&&s.isRedZone?'var(--rz)':'inherit')+'">'+esc(s&&s.downDistanceText?s.downDistanceText+(s.isRedZone?' \\u00b7 RED ZONE':''):'')+'</span></div>'+
-      '<div class="field">'+(s?'<div class="rz" style="'+rzSide+'"></div>':'')+ball+'</div>'+
+      '<div class="teams'+((s&&s.isRedZone)||(!fb&&g.hot)?' redzone':'')+'">'+[g.away,g.home].map((t)=>'<div class="team"><span class="abbr'+(s&&s.possessionTeamId===t.id?' pos':'')+'">'+esc(t.abbr)+'</span><span class="name">'+esc(t.name)+'</span><span class="score">'+t.score+'</span></div>').join('')+'</div>'+
+      '<div class="mid"><span>'+esc((fb?'':g.sportShort+' \\u00b7 ')+g.detail)+'</span><span style="color:'+((s&&s.isRedZone)||(!fb&&g.hot)?'var(--rz)':'inherit')+'">'+esc(fb?(s&&s.downDistanceText?s.downDistanceText+(s.isRedZone?' \\u00b7 RED ZONE':''):''):sit)+'</span></div>'+
+      (fb?'<div class="field">'+(s?'<div class="rz" style="'+rzSide+'"></div>':'')+ball+'</div>':'')+
       '<div class="last">'+esc(s&&s.lastPlay?s.lastPlay:'')+'</div>';
   }catch(e){}}
   tick();setInterval(tick,1000);

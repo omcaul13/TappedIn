@@ -212,6 +212,7 @@ export interface BasketballLeague {
   clock: BasketballClock;
   presets: SportModule['presets'];
   halftimeMaxSeconds: number;
+  highlights: NonNullable<SportModule['highlights']>;
 }
 
 export const preset = (minBreakSeconds: number, confidence: number, replaceIfHomeRemainingSeconds: number, upgradeToHot: boolean, excludeCategories: string[] = []): SportPreset => ({ minBreakSeconds, confidence, replaceIfHomeRemainingSeconds, upgradeToHot, excludeCategories });
@@ -234,6 +235,7 @@ export function basketballLeague(l: BasketballLeague, synth: SportModule['synth'
     inferFirstSeen: inference.first,
     inferChange: inference.change,
     breaks: basketballBreaks(l.id, halftimePeriod),
+    highlights: l.highlights,
     presets: l.presets,
     halftimeMaxSeconds: l.halftimeMaxSeconds,
     progressSeconds: (g) => basketballProgressSeconds(l.clock, g),

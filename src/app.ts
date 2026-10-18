@@ -13,6 +13,8 @@ import { LiveSource, recordingDir } from './espn/source';
 import { clock as fmtClock, dailyLogFile, DecisionLog, type LogEntry } from './log';
 import { startServer, type LocalServer, type PostResult } from './server/server';
 import { effectiveChannels, upgradeLineup } from './providers/lineup';
+import { isSportId, SPORTS, sportOf } from './sports';
+import type { SportId } from './engine/types';
 import { mkdirSync as mkdirp, writeFileSync } from 'node:fs';
 import { lineupFile } from './providers/lineup';
 import { listProviders } from './providers/registry';
@@ -131,7 +133,7 @@ export class App {
     const youtube = ytKey
       ? new YouTubeClient({
           apiKey: ytKey,
-          channels: cfg.highlights.youtubeChannels,
+          channels: [...new Set([...cfg.highlights.youtubeChannels, ...SPORTS.flatMap((m) => m.highlights?.youtubeChannels ?? [])])],
           maxSearchesPerDay: cfg.highlights.maxYoutubeSearchesPerDay,
           minMinutesAfterFinal: cfg.highlights.youtubeMinMinutesAfterFinal,
           cacheFile: path.join(PROJECT_ROOT, '.state', 'youtube-cache.json'),
@@ -384,8 +386,8 @@ export class App {
   private changeSettings(body: Record<string, unknown>): PostResult {
     if (body.reset === true) {
       // Setup choices (which service, how many standby streams) aren't tuning: reset keeps them.
-      const { provider, standbyViews } = this.overrides;
-      this.overrides = { ...(provider ? { provider } : {}), ...(standbyViews !== undefined ? { standbyViews } : {}) };
+      const { provider, standbyViews, screenSports } = this.overrides;
+      this.overrides = { ...(provider ? { provider } : {}), ...(standbyViews !== undefined ? { standbyViews } : {}), ...(screenSports ? { screenSports } : {}) };
       saveOverrides(this.overrides);
       this.applyConfig();
       this.info('settings reset to the config file');
@@ -430,6 +432,19 @@ export class App {
       }
       case '/api/settings':
         return this.changeSettings(body);
+      case '/api/screen-sport': {
+        // Choose a screen's sport before its game (the game list opens on it).
+        const sport = String(body.sport);
+        if (!validScreen || !isSportId(sport)) return { ok: false, message: 'bad sport' };
+        this.setScreenSport(screen, sport);
+        this.pushState();
+        return { ok: true };
+      }
+      case '/api/all-screens-sport': {
+        const sport = String(body.sport);
+        if (!isSportId(sport)) return { ok: false, message: 'bad sport' };
+        return this.allScreensSport(sport);
+      }
       case '/api/diag/open':
       case '/api/diag/close':
       case '/api/diag/run':
@@ -789,6 +804,48 @@ export class App {
     return rejected ? { ok: false, message: rejected.reasons.join('; ') } : { ok: true };
   }
 
+  /** Each screen's sport as remembered (null: none chosen yet). */
+  private screenSports(): (SportId | null)[] {
+    const saved = this.overrides.screenSports ?? [];
+    return Array.from({ length: this.screenCount }, (_, i) => (saved[i] && isSportId(saved[i]) ? saved[i] : null));
+  }
+
+  private setScreenSport(screen: number, sport: SportId): void {
+    const next = this.screenSports();
+    if (next[screen - 1] === sport) return;
+    next[screen - 1] = sport;
+    this.overrides = { ...this.overrides, screenSports: next.map((x) => x ?? '') };
+    saveOverrides(this.overrides);
+  }
+
+  /**
+   * "All screens: NBA": every screen's sport becomes NBA, and each screen not already on an NBA game
+   * gets the best NBA game nobody else is showing (the same pick as at startup). Locked screens keep
+   * their game. You can still change any screen's game afterward.
+   */
+  private allScreensSport(sport: SportId): PostResult {
+    const now = this.clock.now();
+    const views = this.engine.views();
+    for (let i = 1; i <= this.screenCount; i++) this.setScreenSport(i, sport);
+    const screens = this.engine.director.screens;
+    const taken = new Set(screens.flatMap((sc) => (sc.homeGameId && views.get(sc.homeGameId)?.game.sport === sport ? [sc.homeGameId] : [])));
+    const picks = autoHomes(views, now, 12, Array(12).fill(sport)).filter((id) => views.get(id)?.game.sport === sport && !taken.has(id));
+    let changed = 0;
+    for (const sc of screens) {
+      const homeSport = sc.homeGameId ? views.get(sc.homeGameId)?.game.sport : null;
+      if (homeSport === sport || sc.mode === 'LOCKED') continue;
+      const gameId = picks.shift();
+      if (!gameId) break;
+      this.handle(this.engine.act({ type: 'setHome', screen: sc.id, gameId }, now));
+      changed++;
+    }
+    this.info(`all screens: ${sportOf(sport).name} (${changed} screen${changed === 1 ? '' : 's'} switched to a new game)`);
+    this.refreshOverlays();
+    this.pushState();
+    const need = screens.filter((sc) => sc.mode !== 'LOCKED' && (sc.homeGameId ? views.get(sc.homeGameId)?.game.sport : null) !== sport).length;
+    return changed < need ? { ok: true, message: `Only ${changed} watchable ${sportOf(sport).name} game${changed === 1 ? '' : 's'} free right now; pick the rest from each screen's list.` } : { ok: true };
+  }
+
   private focusAudio(screen: number): void {
     const d = this.engine.focusAudio(screen, this.clock.now());
     this.writeEntry({ type: 'audio', ...d });
@@ -846,7 +903,7 @@ export class App {
     this.highlights.noteGames(this.snapshots(), now);
     if (!this.homesSet && this.engine.store.all().length) {
       this.homesSet = true;
-      const homes = this.opts.homes?.length ? this.opts.homes : this.opts.autoHomes ? autoHomes(this.engine.views(), now, this.screenCount) : [];
+      const homes = this.opts.homes?.length ? this.opts.homes : this.opts.autoHomes ? autoHomes(this.engine.views(), now, this.screenCount, this.screenSports()) : [];
       homes.slice(0, this.screenCount).forEach((gameId, i) => this.handle(this.engine.act({ type: 'setHome', screen: i + 1, gameId }, now)));
       if (!homes.length) this.info('No home games yet: pick them in the control panel (Alt+P).');
     }
@@ -882,6 +939,10 @@ export class App {
     for (const d of res.decisions) {
       this.writeEntry({ type: 'decision', ...d });
       if (d.switched) this.lastSwitch.set(d.screen, { at: d.at, rule: d.rule, reasons: d.reasons.slice(0, 4) });
+      if ((d.rule === 'USER_SET_HOME' || d.rule === 'AUTO_PICK') && d.gameId) {
+        const sport = this.engine.store.get(d.gameId)?.snap.sport;
+        if (sport) this.setScreenSport(d.screen, sport);
+      }
       // Warm the highlight cache as soon as a screen goes to halftime.
       if (d.rule === 'HALFTIME') void this.highlights.refresh(this.snapshots(), d.gameId ?? null, this.clock.now());
     }
@@ -926,7 +987,7 @@ export class App {
         return { text: `${s} ${st === 'BREAK' ? 'BREAK?' : st} · ${home?.game.shortName ?? ''}${sound}`, tone };
       }
       case 'FILL_IN':
-        return { text: `${s} FILL-IN · ${on?.game.shortName ?? ''}${on?.game.situation?.isRedZone ? ' (red zone)' : ''} · ${home?.game.shortName ?? ''} in break${sound}`, tone: 'break' };
+        return { text: `${s} FILL-IN · ${on?.game.shortName ?? ''}${on && sportOf(on.game.sport).excitement(on.game).hot ? ` (${sportOf(on.game.sport).excitement(on.game).hot!.label})` : ''} · ${home?.game.shortName ?? ''} in break${sound}`, tone: 'break' };
       case 'GAME_OVER': {
         const left = sc.gameOver?.autoPickAt ? Math.max(0, Math.round((sc.gameOver.autoPickAt - now) / 1000)) : null;
         return { text: `${s} FINAL · ${home?.game.shortName ?? ''}${left !== null ? ` · next game in ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}` : ''}${sound}`, tone: 'final' };
@@ -946,19 +1007,26 @@ export class App {
     const onScreen = new Map<string, number>();
     for (const o of this.engine.director.screens) if (o.id !== sc.id && o.showing.kind === 'game') onScreen.set(o.showing.gameId, o.id);
     const watchable = [...views.values()].filter((v) => v.channel && v.game.id !== sc.homeGameId);
+    // The finished game's sport first, then the other sports in picker order.
+    const own = home?.sport;
+    const rank = (v: GameView) => (v.game.sport === own ? -1 : SPORTS.findIndex((m) => m.id === v.game.sport));
     const margin = (v: GameView) => Math.abs(v.game.home.score - v.game.away.score);
     const live = watchable
       .filter((v) => v.game.phase === 'LIVE' || v.game.phase === 'HALFTIME')
-      .sort((a, b) => margin(a) - margin(b))
-      .map((v) => ({
-        id: v.game.id,
-        label: `${v.game.away.abbr} ${v.game.away.score}-${v.game.home.score} ${v.game.home.abbr}`,
-        detail: [v.game.detail.replace(/^\d{1,2}:\d{2} - /, ''), v.channel!.name, v.game.situation?.isRedZone ? 'red zone' : '', onScreen.has(v.game.id) ? `on S${onScreen.get(v.game.id)}` : ''].filter(Boolean).join(' · '),
-      }));
+      .sort((a, b) => rank(a) - rank(b) || margin(a) - margin(b))
+      .map((v) => {
+        const hot = sportOf(v.game.sport).excitement(v.game).hot;
+        return {
+          id: v.game.id,
+          sport: v.game.sport,
+          label: `${v.game.away.abbr} ${v.game.away.score}-${v.game.home.score} ${v.game.home.abbr}`,
+          detail: [sportOf(v.game.sport).short, v.game.detail.replace(/^\d{1,2}:\d{2} - /, ''), v.channel!.name, hot?.label ?? '', onScreen.has(v.game.id) ? `on S${onScreen.get(v.game.id)}` : ''].filter(Boolean).join(' · '),
+        };
+      });
     const later = watchable
       .filter((v) => v.game.phase === 'PRE')
-      .sort((a, b) => String(a.game.startTime).localeCompare(String(b.game.startTime)))
-      .map((v) => ({ id: v.game.id, label: v.game.shortName, detail: `${v.game.startTime ? etTime(v.game.startTime) : ''} · ${v.channel!.name} ${v.channel!.number}` }));
+      .sort((a, b) => rank(a) - rank(b) || String(a.game.startTime).localeCompare(String(b.game.startTime)))
+      .map((v) => ({ id: v.game.id, sport: v.game.sport, label: v.game.shortName, detail: `${sportOf(v.game.sport).short} · ${v.game.startTime ? etTime(v.game.startTime) : ''} · ${v.channel!.name} ${v.channel!.number}` }));
     return { title: home ? `Final: ${home.away.abbr} ${home.away.score}-${home.home.score} ${home.home.abbr}. Pick the next game` : 'Pick the next game', live, later };
   }
 
@@ -1014,6 +1082,7 @@ export class App {
         const h = this.controller?.screens[s.id - 1]?.lastHealth;
         return {
           id: s.id,
+          sport: (s.homeGameId ? views.get(s.homeGameId)?.game.sport : null) ?? this.screenSports()[s.id - 1] ?? null,
           mode: s.mode,
           homeGameId: s.homeGameId,
           showingGameId: s.showing.kind === 'game' ? s.showing.gameId : null,
@@ -1032,6 +1101,20 @@ export class App {
       games: [...views.values()].map((v) => {
         const a = resolveChannel(this.cfg, v.game.networks);
         return gameDTO(v.game, v.assessment, v.channel, a.available ? null : a.reason);
+      }),
+      sports: SPORTS.map((m) => {
+        const games = [...views.values()].filter((v) => v.game.sport === m.id);
+        return {
+          id: m.id,
+          name: m.name,
+          short: m.short,
+          family: m.family,
+          level: m.level,
+          games: games.length,
+          live: games.filter((v) => v.game.phase === 'LIVE' || v.game.phase === 'HALFTIME').length,
+          enabled: c.sports.enabled.includes(m.id),
+          sensitivity: c.sports.overrides[m.id]?.sensitivity ?? null,
+        };
       }),
     };
   }

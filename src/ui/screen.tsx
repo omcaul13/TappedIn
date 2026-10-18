@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { BackIcon, LockIcon, SoundIcon } from './icons';
-import { act, gameClock, mmss, network, post, screenBadge, scoreLine, substituteReason, teamColor, type AppState, type GameDTO, type ScreenDTO, type TeamDTO } from './util';
+import { BackIcon, LockIcon, SoundIcon, SportIcon } from './icons';
+import { act, gameClock, mmss, network, pickReason, post, screenBadge, scoreLine, substituteReason, teamColor, watchableToday, type AppState, type GameDTO, type ScreenDTO, type SportDTO, type TeamDTO } from './util';
 
 // One screen's overlay: header (game dropdown, state badge, back-to-my-game, lock, sound) that hides
 // after a few seconds without mouse movement, plus cards drawn inside the screen (switching, game
@@ -63,8 +63,9 @@ export function Screen({ st, sc, games, now, menuOpen, setMenuOpen, onHover, onE
     if (!r.ok && r.message) onError(r.message);
   };
 
-  const reason = onOther ? `Showing ${scoreLine(on!)} · ${substituteReason(sc, home, on) ?? ''}` : null;
-  const showingRz = on?.situation?.isRedZone && sc.showingKind === 'game';
+  // Why this screen is on another game: the tier and what makes it worth it, then the home game's break.
+  const reason = onOther ? [`Showing ${scoreLine(on!)}`, sc.mode === 'LOCKED' ? null : pickReason(sc), substituteReason(sc, home, on)].filter(Boolean).join(' · ') : null;
+  const showingRz = !!on?.hot && sc.showingKind === 'game';
 
   return (
     <div
@@ -103,6 +104,10 @@ export function Screen({ st, sc, games, now, menuOpen, setMenuOpen, onHover, onE
             {home ? (
               <>
                 <span class="accent" style={{ background: `linear-gradient(${teamColor(home.away)}, ${teamColor(home.home)})` }} />
+                <span class="sport-chip" title={home.sportShort}>
+                  <SportIcon family={home.family} />
+                  {home.sportShort}
+                </span>
                 <span class="teams">
                   <Logo team={home.away} />
                   {home.phase === 'PRE' ? `${home.away.abbr} @ ${home.home.abbr}` : `${home.away.abbr} ${home.away.score}–${home.home.score} ${home.home.abbr}`}
@@ -221,14 +226,19 @@ function GameRow({ g, current, tag, onPick, disabledReason }: { g: GameDTO; curr
         <b>{gameClock(g)}</b>
         <span>{g.channel ? network(g) : (g.unavailable ?? 'Not available')}</span>
         <span>
-          {g.situation?.isRedZone && <span class="rzpill">RED ZONE</span>} {tag && <span class="onpill">{tag}</span>}
+          {g.hot && <span class="rzpill">{g.hot.toUpperCase()}</span>} {g.channel?.regional === 'unconfirmed' && <span class="regpill" title="Several NFL games share this channel's window; your local station shows one of them">REGIONAL</span>} {tag && <span class="onpill">{tag}</span>}
         </span>
       </span>
     </button>
   );
 }
 
+/** Sports first, then games: the screen's sport (or one you pick) on top, other sports grouped below. */
 function GameMenu({ st, sc, games, onClose, run }: { st: AppState; sc: ScreenDTO; games: Map<string, GameDTO>; onClose(): void; run(p: Promise<{ ok: boolean; message?: string }>): void }) {
+  const firstSport = sc.sport ?? st.sports.find((x) => x.enabled && x.live > 0)?.id ?? st.sports.find((x) => x.enabled && x.games > 0)?.id ?? null;
+  const [step, setStep] = useState<'sports' | 'games'>(firstSport ? 'games' : 'sports');
+  const [sport, setSport] = useState(firstSport);
+  const [allScreens, setAllScreens] = useState(false);
   const [q, setQ] = useState('');
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -244,12 +254,46 @@ function GameMenu({ st, sc, games, onClose, run }: { st: AppState; sc: ScreenDTO
       window.removeEventListener('keydown', key);
     };
   }, []);
+  const choose = (x: SportDTO) => {
+    if (allScreens) {
+      run(post('/api/all-screens-sport', { sport: x.id }));
+      onClose();
+      return;
+    }
+    run(post('/api/screen-sport', { screen: sc.id, sport: x.id }));
+    setSport(x.id);
+    setStep('games');
+  };
+  if (step === 'sports') {
+    const sports = st.sports.filter((x) => x.enabled);
+    return (
+      <div class="menu" ref={ref}>
+        <h4 style={{ margin: '10px 12px 6px' }}>Pick a sport for screen {sc.id}</h4>
+        <div class="sportgrid">
+          {sports.map((x) => {
+            const today = [...games.values()].filter((g) => g.sport === x.id && watchableToday(g)).length;
+            return (
+              <button class={`sport${x.id === sport ? ' current' : ''}`} disabled={today === 0} title={today === 0 ? 'No games today' : x.name} onClick={() => choose(x)}>
+                <SportIcon family={x.family} />
+                <span class="nm">{x.name}</span>
+                <span class="ct">{today === 0 ? 'No games today' : `${today} game${today === 1 ? '' : 's'}${x.live ? ` · ${x.live} live` : ''}`}</span>
+              </button>
+            );
+          })}
+        </div>
+        <label class="allscreens">
+          <input type="checkbox" checked={allScreens} onChange={(e) => setAllScreens((e.target as HTMLInputElement).checked)} />
+          Use for all screens (each screen gets its own game of that sport)
+        </label>
+      </div>
+    );
+  }
   const needle = q.trim().toLowerCase();
-  const all = [...games.values()].filter((g) => g.phase !== 'FINAL' && g.phase !== 'CANCELED' && g.phase !== 'POSTPONED');
-  const match = (g: GameDTO) => !needle || `${g.name} ${g.shortName} ${g.away.abbr} ${g.home.abbr} ${g.networks.join(' ')}`.toLowerCase().includes(needle);
+  const all = [...games.values()].filter(watchableToday);
+  const match = (g: GameDTO) => !needle || `${g.name} ${g.shortName} ${g.away.abbr} ${g.home.abbr} ${g.networks.join(' ')} ${g.sportShort}`.toLowerCase().includes(needle);
   const margin = (g: GameDTO) => Math.abs(g.home.score - g.away.score);
-  const live = all.filter((g) => g.phase !== 'PRE' && match(g)).sort((a, b) => Number(!a.channel) - Number(!b.channel) || margin(a) - margin(b));
-  const later = all.filter((g) => g.phase === 'PRE' && match(g)).sort((a, b) => String(a.startTime).localeCompare(String(b.startTime)) || Number(!a.channel) - Number(!b.channel));
+  const liveOf = (list: GameDTO[]) => list.filter((g) => g.phase !== 'PRE').sort((a, b) => Number(!a.channel) - Number(!b.channel) || Number(!b.hot) - Number(!a.hot) || margin(a) - margin(b));
+  const laterOf = (list: GameDTO[]) => list.filter((g) => g.phase === 'PRE').sort((a, b) => String(a.startTime).localeCompare(String(b.startTime)) || Number(!a.channel) - Number(!b.channel));
   const tagOf = (g: GameDTO) => {
     const homeOn = st.screens.find((o) => o.id !== sc.id && o.homeGameId === g.id);
     return homeOn ? `S${homeOn.id}'s game` : undefined;
@@ -259,15 +303,37 @@ function GameMenu({ st, sc, games, onClose, run }: { st: AppState; sc: ScreenDTO
     onClose();
   };
   const rows = (list: GameDTO[]) => list.map((g) => <GameRow g={g} current={g.id === sc.homeGameId} tag={tagOf(g)} disabledReason={g.channel ? null : (g.unavailable ?? `Not in your ${st.provider.shortName} lineup`)} onPick={() => pick(g)} />);
+  const mine = all.filter((g) => g.sport === sport && match(g));
+  const cur = st.sports.find((x) => x.id === sport);
+  const others = st.sports.filter((x) => x.id !== sport && x.enabled).map((x) => ({ x, list: all.filter((g) => g.sport === x.id && match(g)) })).filter((o) => o.list.length);
   return (
     <div class="menu" ref={ref}>
-      <input autoFocus placeholder="Search teams or networks" value={q} onInput={(e) => setQ((e.target as HTMLInputElement).value)} />
+      <div class="menuhead">
+        <button class="btn" onClick={() => setStep('sports')} title="Pick another sport">
+          ← Sports
+        </button>
+        {cur && (
+          <span class="sport-chip big">
+            <SportIcon family={cur.family} /> {cur.name} · {mine.length} game{mine.length === 1 ? '' : 's'}
+          </span>
+        )}
+      </div>
+      <input autoFocus placeholder="Search teams, networks or sports" value={q} onInput={(e) => setQ((e.target as HTMLInputElement).value)} />
       <div class="list">
-        {live.length > 0 && <h4>Live now</h4>}
-        {rows(live)}
-        {later.length > 0 && <h4>Later today</h4>}
-        {rows(later)}
-        {!live.length && !later.length && <h4>No games match</h4>}
+        {liveOf(mine).length > 0 && <h4>Live now</h4>}
+        {rows(liveOf(mine))}
+        {laterOf(mine).length > 0 && <h4>Later today</h4>}
+        {rows(laterOf(mine))}
+        {!mine.length && <h4>No {cur?.short ?? ''} games {needle ? 'match' : 'today'}</h4>}
+        {others.map(({ x, list }) => (
+          <>
+            <h4 class="grp">
+              <SportIcon family={x.family} /> {x.name}
+              {x.live ? ` · ${x.live} live` : ''}
+            </h4>
+            {rows([...liveOf(list), ...laterOf(list)])}
+          </>
+        ))}
       </div>
     </div>
   );
@@ -276,10 +342,12 @@ function GameMenu({ st, sc, games, onClose, run }: { st: AppState; sc: ScreenDTO
 function GameOver({ st, sc, games, now, run }: { st: AppState; sc: ScreenDTO; games: Map<string, GameDTO>; now: number; run(p: Promise<{ ok: boolean; message?: string }>): void }) {
   const p = sc.picker!;
   const left = sc.gameOverAutoPickAt ? Math.max(0, Math.round((sc.gameOverAutoPickAt - now) / 1000)) : null;
-  const ids = [...p.live, ...p.later].map((x) => x.id);
   const liveIds = new Set(p.live.map((x) => x.id));
   const onOther = (g: GameDTO) => st.screens.find((o) => o.id !== sc.id && o.homeGameId === g.id);
-  const list = ids.map((id) => games.get(id)).filter((g): g is GameDTO => !!g);
+  // The server lists the finished game's sport first, then the others: keep that order, grouped.
+  const items = [...p.live, ...p.later];
+  const order = [...new Set(items.map((x) => x.sport))];
+  const head = { margin: '8px 6px 4px', fontSize: '10.5px', color: 'var(--faint)', letterSpacing: '.1em' };
   return (
     <div class="card gameover">
       <div class="box">
@@ -288,11 +356,22 @@ function GameOver({ st, sc, games, now, run }: { st: AppState; sc: ScreenDTO; ga
           {left !== null && <span class="cd">Best live game in {mmss(left)}</span>}
         </div>
         <div class="list">
-          {list.some((g) => liveIds.has(g.id)) && <h4 style={{ margin: '8px 6px 4px', fontSize: '10.5px', color: 'var(--faint)', letterSpacing: '.1em' }}>LIVE NOW</h4>}
-          {list.filter((g) => liveIds.has(g.id)).map((g) => <GameRow g={g} current={false} tag={onOther(g) ? `S${onOther(g)!.id}'s game` : undefined} onPick={() => run(act('setHome', sc.id, { gameId: g.id }))} />)}
-          {list.some((g) => !liveIds.has(g.id)) && <h4 style={{ margin: '8px 6px 4px', fontSize: '10.5px', color: 'var(--faint)', letterSpacing: '.1em' }}>LATER TODAY</h4>}
-          {list.filter((g) => !liveIds.has(g.id)).map((g) => <GameRow g={g} current={false} onPick={() => run(act('setHome', sc.id, { gameId: g.id }))} />)}
-          {!list.length && <div style={{ padding: '14px', color: 'var(--dim)' }}>No other watchable games today.</div>}
+          {order.map((sport, i) => {
+            const list = items.filter((x) => x.sport === sport).map((x) => games.get(x.id)).filter((g): g is GameDTO => !!g);
+            const meta = st.sports.find((x) => x.id === sport);
+            return (
+              <>
+                <h4 style={head}>
+                  {(meta?.name ?? sport).toUpperCase()}
+                  {i === 0 && sport === sc.sport ? ' · SAME SPORT' : ''}
+                </h4>
+                {list.map((g) => (
+                  <GameRow g={g} current={false} tag={liveIds.has(g.id) ? (onOther(g) ? `S${onOther(g)!.id}'s game` : 'live') : 'later'} onPick={() => run(act('setHome', sc.id, { gameId: g.id }))} />
+                ))}
+              </>
+            );
+          })}
+          {!items.length && <div style={{ padding: '14px', color: 'var(--dim)' }}>No other watchable games today.</div>}
         </div>
         <div class="ft">
           {left !== null && (

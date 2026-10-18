@@ -63,6 +63,7 @@ export const nfl: SportModule = {
   excitement,
   compare: footballCompare,
   synth: footballSynth,
+  highlights: { query: 'NFL', youtubeChannels: ['NFL', 'FOX Sports', 'CBS Sports', 'NBC Sports', 'ESPN'] },
 };
 
 // ---- regional CBS/FOX windows ---------------------------------------------------------------------
