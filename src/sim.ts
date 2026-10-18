@@ -83,7 +83,7 @@ export async function* recordedFeed(dir: string, toMs?: number): Feed {
 }
 
 export async function* synthFeed(dir: string, cfg: Config, toMs?: number): Feed {
-  const finals = readRecords(recordingFiles(dir).finals).map((r) => r.body);
+  const finals = readRecords(recordingFiles(dir).finals).map((r) => ({ body: r.body, sport: r.sport }));
   for (const ev of synthesizeDay(finals, { dataDelaySeconds: cfg.breakDetector.dataDelaySeconds })) {
     if (toMs !== undefined && ev.at > toMs) return;
     if (ev.kind === 'snapshots') yield { at: ev.at, apply: (e) => e.ingestSnapshots(ev.snaps, ev.at) };

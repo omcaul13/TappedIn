@@ -5,9 +5,16 @@ import '../systemCa';
 const BASE = 'https://site.api.espn.com/apis/site/v2/sports';
 
 export interface EspnClientOptions {
+  /** Default league path ('football/college-football') and groups, for callers that don't name one. */
   sport: string;
   groups: string;
   requestTimeoutMs: number;
+}
+
+/** One ESPN league endpoint: 'basketball/nba', or 'football/college-football' with groups '80' (FBS). */
+export interface League {
+  path: string;
+  groups?: string;
 }
 
 export interface FetchResult<T = unknown> {
@@ -31,20 +38,25 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export class EspnClient {
   constructor(private readonly opts: EspnClientOptions) {}
 
-  scoreboardUrl(date: string): string {
-    return `${BASE}/${this.opts.sport}/scoreboard?dates=${date}&groups=${this.opts.groups}&limit=300`;
+  private league(l?: League): League {
+    return l ?? { path: this.opts.sport, groups: this.opts.groups };
   }
 
-  summaryUrl(eventId: string): string {
-    return `${BASE}/${this.opts.sport}/summary?event=${eventId}`;
+  scoreboardUrl(date: string, league?: League): string {
+    const l = this.league(league);
+    return `${BASE}/${l.path}/scoreboard?dates=${date}${l.groups ? `&groups=${l.groups}` : ''}&limit=300`;
   }
 
-  scoreboard(date: string): Promise<FetchResult> {
-    return this.getJson(this.scoreboardUrl(date));
+  summaryUrl(eventId: string, league?: League): string {
+    return `${BASE}/${this.league(league).path}/summary?event=${eventId}`;
   }
 
-  summary(eventId: string): Promise<FetchResult> {
-    return this.getJson(this.summaryUrl(eventId));
+  scoreboard(date: string, league?: League): Promise<FetchResult> {
+    return this.getJson(this.scoreboardUrl(date, league));
+  }
+
+  summary(eventId: string, league?: League): Promise<FetchResult> {
+    return this.getJson(this.summaryUrl(eventId, league));
   }
 
   async getJson<T = unknown>(url: string, retries = 2): Promise<FetchResult<T>> {

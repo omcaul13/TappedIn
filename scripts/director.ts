@@ -29,7 +29,7 @@ const record = (r: TickResult) => {
 const source = new LiveSource(
   cfg,
   {
-    scoreboard: (body, at) => engine.ingestScoreboard(body, at),
+    scoreboard: (body, at, sport) => engine.ingestScoreboard(body, at, sport),
     summary: (id, body, at) => engine.ingestSummary(id, body, at),
     error: (what, err) => log.write({ type: 'info', at: now(), text: `ESPN ${what} failed: ${err}` }),
   },

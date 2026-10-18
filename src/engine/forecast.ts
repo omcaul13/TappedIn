@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { FOOTBALL_CATEGORIES, FOOTBALL_LABELS } from '../sports/football';
 
@@ -28,11 +28,13 @@ export interface BreakModel {
 
 export const DEFAULT_MODEL_PATH = path.resolve(import.meta.dirname, '..', '..', 'config', 'break-models', 'cfb.json');
 
-let cached: { file: string; model: BreakModel } | null = null;
+const cache = new Map<string, BreakModel>();
+/** A sport's model; a sport nobody has built one for yet gets an empty model (it never forecasts a break). */
 export function loadBreakModel(file = DEFAULT_MODEL_PATH): BreakModel {
-  if (cached?.file === file) return cached.model;
-  const model = JSON.parse(readFileSync(file, 'utf8')) as BreakModel;
-  cached = { file, model };
+  let model = cache.get(file);
+  if (model) return model;
+  model = existsSync(file) ? (JSON.parse(readFileSync(file, 'utf8')) as BreakModel) : emptyModel(5, []);
+  cache.set(file, model);
   return model;
 }
 

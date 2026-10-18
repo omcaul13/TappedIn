@@ -108,6 +108,8 @@ export const ConfigSchema = z.object({
       requestTimeoutMs: z.number().int().positive().default(8000),
       scoreboardLiveSeconds: z.number().positive().default(12),
       scoreboardIdleSeconds: z.number().positive().default(60),
+      /** A sport with no games today is checked this rarely. */
+      scoreboardEmptySeconds: z.number().positive().default(900),
       summarySeconds: z.number().positive().default(15),
       /** Play-by-play for the games on screen (homes and substitutes) comes this often. */
       hotSummarySeconds: z.number().positive().default(6),

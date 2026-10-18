@@ -3,6 +3,7 @@ import type { GameState, LastPlay, TimelineEvent } from '../engine/gameStore';
 import type { RankedCandidate } from '../engine/ranker';
 import type { GameSnapshot, LiveDetail, Phase, PlayKind, PlaySnap, Situation, SportFamily, SportId, TeamSnap } from '../engine/types';
 import type { Json } from '../espn/json';
+import type { SynthAdapter } from './synth/types';
 
 // One sport at one level (college football, NFL, NBA, NHL, …). Everything that differs between
 // sports lives behind this interface; the engine, director and UI only see the common model.
@@ -109,4 +110,9 @@ export interface SportModule {
   excitement(g: GameSnapshot): Excitement;
   /** Order of two same-sport fill-in candidates (best first). */
   compare(a: RankedCandidate, b: RankedCandidate): number;
+
+  // ---- simulation ---------------------------------------------------------------------------
+  /** Rebuilds this sport's games from final play-by-play (`npm run sim -- --synth`). */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  synth?: SynthAdapter<any>;
 }

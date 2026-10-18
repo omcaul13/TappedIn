@@ -1,6 +1,7 @@
 import path from 'node:path';
-import type { Config } from '../config';
-import type { GameSnapshot, PlaySnap } from '../engine/types';
+import { enabledSports, type Config } from '../config';
+import type { GameSnapshot, PlaySnap, SportId } from '../engine/types';
+import { SPORT_IDS, sportOf } from '../sports';
 import { EspnClient } from './client';
 import { appendRecord, mergeByTime, recordingFiles, streamRecords, trimSummary, type RecordLine } from './recording';
 
@@ -8,7 +9,7 @@ import { appendRecord, mergeByTime, recordingFiles, streamRecords, trimSummary, 
 // so live polling, a recorded game day and a synthesized day are interchangeable.
 
 export interface DataSink {
-  scoreboard(body: unknown, at: number): GameSnapshot[] | void;
+  scoreboard(body: unknown, at: number, sport: SportId): GameSnapshot[] | void;
   summary(gameId: string, body: unknown, at: number): void;
   /** Already-normalized input (used by the synthesizer). */
   snapshots?(snaps: GameSnapshot[], at: number): void;
@@ -32,7 +33,10 @@ export interface LiveSourceOptions {
 export class LiveSource {
   private readonly client: EspnClient;
   private stopped = false;
-  private anyLive = false;
+  /** Sports with a game live (or at halftime / delayed) on the last scoreboard poll. */
+  private liveSports = new Set<SportId>();
+  /** Which sport each game belongs to, for its play-by-play URL. */
+  private sportOfGame = new Map<string, SportId>();
   private timers: NodeJS.Timeout[] = [];
 
   constructor(
@@ -47,8 +51,13 @@ export class LiveSource {
     this.cfg = cfg;
   }
 
+  private get anyLive(): boolean {
+    return this.liveSports.size > 0;
+  }
+
   start(): void {
-    void this.scoreboardLoop();
+    // One scoreboard loop per sport; disabled sports idle until the settings turn them on.
+    for (const sport of SPORT_IDS) void this.scoreboardLoop(sport);
     // Two tiers: games on screen often (spots breaks and restarts sooner), likely substitutes less often.
     void this.summaryLoop(() => this.opts.onScreen?.() ?? [], () => this.cfg.espn.hotSummarySeconds);
     void this.summaryLoop(
@@ -77,18 +86,30 @@ export class LiveSource {
     if (this.opts.recordDir) appendRecord(recordingFiles(this.opts.recordDir)[file], rec);
   }
 
-  private async scoreboardLoop(): Promise<void> {
+  private async scoreboardLoop(sport: SportId): Promise<void> {
+    // Stagger the first polls so a dozen sports don't all ask ESPN at once.
+    await this.sleep(SPORT_IDS.indexOf(sport) * 700);
     while (!this.stopped) {
-      try {
-        const res = await this.client.scoreboard(this.opts.date);
-        const at = Date.parse(res.fetchedAt);
-        const snaps = this.sink.scoreboard(res.body, at) ?? [];
-        this.anyLive = snaps.some((g) => g.phase === 'LIVE' || g.phase === 'HALFTIME' || g.phase === 'DELAYED');
-        this.record({ t: res.fetchedAt, kind: 'scoreboard', url: res.url, status: res.status, body: res.body }, 'scoreboard');
-      } catch (err) {
-        this.sink.error?.('scoreboard', err);
+      let base = this.cfg.espn.scoreboardIdleSeconds;
+      if (!enabledSports(this.cfg).includes(sport)) {
+        this.liveSports.delete(sport);
+        await this.sleep(30_000);
+        continue;
       }
-      const base = this.anyLive ? this.cfg.espn.scoreboardLiveSeconds : this.cfg.espn.scoreboardIdleSeconds;
+      try {
+        const res = await this.client.scoreboard(this.opts.date, sportOf(sport).espn);
+        const at = Date.parse(res.fetchedAt);
+        const snaps = this.sink.scoreboard(res.body, at, sport) ?? [];
+        for (const g of snaps) this.sportOfGame.set(g.id, sport);
+        const live = snaps.some((g) => g.phase === 'LIVE' || g.phase === 'HALFTIME' || g.phase === 'DELAYED');
+        if (live) this.liveSports.add(sport);
+        else this.liveSports.delete(sport);
+        // Live: often. Games today but none live: the idle rate. No games today at all: rarely.
+        base = live ? this.cfg.espn.scoreboardLiveSeconds : snaps.some((g) => g.phase === 'PRE') ? this.cfg.espn.scoreboardIdleSeconds : this.cfg.espn.scoreboardEmptySeconds;
+        this.record({ t: res.fetchedAt, kind: 'scoreboard', url: res.url, status: res.status, body: res.body, sport }, 'scoreboard');
+      } catch (err) {
+        this.sink.error?.(`${sportOf(sport).short} scoreboard`, err);
+      }
       await this.sleep(base * 1000 + this.jitter());
     }
   }
@@ -100,9 +121,10 @@ export class LiveSource {
       for (const id of ids) {
         if (this.stopped) return;
         try {
-          const res = await this.client.summary(id);
+          const sport = this.sportOfGame.get(id) ?? 'cfb';
+          const res = await this.client.summary(id, sportOf(sport).espn);
           this.sink.summary(id, res.body, Date.parse(res.fetchedAt));
-          this.record({ t: res.fetchedAt, kind: 'summary', eventId: id, url: res.url, status: res.status, body: trimSummary(res.body) }, 'summaries');
+          this.record({ t: res.fetchedAt, kind: 'summary', eventId: id, url: res.url, status: res.status, body: trimSummary(res.body, sport), sport }, 'summaries');
         } catch (err) {
           this.sink.error?.(`summary ${id}`, err);
         }

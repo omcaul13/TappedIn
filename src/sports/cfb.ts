@@ -1,4 +1,5 @@
 import { categorizeFootball, classifyFootballPlay, FOOTBALL_CATEGORIES, FOOTBALL_LABELS, FOOTBALL_LINGER, FOOTBALL_RESUMES, footballChange, footballCompare, footballContinues, footballEndOfPeriod, footballExcitement, footballFirstSeen, footballPhase, footballProgressSeconds, footballSituation, footballSummaryPlays } from './football';
+import { footballSynth } from './synth/football';
 import type { SportModule } from './types';
 
 // College football: the sport RedZone started with. Its switching numbers come from
@@ -37,4 +38,5 @@ export const cfb: SportModule = {
   progressSeconds: footballProgressSeconds,
   excitement: footballExcitement,
   compare: footballCompare,
+  synth: footballSynth,
 };

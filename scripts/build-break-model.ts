@@ -1,47 +1,66 @@
-// Build the break forecast model from recorded play-by-play.
-//   npm run build-break-model                       # every recordings/*/finals.ndjson.gz
+// Build each sport's break forecast model from recorded play-by-play.
+//   npm run build-break-model                         # every sport but college football, from every recordings/*/finals.ndjson.gz
+//   npm run build-break-model -- --sport nhl          # one sport (--sport cfb rebuilds college football's shipped model)
 //   npm run build-break-model -- recordings/20261017/finals.ndjson.gz ...
-// For each play: category of the stoppage it starts, and the wallclock gap to the next live-ball play.
+// For each play: category of the stoppage it starts (the sport's own rules), and the wallclock gap
+// to the next play that resumes action. Writes config/break-models/<sport>.json.
 import { existsSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { PROJECT_ROOT } from '../src/config';
-import { addGap, categorize, CATEGORIES, DEFAULT_MODEL_PATH, emptyModel, survival } from '../src/engine/forecast';
-import { normalizeSummaryPlays } from '../src/espn/normalize';
+import { addGap, emptyModel, survival } from '../src/engine/forecast';
+import type { SportId } from '../src/engine/types';
 import { readRecords } from '../src/espn/recording';
+import { isSportId, SPORTS, sportOf } from '../src/sports';
 
 const args = process.argv.slice(2);
-const files = args.length
-  ? args
+const only = args.includes('--sport') ? args[args.indexOf('--sport') + 1] : null;
+if (only && !isSportId(only)) {
+  console.error(`unknown sport "${only}"`);
+  process.exit(1);
+}
+const fileArgs = args.filter((a, i) => !a.startsWith('--') && args[i - 1] !== '--sport');
+const files = fileArgs.length
+  ? fileArgs
   : readdirSync(path.join(PROJECT_ROOT, 'recordings'))
       .map((d) => path.join(PROJECT_ROOT, 'recordings', d, 'finals.ndjson.gz'))
       .filter((f) => existsSync(f));
 
-const model = emptyModel(5);
-const seen = new Set<string>();
-const isResume = (k: string) => k === 'snap' || k === 'kickoff' || k === 'score';
-for (const f of files) {
-  for (const rec of readRecords(f)) {
-    if (!rec.eventId || seen.has(rec.eventId)) continue;
-    const plays = normalizeSummaryPlays(rec.body).filter((p) => p.wallclock !== null);
-    if (plays.length < 50) continue;
+/** Fewest timed plays for a game to count (drops games ESPN never filled in). */
+const MIN_PLAYS: Partial<Record<string, number>> = { football: 50, basketball: 100, hockey: 80, baseball: 100, soccer: 10 };
+
+const records = files.flatMap((f) => readRecords(f));
+for (const mod of SPORTS) {
+  if (only ? mod.id !== only : mod.id === 'cfb') continue; // CFB's model is frozen unless asked for by name
+  const sport = mod.id as SportId;
+  const model = emptyModel(5, mod.breaks.categories);
+  const seen = new Set<string>();
+  for (const rec of records) {
+    if ((rec.sport ?? 'cfb') !== sport || !rec.eventId || seen.has(rec.eventId)) continue;
+    const plays = mod.summaryPlays(rec.body).filter((p) => p.wallclock !== null);
+    if (plays.length < (MIN_PLAYS[mod.family] ?? 50)) continue;
     seen.add(rec.eventId);
     model.games++;
     for (let i = 0; i < plays.length - 1; i++) {
-      const cat = categorize(plays[i], plays[i - 1]);
+      const cat = mod.breaks.categorize(plays[i], plays[i - 1]);
       if (!cat) continue;
-      const next = plays.find((x, k) => k > i && isResume(x.kind));
+      const next = plays.find((x, k) => k > i && mod.breaks.resumes.has(x.kind));
       if (!next) continue;
       const gap = (next.wallclock! - plays[i].wallclock!) / 1000;
       if (gap < 0 || gap > 900) continue;
       addGap(model, cat, gap);
     }
   }
-}
-writeFileSync(DEFAULT_MODEL_PATH, JSON.stringify(model));
-console.log(`break model from ${model.games} games (${files.length} file(s)) -> ${DEFAULT_MODEL_PATH}`);
-console.log('  category               n     P(>=60s)  P(>=90s)  P(>=120s)');
-for (const c of CATEGORIES) {
-  const n = model.categories[c].n;
-  const p = (t: number) => `${Math.round(survival(model, c, t) * 100)}%`.padStart(8);
-  console.log(`  ${c.padEnd(20)} ${String(n).padStart(5)}  ${p(60)}  ${p(90)}  ${p(120)}`);
+  if (!model.games) {
+    console.log(`${mod.short}: no recorded games; model not written`);
+    continue;
+  }
+  const out = path.join(PROJECT_ROOT, sportOf(sport).breaks.modelFile);
+  writeFileSync(out, JSON.stringify(model));
+  console.log(`\n${mod.short}: break model from ${model.games} games -> ${path.relative(PROJECT_ROOT, out)}`);
+  console.log('  category               n     P(>=60s)  P(>=90s)  P(>=120s)');
+  for (const c of mod.breaks.categories) {
+    const n = model.categories[c]?.n ?? 0;
+    const p = (t: number) => `${Math.round(survival(model, c, t) * 100)}%`.padStart(8);
+    console.log(`  ${c.padEnd(20)} ${String(n).padStart(5)}  ${p(60)}  ${p(90)}  ${p(120)}`);
+  }
 }

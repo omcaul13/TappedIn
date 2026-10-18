@@ -220,7 +220,7 @@ export class App {
       this.source = new LiveSource(
         cfg,
         {
-          scoreboard: (body, at) => this.engine.ingestScoreboard(body, at),
+          scoreboard: (body, at, sport) => this.engine.ingestScoreboard(body, at, sport),
           summary: (id, body, at) => {
             this.engine.ingestSummary(id, body, at);
             this.highlights.ingestSummary(id, body, at);
