@@ -79,7 +79,7 @@ export function effectiveStandby(cfg: Config, provider: ProviderConfig): number 
   return cfg.electron.standbyViews ?? provider.defaults.standbyViews;
 }
 
-export async function startShell(cfg: Config, uiUrl: string, events: ShellEvents, provider: ProviderConfig): Promise<Shell> {
+export async function startShell(cfg: Config, uiUrl: string, events: ShellEvents, provider: ProviderConfig, screens = 4): Promise<Shell> {
   if (await debugPortOpen(cfg.electron.debugPort)) {
     throw new Error(`Something already uses port ${cfg.electron.debugPort} (an open RedZone window?). Close it and start again.`);
   }
@@ -90,7 +90,7 @@ export async function startShell(cfg: Config, uiUrl: string, events: ShellEvents
     `--port=${cfg.electron.debugPort}`,
     `--ui=${uiUrl}`,
     `--user-data=${cfg.electron.userDataDir}`,
-    '--screens=4',
+    `--screens=${Math.max(1, Math.min(4, screens))}`,
     `--spares=${effectiveStandby(cfg, provider)}`,
     `--provider=${writeShellProvider(provider)}`,
     ...(cfg.electron.disableDirectComposition ? ['--no-dcomp'] : []),

@@ -13,6 +13,7 @@ import { LiveSource, recordingDir } from './espn/source';
 import { clock as fmtClock, dailyLogFile, DecisionLog, type LogEntry } from './log';
 import { startServer, type LocalServer, type PostResult } from './server/server';
 import { effectiveChannels } from './providers/lineup';
+import { loadSetup, migrateOwner, needsSetup, type SetupState } from './setup/state';
 import { createAdapter, STATE_DIR } from './providers/registry';
 import type { ProviderAdapter } from './providers/types';
 import { gameDTO, type AppState, type FeedItem, type PickerDTO, type ScreenDTO } from './server/state';
@@ -88,6 +89,10 @@ export class App {
   private broadcastTimer: NodeJS.Timeout | null = null;
   /** The TV service the screens play. Changing services takes a restart. */
   private readonly adapter: ProviderAdapter;
+  /** First-run setup: done or not, and what it found. */
+  private setupState: SetupState;
+  /** Screens in the grid (1-4): the setup's choice once setup is done, 4 while it runs. */
+  private screenCount: number;
 
   constructor(
     cfg: Config,
@@ -96,7 +101,9 @@ export class App {
     this.fileCfg = cfg;
     this.overrides = loadOverrides();
     this.cfg = cfg = resolveConfig(cfg, this.overrides);
-    this.engine = new Engine(cfg);
+    this.setupState = migrateOwner(STATE_DIR, cfg) ?? loadSetup();
+    this.screenCount = needsSetup(this.setupState, cfg) ? 4 : this.setupState.screens;
+    this.engine = new Engine(cfg, this.screenCount);
     const ytKey = process.env.YT_API_KEY?.trim();
     const youtube = ytKey
       ? new YouTubeClient({
@@ -180,9 +187,9 @@ export class App {
           void this.stop().then(() => process.exit(0));
         },
         log: (t) => this.info(t),
-      }, this.adapter.config);
+      }, this.adapter.config, this.screenCount);
       await this.shell.ready;
-      const { browser, screens, spares } = await attachShell(cfg, 4, this.adapter.config);
+      const { browser, screens, spares } = await attachShell(cfg, this.screenCount, this.adapter.config);
       this.controller = new WindowController(cfg, browser, null, controllerOpts, events);
       const shell = this.shell;
       await this.controller.attach(screens, spares, (screen, view) => shell.present(screen, view));
@@ -191,7 +198,7 @@ export class App {
       if (launched && this.mode === 'live') this.info('Started RedZone Chrome. If a tile shows "Signed out of Xfinity", run "npm run login" and sign in.');
       const { browser, context } = await connect(cfg);
       this.controller = new WindowController(cfg, browser, context, controllerOpts, events);
-      await this.controller.open(4);
+      await this.controller.open(this.screenCount);
       this.info(`control panel at ${this.server.url}/panel (Alt+P)`);
     }
 
@@ -278,7 +285,7 @@ export class App {
 
   private async post(p: string, body: Record<string, unknown>): Promise<PostResult> {
     const screen = Number(body.screen);
-    const validScreen = Number.isInteger(screen) && screen >= 1 && screen <= 4;
+    const validScreen = Number.isInteger(screen) && screen >= 1 && screen <= this.screenCount;
     switch (p) {
       case '/api/action': {
         const type = String(body.type);
@@ -293,7 +300,7 @@ export class App {
         }
         // { screen: n } puts sound on screen n; 0 mutes every screen.
         const focus = Number(body.screen ?? body.focus);
-        if (Number.isInteger(focus) && focus >= 0 && focus <= 4) this.focusAudio(focus);
+        if (Number.isInteger(focus) && focus >= 0 && focus <= this.screenCount) this.focusAudio(focus);
         this.refreshOverlays();
         this.pushState();
         return { ok: true };
@@ -411,8 +418,8 @@ export class App {
     this.highlights.noteGames(this.snapshots(), now);
     if (!this.homesSet && this.engine.store.all().length) {
       this.homesSet = true;
-      const homes = this.opts.homes?.length ? this.opts.homes : this.opts.autoHomes ? autoHomes(this.engine.views(), now) : [];
-      homes.slice(0, 4).forEach((gameId, i) => this.handle(this.engine.act({ type: 'setHome', screen: i + 1, gameId }, now)));
+      const homes = this.opts.homes?.length ? this.opts.homes : this.opts.autoHomes ? autoHomes(this.engine.views(), now, this.screenCount) : [];
+      homes.slice(0, this.screenCount).forEach((gameId, i) => this.handle(this.engine.act({ type: 'setHome', screen: i + 1, gameId }, now)));
       if (!homes.length) this.info('No home games yet: pick them in the control panel (Alt+P).');
     }
     if (this.engine.audio.focus !== this.focus) {

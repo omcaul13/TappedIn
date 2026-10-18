@@ -56,6 +56,12 @@ export class Engine {
     return this.cfg;
   }
 
+  /** Change the number of screens. Screens that remain keep their state; new ones start idle. */
+  resizeScreens(n: number): void {
+    const fresh = createDirector(n);
+    this.director = { ...this.director, screens: fresh.screens.map((s) => this.director.screens.find((o) => o.id === s.id) ?? s) };
+  }
+
   /** Hot reload: thresholds apply from the next tick. Audio mode set at runtime is kept. */
   setConfig(cfg: Config): void {
     this.cfg = cfg;

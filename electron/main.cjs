@@ -17,6 +17,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { app, BrowserWindow, Menu, WebContentsView, components, ipcMain, session } = require('electron');
 const { compile, rules } = require('./signin-rules.cjs');
+const { cellRects } = require('./layout.cjs');
 
 const args = process.argv.slice(2);
 const value = (name, d) => {
@@ -235,12 +236,7 @@ async function handoff() {
 
 function cellBounds(screen) {
   const [w, h] = win.getContentSize();
-  const gh = Math.max(0, h - TOP_BAR);
-  const cw = Math.floor((w - GAP) / 2);
-  const ch = Math.floor((gh - GAP) / 2);
-  const col = (screen - 1) % 2;
-  const row = Math.floor((screen - 1) / 2);
-  return { x: col * (cw + GAP), y: TOP_BAR + row * (ch + GAP), width: col ? w - cw - GAP : cw, height: row ? gh - ch - GAP : ch };
+  return cellRects(SCREENS, w, h, TOP_BAR, GAP)[screen - 1];
 }
 
 function layout() {

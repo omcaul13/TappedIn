@@ -132,7 +132,7 @@ function App() {
         </button>
       </header>
 
-      <main class="grid">
+      <main class={`grid n${st.screens.length}`}>
         {st.screens.map((sc) => (
           <Screen
             key={sc.id}
