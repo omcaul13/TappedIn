@@ -1,6 +1,6 @@
 // Checks a RedZone install and names a one-line fix for each problem. Read-only: it never installs,
 // signs or changes anything.
-//   npm run doctor
+//   npm run doctor [-- --deps]
 // Exit code 0 when every check passes, 1 otherwise. The check* functions are pure (test/doctor.test.ts);
 // main() gathers the facts they judge.
 import { readFileSync, statSync } from 'node:fs';
@@ -114,6 +114,45 @@ export function checkEspn(r: { status: number } | { error: string }): CheckResul
   return { ok: false, title: `ESPN scoreboard is not reachable (${why})`, fix: 'Check your internet connection. If it works in a browser, ESPN may be down; try again in a few minutes.' };
 }
 
+type LockPackages = Record<string, { version?: string; integrity?: string; optional?: boolean }>;
+
+function lockPackages(text: string): LockPackages {
+  const v = JSON.parse(text) as { packages?: LockPackages };
+  return v.packages ?? {};
+}
+
+/**
+ * Whether node_modules matches package-lock.json. `hidden` is node_modules/.package-lock.json (npm's
+ * record of what it installed), or null without node_modules. Optional packages for other platforms
+ * (esbuild's) are in the lockfile but never installed.
+ */
+export function checkDependencies(lock: string, hidden: string | null): CheckResult {
+  const fix = `${SETUP}, or run npm ci.`;
+  if (hidden === null) return { ok: false, title: 'Dependencies are not installed (no node_modules)', fix };
+  let want: LockPackages;
+  let have: LockPackages;
+  try {
+    want = lockPackages(lock);
+    have = lockPackages(hidden);
+  } catch (err) {
+    return { ok: false, title: `Can't read the lockfiles (${firstLine(err)})`, fix };
+  }
+  const name = (k: string) => k.replace(/^.*node_modules\//, '');
+  const off: string[] = [];
+  for (const [key, w] of Object.entries(want)) {
+    if (key === '') continue;
+    const h = have[key];
+    if (!h) {
+      if (!w.optional) off.push(`${name(key)} missing`);
+    } else if (h.version !== w.version || (h.integrity && w.integrity && h.integrity !== w.integrity)) {
+      off.push(`${name(key)} ${h.version} (wants ${w.version})`);
+    }
+  }
+  if (off.length === 0) return { ok: true, title: 'Dependencies match package-lock.json', fix: '' };
+  const shown = off.slice(0, 3).join(', ') + (off.length > 3 ? ` and ${off.length - 3} more` : '');
+  return { ok: false, title: `Dependencies don't match package-lock.json: ${shown}`, fix };
+}
+
 function firstLine(err: unknown): string {
   return (err instanceof Error ? err.message : String(err)).split('\n')[0];
 }
@@ -168,8 +207,17 @@ async function probeEspn(cfg: Config): Promise<{ status: number } | { error: str
   }
 }
 
+export function dependencyCheck(root = PROJECT_ROOT): CheckResult {
+  return checkDependencies(readText(path.join(root, 'package-lock.json')) ?? '{}', readText(path.join(root, 'node_modules', '.package-lock.json')));
+}
+
 export async function runDoctor(root = PROJECT_ROOT): Promise<CheckResult[]> {
-  const results: CheckResult[] = [checkNode(process.version), checkEcsElectron(electronVersion(root)), checkSignature(signatureFacts(root))];
+  const results: CheckResult[] = [
+    checkNode(process.version),
+    dependencyCheck(root),
+    checkEcsElectron(electronVersion(root)),
+    checkSignature(signatureFacts(root)),
+  ];
 
   let cfg: Config;
   try {
@@ -187,7 +235,8 @@ export async function runDoctor(root = PROJECT_ROOT): Promise<CheckResult[]> {
 }
 
 async function main(): Promise<void> {
-  const results = await runDoctor();
+  // --deps: only whether node_modules matches package-lock.json (the installer uses it to skip npm ci).
+  const results = process.argv.includes('--deps') ? [dependencyCheck()] : await runDoctor();
   for (const r of results) {
     console.log(`${r.ok ? '[ok]' : '[!!]'} ${r.title}`);
     if (!r.ok) console.log(`     Fix: ${r.fix}`);

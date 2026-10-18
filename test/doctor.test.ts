@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  checkDependencies,
   checkEcsElectron,
   checkEspn,
   checkNode,
@@ -119,5 +120,27 @@ describe('doctor: ESPN', () => {
     const r = checkEspn({ error: 'fetch failed' });
     expect(r.ok).toBe(false);
     expect(r.title).toContain('fetch failed');
+  });
+});
+
+describe('doctor: dependencies', () => {
+  const lock = (packages: Record<string, unknown>) => JSON.stringify({ lockfileVersion: 3, packages: { '': { name: 'redzone' }, ...packages } });
+  const hidden = (packages: Record<string, unknown>) => JSON.stringify({ lockfileVersion: 3, packages });
+  const zod = { version: '4.6.7', integrity: 'sha512-z' };
+  const esbuildLinux = { version: '0.28.2', optional: true };
+
+  it('in sync when installed packages match the lockfile; optional packages for other platforms may be absent', () => {
+    const r = checkDependencies(lock({ 'node_modules/zod': zod, 'node_modules/@esbuild/linux-x64': esbuildLinux }), hidden({ 'node_modules/zod': zod }));
+    expect(r.ok).toBe(true);
+  });
+
+  it('out of sync on a missing package, a changed version, or no node_modules', () => {
+    expect(checkDependencies(lock({ 'node_modules/zod': zod }), hidden({})).ok).toBe(false);
+    const changed = checkDependencies(lock({ 'node_modules/zod': { version: '4.7.0', integrity: 'sha512-y' } }), hidden({ 'node_modules/zod': zod }));
+    expect(changed.ok).toBe(false);
+    expect(changed.title).toContain('zod');
+    const none = checkDependencies(lock({ 'node_modules/zod': zod }), null);
+    expect(none.ok).toBe(false);
+    expect(none.fix).toMatch(/npm ci/);
   });
 });
