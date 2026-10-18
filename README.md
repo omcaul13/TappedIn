@@ -21,7 +21,7 @@ RedZone isn't affiliated with or endorsed by any TV service, school, league or n
 | v2.2 | **Faster switching:** standby views, in-window switching card, faster play-by-play for on-screen games | ✅ done (live-tested 10/17) |
 | v2.3 | **Switch less:** break forecast from 76 recorded games, Low/Medium/High sensitivity, hysteresis | ✅ done (replayed 10/10 and 10/17) |
 | v3.0 | **Other TV services:** provider adapters with per-service config files | ✅ Xfinity re-verified live 10/18 through the adapter; full app check on a game day pending |
-| v3.1 | **Setup for everyone:** one-click installer, first-run setup, TV service settings, diagnostics | 🚧 built; live run-through pending |
+| v3.1 | **Setup for everyone:** one-click installer, first-run setup, TV service settings, diagnostics | ✅ setup run live on Xfinity On Campus 10/18 (sign-in, scan 17 networks, playback, 4 streams); installer checked in check-only mode |
 
 ## Supported TV services
 
