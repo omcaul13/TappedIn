@@ -99,6 +99,8 @@ export interface SportModule {
   inferFirstSeen?(g: GameState, snap: GameSnapshot, ctx: InferContext): void;
   /** …and when a new poll differs from the previous one. */
   inferChange?(g: GameState, prev: GameSnapshot, snap: GameSnapshot, ctx: InferContext): void;
+  /** Live situation the play-by-play shows when the scoreboard doesn't (hockey: power play from play strength). */
+  liveFromPlays?(plays: PlaySnap[], snap: GameSnapshot): LiveDetail | null;
 
   // ---- breaks ------------------------------------------------------------------------------
   breaks: BreakSpec;

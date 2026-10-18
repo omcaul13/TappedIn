@@ -47,6 +47,7 @@ export function snap(o: Partial<GameSnapshot> & { id?: string } = {}): GameSnaps
     away: o.away ?? { id: `a${id}`, abbr: `A${id}`, name: `Away ${id}`, score: 10 },
     networks: o.networks ?? ['ESPN'],
     situation: o.situation === undefined ? null : o.situation,
+    ...(o.live ? { live: o.live } : {}),
     observedAt: o.observedAt ?? T0,
   };
 }

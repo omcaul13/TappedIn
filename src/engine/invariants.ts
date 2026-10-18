@@ -47,7 +47,7 @@ export class InvariantChecker {
         }
       }
     }
-    for (const c of res.commands) if (c.type === 'tune' && !this.lineup.has(c.channel)) fail(`S${c.screen} tuned to channel ${c.channel}, not in lineup`);
+    for (const c of res.commands) if (c.type === 'tune' && !this.lineup.has(c.channel) && !this.cfg.simulation.fullLineup) fail(`S${c.screen} tuned to channel ${c.channel}, not in lineup`);
 
     const byGame = new Map<string, number[]>();
     for (const sc of engine.director.screens) {

@@ -1,6 +1,6 @@
 import { sportOf } from '../sports';
 import type { InferContext } from '../sports/types';
-import type { GameSnapshot, Phase, PlayKind, PlaySnap } from './types';
+import type { GameSnapshot, LiveDetail, Phase, PlayKind, PlaySnap } from './types';
 
 export type { PlayKind };
 
@@ -54,6 +54,8 @@ export interface GameState {
   plays: PlaySnap[];
   /** The most recent play of any kind (what the current stoppage, if any, follows). */
   lastPlay: LastPlay | null;
+  /** Live situation read from play-by-play, for sports whose scoreboard doesn't carry it (hockey). */
+  playsLive?: LiveDetail | null;
 }
 
 export interface LastPlay {
@@ -174,6 +176,8 @@ export class GameStore {
       if (firstFetch && p.wallclock !== null && now - p.wallclock > (this.opts.keepEventsSeconds ?? 900) * 1000) continue;
       this.addPlayEvents(g, { kind: p.kind, id: p.id, typeText: p.typeText, text: p.text, at, seenAt: now, order: p.seq, isTurnover: p.isTurnover, period: p.period }, 'pbp');
     }
+    const fromPlays = sportOf(g.snap.sport).liveFromPlays;
+    if (fromPlays) g.playsLive = fromPlays(plays, g.snap);
     // Inferred scoreboard events (score/timeout/quarter changes) are superseded by the real play,
     // which has a precise time; keeping both would make the play look like a resume after its own event.
     g.events = g.events.filter((e) => e.playId !== null || !this.hasPbpTwin(g, e));

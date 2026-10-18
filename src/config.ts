@@ -282,6 +282,9 @@ export const ConfigSchema = z.object({
     })
     .prefault({}),
 
+  /** Simulation only (`npm run sim -- --full-lineup`): pretend every game is watchable, each on its own channel, to judge a sport's detector on a full slate. */
+  simulation: z.object({ fullLineup: z.boolean().default(false) }).prefault({}),
+
   channels: z.record(z.string(), ChannelSchema).default({}),
   unavailable: z.array(z.string()).default([]),
 });

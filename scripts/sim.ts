@@ -29,6 +29,7 @@ const variant = (model: 'classic' | 'forecast', sensitivity?: 'low' | 'medium' |
   return c;
 };
 if (flags['no-regional']) base.sports.nflRegionalCheck = false;
+if (flags['full-lineup']) base.simulation.fullLineup = true;
 const cfg = variant(
   flags.model === 'classic' ? 'classic' : flags.model === 'forecast' ? 'forecast' : base.switching.breakModel,
   flags.sensitivity === 'low' || flags.sensitivity === 'medium' || flags.sensitivity === 'high' ? flags.sensitivity : undefined,

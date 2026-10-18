@@ -112,6 +112,8 @@ export interface PlaySnap {
   teamId: string | null;
   endYardsToEndzone: number | null;
   endTeamId: string | null;
+  /** Hockey: "Even Strength", "Power Play", "Shorthanded" (for the play's team). */
+  strength?: string | null;
 }
 
 export type BreakState = 'PRE' | 'LIVE' | 'BREAK' | 'HALFTIME' | 'FINAL' | 'UNKNOWN';

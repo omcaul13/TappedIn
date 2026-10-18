@@ -96,6 +96,11 @@ export class Engine {
   }
 
   channelFor(g: GameSnapshot): GameView['channel'] {
+    if (this.cfg.simulation.fullLineup) return this.channelFor0(g) ?? { name: `SIM ${g.shortName}`, number: 900_000 + (Number(g.id.replace(/\D/g, '').slice(-5)) || 0) };
+    return this.channelFor0(g);
+  }
+
+  private channelFor0(g: GameSnapshot): GameView['channel'] {
     const key = g.networks.join('|');
     if (!this.channelCache.has(key)) {
       const a = resolveChannel(this.cfg, g.networks);
@@ -112,7 +117,9 @@ export class Engine {
     const out = new Map<string, GameView>();
     for (const g of this.store.all()) {
       const a = this.assessments.get(g.id);
-      if (a) out.set(g.id, { game: g.snap, assessment: a, channel: this.channelFor(g.snap) });
+      // Hockey's power play comes from play-by-play, not the scoreboard.
+      const game = g.playsLive && g.snap.phase === 'LIVE' && !g.snap.live ? { ...g.snap, live: g.playsLive } : g.snap;
+      if (a) out.set(g.id, { game, assessment: a, channel: this.channelFor(g.snap) });
     }
     // NFL Sunday windows: several games on CBS/FOX at once, and your station shows one.
     const nfl = [...out.values()].flatMap((v) => (v.game.sport === 'nfl' && v.channel ? [{ game: v.game, channel: v.channel.name }] : []));

@@ -90,6 +90,7 @@ export function topLevelPlays(body: Json, classify: (typeText: string, scoring: 
       teamId: p?.team?.id != null ? String(p.team.id) : null,
       endYardsToEndzone: null,
       endTeamId: null,
+      ...(str(p?.strength?.text) ? { strength: str(p.strength.text) } : {}),
     });
   });
   return [...byId.values()].sort((a, b) => a.seq - b.seq || (a.wallclock ?? 0) - (b.wallclock ?? 0));

@@ -13,9 +13,9 @@ export interface ClockSynthOptions {
   /** Periods whose end is halftime / an intermission (the reel plays). */
   intermissionAfter: readonly number[];
   /** Play clocks count up from 0:00 (hockey) in periods this long; the scoreboard shows time left. */
-  elapsedClockPeriodSeconds?: number;
+  elapsedClockPeriodSeconds?: (period: number) => number;
   /** The live situation the scoreboard would show (power play…), if the plays tell. */
-  live?(last: PlaySnap, plays: PlaySnap[], visible: number): LiveDetail | null;
+  live?(plays: PlaySnap[], g: SynthGame): LiveDetail | null;
 }
 
 const side = (comp: Json, ha: string): TeamSnap => {
@@ -78,7 +78,7 @@ export function clockSynth(o: ClockSynthOptions): SynthAdapter {
     const m = /^(\d{1,2}):(\d{2})/.exec(last.displayClock ?? '');
     const tenths = /^(\d{1,2})\.\d$/.exec(last.displayClock ?? ''); // "39.8": under a minute left
     const raw = m ? Number(m[1]) * 60 + Number(m[2]) : tenths ? Number(tenths[1]) : null;
-    const len = o.elapsedClockPeriodSeconds;
+    const len = o.elapsedClockPeriodSeconds?.(last.period ?? 1);
     const clockSec = ended ? 0 : raw === null ? null : len ? Math.max(0, len - raw) : raw;
     const shown = clockSec === null ? (last.displayClock ?? '') : `${Math.floor(clockSec / 60)}:${String(clockSec % 60).padStart(2, '0')}`;
     const snap: GameSnapshot = {
@@ -93,7 +93,7 @@ export function clockSynth(o: ClockSynthOptions): SynthAdapter {
       home,
       away,
     };
-    const live = o.live?.(last, g.plays, visible);
+    const live = o.live?.(g.plays.slice(0, visible), g);
     if (live) snap.live = live;
     return snap;
   };
