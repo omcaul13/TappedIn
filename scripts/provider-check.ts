@@ -47,11 +47,11 @@ const shell = await startShell(
     },
     log: (s) => log(s),
   },
-  provider,
+  { provider, screens: 4, spares: 0, signin: 'now' },
 );
 await shell.ready;
 if (signin !== 'ok') log(`sign-in ended as "${signin}"; continuing anyway`);
-const { screens } = await attachShell(cfg, 4, provider);
+const { screens } = await attachShell(cfg, shell.layout);
 const tuner = new Tuner(adapter, cacheFileFor(id, STATE_DIR), { fastPath: true });
 
 if (flags.scan) {

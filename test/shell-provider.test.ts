@@ -48,3 +48,38 @@ describe('shell provider for the Electron window', () => {
     expect(effectiveStandby(parseConfig({}), { ...provider, defaults: { standbyViews: 1 } })).toBe(1);
   });
 });
+
+describe('shell requests and view names', async () => {
+  const { markerTitle, revealAllowed, ReplyRouter } = await import('../src/shell');
+
+  it('view titles carry the configure generation (none at startup, as before)', () => {
+    expect(markerTitle('SCREEN', 1, 0)).toBe('RZ-SCREEN-1');
+    expect(markerTitle('SPARE', 2, 0)).toBe('RZ-SPARE-2');
+    expect(markerTitle('SCREEN', 3, 2)).toBe('RZ-SCREEN-3-g2');
+  });
+
+  it('only reveals files in the RedZone exports folder or .state', () => {
+    const docs = String.raw`C:\Users\me\OneDrive\Documents`;
+    const state = String.raw`C:\code\redzone\.state`;
+    expect(revealAllowed(String.raw`C:\Users\me\OneDrive\Documents\RedZone\redzone-sling.json`, docs, state)).toBe(true);
+    expect(revealAllowed(String.raw`C:\code\redzone\.state\provider-check\a.png`, docs, state)).toBe(true);
+    expect(revealAllowed(String.raw`C:\Windows\System32\cmd.exe`, docs, state)).toBe(false);
+    expect(revealAllowed(String.raw`C:\Users\me\OneDrive\Documents\RedZone\..\secrets.txt`, docs, state)).toBe(false);
+  });
+
+  it('replies resolve only the matching request', async () => {
+    const sent: { id: number; type: string }[] = [];
+    const router = new ReplyRouter((m) => void sent.push(m as { id: number; type: string }));
+    const a = router.request('logout', {}, 1000);
+    const b = router.request('signin-check', {}, 1000);
+    router.handle({ type: 'reply', id: sent[1].id, ok: true, data: { isApp: true } });
+    await expect(b).resolves.toEqual({ isApp: true });
+    router.handle({ type: 'reply', id: sent[0].id, ok: false, error: 'nope' });
+    await expect(a).rejects.toThrow('nope');
+  });
+
+  it('a request with no reply times out', async () => {
+    const router = new ReplyRouter(() => {});
+    await expect(router.request('logout', {}, 20)).rejects.toThrow(/no reply/);
+  });
+});

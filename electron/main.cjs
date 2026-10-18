@@ -10,12 +10,15 @@
 // src/shell.ts writes from config/providers/<id>.json.
 //
 // Started by src/shell.ts with:
-//   --port=<debugging port> --ui=<url> --user-data=<dir> --provider=<file> [--screens=4] [--no-dcomp]
+//   --port=<debugging port> --ui=<url> --user-data=<dir> --provider=<file> [--screens=4] [--spares=0]
+//   [--signin=defer] [--no-dcomp]
 // (always --name=value: Electron exits at once on some space-separated values like "--screens 4")
-// Talks to the app over the Node IPC channel: sends ready / signin / closed, accepts handoff / quit.
+// Talks to the app over the Node IPC channel: sends ready / signin / closed / reply, accepts handoff /
+// present / quit, and requests { id, type } answered with { type: 'reply', id, ok, data | error }:
+// configure (switch service, screens, spares in place), logout, signin-check, reveal, paths.
 const fs = require('node:fs');
 const path = require('node:path');
-const { app, BrowserWindow, Menu, WebContentsView, components, ipcMain, session } = require('electron');
+const { app, BrowserWindow, Menu, WebContentsView, components, ipcMain, session, shell } = require('electron');
 const { compile, rules } = require('./signin-rules.cjs');
 const { cellRects } = require('./layout.cjs');
 
@@ -26,20 +29,28 @@ const value = (name, d) => {
 };
 const flag = (name) => args.includes(`--${name}`);
 
-const SCREENS = Math.max(1, Math.min(4, Number(value('screens', '4'))));
+const clampScreens = (n) => Math.max(1, Math.min(4, Number(n) || 4));
+const clampSpares = (n) => Math.max(0, Math.min(4, Number(n) || 0));
+let SCREENS = clampScreens(value('screens', '4'));
 // Standby views: the app loads a substitute in one while the screen keeps showing its game, and keeps
 // a screen's own game playing in one (under the substitute) so going back is instant.
-const SPARES = Math.max(0, Math.min(4, Number(value('spares', '0'))));
+let SPARES = clampSpares(value('spares', '0'));
+/** Bumped by every configure: view titles carry it, and sign-in news from an older service is dropped. */
+let GEN = 0;
 const PROVIDER_FILE = value('provider', '');
 if (!PROVIDER_FILE) {
   console.error('main.cjs needs --provider=<file> (written by src/shell.ts)');
   process.exit(2);
 }
-/** The TV service: see ShellProvider in src/shell.ts. */
-const SP = JSON.parse(fs.readFileSync(PROVIDER_FILE, 'utf8'));
-const SIGNIN = SP.signin;
-const R = rules(SP);
-const PARTITION = SP.partition;
+/** The TV service (see ShellProvider in src/shell.ts) and what follows from it; replaced by configure. */
+let SP, SIGNIN, R, PARTITION, HIDE_JS;
+function loadProvider(file) {
+  SP = JSON.parse(fs.readFileSync(file, 'utf8'));
+  SIGNIN = SP.signin;
+  R = rules(SP);
+  PARTITION = SP.partition;
+  HIDE_JS = buildHideJs();
+}
 const TOP_BAR = 36; // keep in sync with --top in src/ui/style.css
 const GAP = 2;
 const BG = '#05070a';
@@ -63,9 +74,10 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // Visibility inherits through shadow DOM, so hiding the document and re-showing one video works inside
 // web components (Xfinity's player). The guide stays visible: the in-app channel switch clicks a row
 // in it (the UI covers the screen with a "Switching to…" card meanwhile). The provider can add CSS.
-const PLAYER_RE = compile(SP.playerUrl);
-const HIDE_CSS = 'html.rz-hide,html.rz-hide body{background:#000!important;cursor:none!important;overflow:hidden!important} html.rz-hide{visibility:hidden!important}' + (SP.hideCss ? ` ${SP.hideCss}` : '');
-const HIDE_JS = `(() => {
+function buildHideJs() {
+  const PLAYER_RE = compile(SP.playerUrl);
+  const HIDE_CSS = 'html.rz-hide,html.rz-hide body{background:#000!important;cursor:none!important;overflow:hidden!important} html.rz-hide{visibility:hidden!important}' + (SP.hideCss ? ` ${SP.hideCss}` : '');
+  return `(() => {
   if (window.__rzHide) return; window.__rzHide = true;
   const style = document.createElement('style');
   style.textContent = ${JSON.stringify(HIDE_CSS)};
@@ -90,14 +102,18 @@ const HIDE_JS = `(() => {
   };
   pick(); setInterval(pick, ${Number(SP.hidePollMs) || 500});
 })()`;
+}
+loadProvider(PROVIDER_FILE);
 
 const isApp = (url) => R.isApp(url);
 const marker = (label) =>
   `data:text/html,${encodeURIComponent(`<title>${label}</title><body style="margin:0;background:#000;color:#334155;font:600 15px system-ui;display:grid;place-items:center;height:100vh">${label}</body>`)}`;
 
 /** Chrome's identifier without "Electron/…" (some services, Xfinity included, send Electron to an "update your browser" page). */
-function useChromeUserAgent() {
-  const ua = session.defaultSession.getUserAgent().replace(/ Electron\/\S+/, '').replace(/ RedZone\/\S+/, '');
+let ORIGINAL_UA = null;
+function applyUserAgent() {
+  ORIGINAL_UA ??= session.defaultSession.getUserAgent();
+  const ua = SP.userAgent === 'chrome' ? ORIGINAL_UA.replace(/ Electron\/\S+/, '').replace(/ RedZone\/\S+/, '') : ORIGINAL_UA;
   app.userAgentFallback = ua;
   session.defaultSession.setUserAgent(ua);
   session.fromPartition(PARTITION).setUserAgent(ua);
@@ -105,7 +121,7 @@ function useChromeUserAgent() {
 
 let win = null;
 let ui = null;
-/** Every video view by name (S1..S4, X1..): { view, cell } where cell is the screen it sits in. */
+/** Every video view by name (S1..S4, X1..): { view, cell, label } where cell is the screen it sits in. */
 const views = new Map();
 let signingIn = null;
 
@@ -146,8 +162,8 @@ function logNavigation(wc) {
 }
 
 /** Portal hand-off (Xfinity On Campus "Watch Now"). */
-async function portalHandoff(w) {
-  send({ type: 'signin', state: 'signing-in', detail: `Opening ${SP.shortName} from ${SP.name}` });
+async function portalHandoff(w, say) {
+  say({ type: 'signin', state: 'signing-in', detail: `Opening ${SP.shortName} from ${SP.name}` });
   w.webContents.setWindowOpenHandler(() => ({ action: 'allow', overrideBrowserWindowOptions: { show: false, webPreferences: { partition: PARTITION } } }));
   const stream = new Promise((resolve) => {
     const watch = (wc) => {
@@ -172,17 +188,17 @@ async function portalHandoff(w) {
   }
   if (!clicked) {
     w.show();
-    send({ type: 'signin', state: 'needed', detail: SIGNIN.instructions });
+    say({ type: 'signin', state: 'needed', detail: SIGNIN.instructions });
   }
   const wc = await Promise.race([stream, sleep(clicked ? SIGNIN.waitAfterClickMs : SIGNIN.waitForUserMs).then(() => null)]);
   if (!wc) throw new Error(`${SP.shortName} did not open after the ${SP.name} hand-off`);
   await sleep(SIGNIN.handoffSettleMs); // let the service finish setting up its session
   const out = await wc.executeJavaScript(BODY_TEXT_JS).then((t) => R.signedOut(t)).catch(() => null);
-  send({ type: 'signin', state: out === true ? 'failed' : 'ok', detail: out === true ? `${SP.shortName} still looks signed out` : `Signed in to ${SP.shortName}` });
+  say({ type: 'signin', state: out === true ? 'failed' : 'ok', detail: out === true ? `${SP.shortName} still looks signed out` : `Signed in to ${SP.shortName}` });
 }
 
 /** No portal: show the service's own sign-in and wait for any window of the flow to reach the signed-in page. */
-async function interactiveSignin(w) {
+async function interactiveSignin(w, say) {
   w.webContents.setWindowOpenHandler(() => ({ action: 'allow', overrideBrowserWindowOptions: { show: true, autoHideMenuBar: true, webPreferences: { partition: PARTITION } } }));
   const onCreated = (_e, wc) => logNavigation(wc);
   app.on('web-contents-created', onCreated);
@@ -190,7 +206,7 @@ async function interactiveSignin(w) {
   try {
     if (SIGNIN.startUrl) await w.loadURL(SIGNIN.startUrl).catch(() => {});
     w.show();
-    send({ type: 'signin', state: 'needed', detail: SIGNIN.instructions });
+    say({ type: 'signin', state: 'needed', detail: SIGNIN.instructions });
     const deadline = Date.now() + SIGNIN.waitForUserMs;
     while (Date.now() < deadline) {
       await sleep(1000);
@@ -199,7 +215,7 @@ async function interactiveSignin(w) {
       const pages = await Promise.all(wins.map(async (bw) => ({ url: bw.webContents.getURL(), bodyText: await bodyText(bw.webContents) })));
       if (R.signinDone(pages)) {
         await sleep(SIGNIN.handoffSettleMs);
-        send({ type: 'signin', state: 'ok', detail: `Signed in to ${SP.shortName}` });
+        say({ type: 'signin', state: 'ok', detail: `Signed in to ${SP.shortName}` });
         return;
       }
     }
@@ -211,27 +227,38 @@ async function interactiveSignin(w) {
 
 async function handoff() {
   if (signingIn) return signingIn;
-  signingIn = (async () => {
-    send({ type: 'signin', state: 'signing-in', detail: `Checking ${SP.shortName}` });
-    const w = new BrowserWindow({ width: 1100, height: 760, show: false, title: SIGNIN.windowTitle, backgroundColor: BG, webPreferences: { partition: PARTITION } });
+  const gen = GEN;
+  // A configure (another service) makes this sign-in stale: its news is dropped.
+  const say = (m) => {
+    if (gen === GEN) send(m);
+  };
+  const run = (async () => {
+    say({ type: 'signin', state: 'signing-in', detail: `Checking ${SP.shortName}` });
+    const w = new BrowserWindow({ width: 1100, height: 760, show: false, title: SIGNIN.windowTitle, backgroundColor: BG, parent: win || undefined, webPreferences: { partition: PARTITION } });
     w.setMenuBarVisibility(false);
     if (await streamSignedIn(w)) {
-      send({ type: 'signin', state: 'ok', detail: `Signed in to ${SP.shortName}` });
-      w.destroy();
-      signingIn = null;
+      say({ type: 'signin', state: 'ok', detail: `Signed in to ${SP.shortName}` });
+      if (!w.isDestroyed()) w.destroy();
       return;
     }
     try {
-      if (SIGNIN.portalUrl) await portalHandoff(w);
-      else await interactiveSignin(w);
+      if (SIGNIN.portalUrl) await portalHandoff(w, say);
+      else await interactiveSignin(w, say);
     } catch (err) {
-      send({ type: 'signin', state: 'failed', detail: String(err && err.message ? err.message : err) });
+      say({ type: 'signin', state: 'failed', detail: String(err && err.message ? err.message : err) });
     } finally {
-      for (const bw of BrowserWindow.getAllWindows()) if (bw !== win && !bw.isDestroyed()) bw.destroy();
-      signingIn = null;
+      if (gen === GEN) closeSigninWindows();
     }
-  })();
-  return signingIn;
+  })().finally(() => {
+    if (signingIn === run) signingIn = null;
+  });
+  signingIn = run;
+  return run;
+}
+
+/** Close every window but the app window (sign-in windows and their pop-ups). */
+function closeSigninWindows() {
+  for (const bw of BrowserWindow.getAllWindows()) if (bw !== win && !bw.isDestroyed()) bw.destroy();
 }
 
 function cellBounds(screen) {
@@ -259,6 +286,16 @@ function present(screen, name) {
   win.contentView.addChildView(ui); // …and the UI goes back above it
 }
 
+const markerTitle = (kind, n) => `RZ-${kind}-${n}${GEN ? `-g${GEN}` : ''}`; // same rule as src/shell.ts
+
+function destroyViews() {
+  for (const { view } of views.values()) {
+    if (win) win.contentView.removeChildView(view);
+    if (!view.webContents.isDestroyed()) view.webContents.close();
+  }
+  views.clear();
+}
+
 function createViews() {
   const make = (name, label, cell) => {
     const v = new WebContentsView({ webPreferences: { partition: PARTITION, backgroundThrottling: false } });
@@ -271,13 +308,64 @@ function createViews() {
     v.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
     v.webContents.loadURL(marker(label));
     win.contentView.addChildView(v, 0); // below everything, the screen views go on top of spares
-    views.set(name, { view: v, cell });
+    views.set(name, { view: v, cell, label });
   };
-  for (let i = 0; i < SPARES; i++) make(`X${i + 1}`, `RZ-SPARE-${i + 1}`, (i % SCREENS) + 1);
-  for (let i = 0; i < SCREENS; i++) make(`S${i + 1}`, `RZ-SCREEN-${i + 1}`, i + 1);
+  for (let i = 0; i < SPARES; i++) make(`X${i + 1}`, markerTitle('SPARE', i + 1), (i % SCREENS) + 1);
+  for (let i = 0; i < SCREENS; i++) make(`S${i + 1}`, markerTitle('SCREEN', i + 1), i + 1);
   for (let i = 0; i < SCREENS; i++) present(i + 1, `S${i + 1}`);
   layout();
 }
+
+/** Switch service, screen count or standby views in place: the window stays, the video views are rebuilt. */
+async function configure(msg) {
+  GEN++;
+  signingIn = null;
+  closeSigninWindows();
+  loadProvider(String(msg.provider));
+  SCREENS = clampScreens(msg.screens);
+  SPARES = clampSpares(msg.spares);
+  applyUserAgent();
+  destroyViews();
+  createViews();
+  if (msg.signin === 'now') void handoff();
+  return { screens: SCREENS, spares: SPARES, generation: GEN };
+}
+
+/** Forget this service's sign-in (its partition only), and park every view on its marker page. */
+async function logout() {
+  GEN++; // any sign-in in progress is stale now
+  signingIn = null;
+  closeSigninWindows();
+  await session.fromPartition(PARTITION).clearStorageData();
+  for (const { view, label } of views.values()) await view.webContents.loadURL(marker(label)).catch(() => {});
+}
+
+/** What sign-in detection sees on the check page (site and path only: URLs can carry tokens). */
+async function signinCheck() {
+  const w = new BrowserWindow({ show: false, webPreferences: { partition: PARTITION } });
+  try {
+    await withTimeout(w.loadURL(SIGNIN.checkUrl), SIGNIN.checkTimeoutMs, SP.shortName).catch(() => {});
+    await sleep(SIGNIN.checkSettleMs);
+    const url = w.webContents.getURL();
+    let where = url;
+    try {
+      const u = new URL(url);
+      where = `${u.origin}${u.pathname}`;
+    } catch {}
+    return { url: where, isApp: R.isApp(url), signedOut: R.signedOut(await bodyText(w.webContents)) };
+  } finally {
+    if (!w.isDestroyed()) w.destroy();
+  }
+}
+
+const REQUESTS = {
+  configure,
+  logout,
+  'signin-check': signinCheck,
+  // The app checks the path is a RedZone export before asking.
+  reveal: async (msg) => shell.showItemInFolder(String(msg.file)),
+  paths: async () => ({ documents: app.getPath('documents') }),
+};
 
 function toggleFullscreen() {
   if (win) win.setFullScreen(!win.isFullScreen());
@@ -286,7 +374,7 @@ function toggleFullscreen() {
 app.whenReady().then(async () => {
   Menu.setApplicationMenu(null);
   await components.whenReady();
-  if (SP.userAgent === 'chrome') useChromeUserAgent();
+  applyUserAgent();
 
   win = new BrowserWindow({
     width: 1600,
@@ -329,13 +417,20 @@ app.whenReady().then(async () => {
     return win ? win.isFullScreen() : false;
   });
 
-  await handoff();
+  if (value('signin', 'now') !== 'defer') await handoff();
   createViews();
   send({ type: 'ready', screens: SCREENS, spares: SPARES });
 });
 
 process.on('message', (msg) => {
   if (!msg || typeof msg !== 'object') return;
+  if (typeof msg.id === 'number' && REQUESTS[msg.type]) {
+    Promise.resolve()
+      .then(() => REQUESTS[msg.type](msg))
+      .then((data) => send({ type: 'reply', id: msg.id, ok: true, data }))
+      .catch((err) => send({ type: 'reply', id: msg.id, ok: false, error: String(err && err.message ? err.message : err) }));
+    return;
+  }
   if (msg.type === 'handoff') void handoff();
   else if (msg.type === 'present') present(Number(msg.screen), String(msg.view));
   else if (msg.type === 'quit') app.quit();

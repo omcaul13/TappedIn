@@ -17,7 +17,7 @@ import { loadSetup, migrateOwner, needsSetup, type SetupState } from './setup/st
 import { createAdapter, STATE_DIR } from './providers/registry';
 import type { ProviderAdapter } from './providers/types';
 import { gameDTO, type AppState, type FeedItem, type PickerDTO, type ScreenDTO } from './server/state';
-import { attachShell, startShell, type Shell, type SigninStatus } from './shell';
+import { attachShell, effectiveStandby, startShell, type Shell, type SigninStatus } from './shell';
 import { autoHomes, recordedFeed, synthFeed } from './sim';
 import { connect, ensureChrome } from './windows/chrome';
 import { WindowController } from './windows/controller';
@@ -187,9 +187,9 @@ export class App {
           void this.stop().then(() => process.exit(0));
         },
         log: (t) => this.info(t),
-      }, this.adapter.config, this.screenCount);
+      }, { provider: this.adapter.config, screens: this.screenCount, spares: effectiveStandby(cfg, this.adapter.config), signin: 'now' });
       await this.shell.ready;
-      const { browser, screens, spares } = await attachShell(cfg, this.screenCount, this.adapter.config);
+      const { browser, screens, spares } = await attachShell(cfg, this.shell.layout);
       this.controller = new WindowController(cfg, browser, null, controllerOpts, events);
       const shell = this.shell;
       await this.controller.attach(screens, spares, (screen, view) => shell.present(screen, view));
