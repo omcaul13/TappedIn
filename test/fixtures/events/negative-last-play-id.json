@@ -1,0 +1,678 @@
+{
+ "id": "401860903",
+ "uid": "s:20~l:23~e:401860903",
+ "date": "2026-10-17T22:00Z",
+ "name": "Washington State Cougars at Oregon State Beavers",
+ "shortName": "WSU @ ORST",
+ "season": {
+  "year": 2026,
+  "type": 2,
+  "slug": "regular-season"
+ },
+ "week": {
+  "number": 7
+ },
+ "competitions": [
+  {
+   "id": "401860903",
+   "uid": "s:20~l:23~e:401860903~c:401860903",
+   "date": "2026-10-17T22:00Z",
+   "attendance": 0,
+   "type": {
+    "id": "1",
+    "abbreviation": "STD"
+   },
+   "timeValid": true,
+   "dateValid": true,
+   "neutralSite": false,
+   "conferenceCompetition": true,
+   "playByPlayAvailable": true,
+   "recent": true,
+   "venue": {
+    "id": "3893",
+    "fullName": "Reser Stadium",
+    "address": {
+     "city": "Corvallis",
+     "state": "OR",
+     "country": "USA"
+    },
+    "indoor": false
+   },
+   "competitors": [
+    {
+     "id": "204",
+     "uid": "s:20~l:23~t:204",
+     "type": "team",
+     "order": 0,
+     "homeAway": "home",
+     "team": {
+      "id": "204",
+      "uid": "s:20~l:23~t:204",
+      "location": "Oregon State",
+      "name": "Beavers",
+      "abbreviation": "ORST",
+      "displayName": "Oregon State Beavers",
+      "shortDisplayName": "Oregon St",
+      "color": "dc4405",
+      "alternateColor": "000000",
+      "isActive": true,
+      "venue": {
+       "id": "3893"
+      },
+      "links": [
+       {
+        "rel": [
+         "clubhouse",
+         "desktop",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/_/id/204/oregon-state-beavers",
+        "text": "Clubhouse",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "clubhouse",
+         "mobile",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/_/id/204/oregon-state-beavers",
+        "text": "Clubhouse",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "roster",
+         "desktop",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/roster/_/id/204",
+        "text": "Roster",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "roster",
+         "sportscenter",
+         "app",
+         "team"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:23~t:204&section=roster",
+        "text": "Roster",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "stats",
+         "desktop",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/stats/_/id/204",
+        "text": "Statistics",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "stats",
+         "sportscenter",
+         "app",
+         "team"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:23~t:204&section=stats",
+        "text": "Statistics",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "schedule",
+         "desktop",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/schedule/_/id/204",
+        "text": "Schedule",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "schedule",
+         "sportscenter",
+         "app",
+         "team"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:23~t:204&section=scores",
+        "text": "Schedule",
+        "isExternal": false,
+        "isPremium": false
+       }
+      ],
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/204.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/204.png",
+      "conferenceId": "9"
+     },
+     "score": "7",
+     "linescores": [
+      {
+       "value": 7,
+       "displayValue": "7",
+       "period": 1
+      }
+     ],
+     "statistics": [],
+     "curatedRank": {
+      "current": 99
+     },
+     "records": [
+      {
+       "name": "overall",
+       "abbreviation": "overall",
+       "type": "total",
+       "summary": "4-2"
+      },
+      {
+       "name": "Home",
+       "abbreviation": "Home",
+       "type": "homerecord",
+       "summary": "2-1"
+      },
+      {
+       "name": "Away",
+       "abbreviation": "Away",
+       "type": "awayrecord",
+       "summary": "2-1"
+      },
+      {
+       "name": "vs. Conf.",
+       "abbreviation": "CONF",
+       "type": "vsconf",
+       "summary": "2-0"
+      }
+     ]
+    },
+    {
+     "id": "265",
+     "uid": "s:20~l:23~t:265",
+     "type": "team",
+     "order": 1,
+     "homeAway": "away",
+     "team": {
+      "id": "265",
+      "uid": "s:20~l:23~t:265",
+      "location": "Washington State",
+      "name": "Cougars",
+      "abbreviation": "WSU",
+      "displayName": "Washington State Cougars",
+      "shortDisplayName": "Washington St",
+      "color": "a60f2d",
+      "alternateColor": "4d4d4d",
+      "isActive": true,
+      "venue": {
+       "id": "3820"
+      },
+      "links": [
+       {
+        "rel": [
+         "clubhouse",
+         "desktop",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/_/id/265/washington-state-cougars",
+        "text": "Clubhouse",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "clubhouse",
+         "mobile",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/_/id/265/washington-state-cougars",
+        "text": "Clubhouse",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "roster",
+         "desktop",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/roster/_/id/265",
+        "text": "Roster",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "roster",
+         "sportscenter",
+         "app",
+         "team"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:23~t:265&section=roster",
+        "text": "Roster",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "stats",
+         "desktop",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/stats/_/id/265",
+        "text": "Statistics",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "stats",
+         "sportscenter",
+         "app",
+         "team"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:23~t:265&section=stats",
+        "text": "Statistics",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "schedule",
+         "desktop",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/schedule/_/id/265",
+        "text": "Schedule",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "schedule",
+         "sportscenter",
+         "app",
+         "team"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:23~t:265&section=scores",
+        "text": "Schedule",
+        "isExternal": false,
+        "isPremium": false
+       }
+      ],
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/265.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/265.png",
+      "conferenceId": "9"
+     },
+     "score": "0",
+     "linescores": [
+      {
+       "value": 0,
+       "displayValue": "0",
+       "period": 1
+      }
+     ],
+     "statistics": [],
+     "curatedRank": {
+      "current": 99
+     },
+     "records": [
+      {
+       "name": "overall",
+       "abbreviation": "overall",
+       "type": "total",
+       "summary": "1-5"
+      },
+      {
+       "name": "Home",
+       "abbreviation": "Home",
+       "type": "homerecord",
+       "summary": "1-2"
+      },
+      {
+       "name": "Away",
+       "abbreviation": "Away",
+       "type": "awayrecord",
+       "summary": "0-3"
+      },
+      {
+       "name": "vs. Conf.",
+       "abbreviation": "CONF",
+       "type": "vsconf",
+       "summary": "0-2"
+      }
+     ]
+    }
+   ],
+   "notes": [],
+   "situation": {
+    "lastPlay": {
+     "id": "-89400664",
+     "type": {
+      "id": "61",
+      "text": "Extra Point Good",
+      "abbreviation": "XP"
+     },
+     "text": "(C. Ojeda KICK)",
+     "scoreValue": 1,
+     "team": {
+      "id": "204"
+     },
+     "statYardage": 0,
+     "drive": {
+      "description": "11 plays, 62 yards, 4:32",
+      "start": {
+       "yardLine": 38,
+       "text": "ORST 38"
+      },
+      "end": {
+       "yardLine": 97,
+       "text": "WSU 3"
+      },
+      "timeElapsed": {
+       "displayValue": "4:32"
+      },
+      "result": "TD"
+     },
+     "start": {
+      "yardLine": 97,
+      "team": {
+       "id": "204"
+      }
+     },
+     "end": {
+      "yardLine": 65,
+      "team": {
+       "id": "204"
+      }
+     },
+     "athletesInvolved": [
+      {
+       "id": "5085883",
+       "fullName": "Jake Reichle",
+       "displayName": "Jake Reichle",
+       "shortName": "J. Reichle",
+       "links": [
+        {
+         "rel": [
+          "playercard",
+          "desktop",
+          "athlete"
+         ],
+         "href": "https://www.espn.com/college-football/player/_/id/5085883/jake-reichle"
+        }
+       ],
+       "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5085883.png",
+       "jersey": "34",
+       "position": "RB",
+       "team": {
+        "id": "204"
+       }
+      }
+     ]
+    },
+    "down": -1,
+    "yardLine": 65,
+    "distance": -1,
+    "isRedZone": false,
+    "homeTimeouts": 3,
+    "awayTimeouts": 3
+   },
+   "status": {
+    "clock": 433,
+    "displayClock": "7:13",
+    "period": 1,
+    "type": {
+     "id": "2",
+     "name": "STATUS_IN_PROGRESS",
+     "state": "in",
+     "completed": false,
+     "description": "In Progress",
+     "detail": "7:13 - 1st Quarter",
+     "shortDetail": "7:13 - 1st"
+    }
+   },
+   "broadcasts": [
+    {
+     "market": "national",
+     "names": [
+      "USA Net"
+     ]
+    }
+   ],
+   "leaders": [
+    {
+     "name": "passingYards",
+     "displayName": "Passing Leader",
+     "shortDisplayName": "PASS",
+     "abbreviation": "PYDS",
+     "leaders": [
+      {
+       "displayValue": "4/8, 26 YDS",
+       "value": 26,
+       "athlete": {
+        "id": "5212654",
+        "fullName": "Braden Atkinson",
+        "displayName": "Braden Atkinson",
+        "shortName": "B. Atkinson",
+        "links": [
+         {
+          "rel": [
+           "playercard",
+           "desktop",
+           "athlete"
+          ],
+          "href": "https://www.espn.com/college-football/player/_/id/5212654/braden-atkinson"
+         }
+        ],
+        "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5212654.png",
+        "jersey": "2",
+        "position": {
+         "abbreviation": "QB"
+        },
+        "team": {
+         "id": "204"
+        },
+        "active": true
+       },
+       "team": {
+        "id": "204"
+       }
+      }
+     ]
+    },
+    {
+     "name": "rushingYards",
+     "displayName": "Rushing Leader",
+     "shortDisplayName": "RUSH",
+     "abbreviation": "RYDS",
+     "leaders": [
+      {
+       "displayValue": "1 CAR, 19 YDS",
+       "value": 19,
+       "athlete": {
+        "id": "4917981",
+        "fullName": "AJ Newberry",
+        "displayName": "AJ Newberry",
+        "shortName": "A. Newberry",
+        "links": [
+         {
+          "rel": [
+           "playercard",
+           "desktop",
+           "athlete"
+          ],
+          "href": "https://www.espn.com/college-football/player/_/id/4917981/aj-newberry"
+         }
+        ],
+        "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4917981.png",
+        "jersey": "23",
+        "position": {
+         "abbreviation": "RB"
+        },
+        "team": {
+         "id": "204"
+        },
+        "active": true
+       },
+       "team": {
+        "id": "204"
+       }
+      }
+     ]
+    },
+    {
+     "name": "receivingYards",
+     "displayName": "Receiving Leader",
+     "shortDisplayName": "REC",
+     "abbreviation": "RECYDS",
+     "leaders": [
+      {
+       "displayValue": "1 REC, 15 YDS",
+       "value": 15,
+       "athlete": {
+        "id": "4917981",
+        "fullName": "AJ Newberry",
+        "displayName": "AJ Newberry",
+        "shortName": "A. Newberry",
+        "links": [
+         {
+          "rel": [
+           "playercard",
+           "desktop",
+           "athlete"
+          ],
+          "href": "https://www.espn.com/college-football/player/_/id/4917981/aj-newberry"
+         }
+        ],
+        "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4917981.png",
+        "jersey": "23",
+        "position": {
+         "abbreviation": "RB"
+        },
+        "team": {
+         "id": "204"
+        },
+        "active": true
+       },
+       "team": {
+        "id": "204"
+       }
+      }
+     ]
+    }
+   ],
+   "groups": {
+    "id": "9",
+    "name": "Pac-12 Conference",
+    "shortName": "Pac-12",
+    "isConference": true
+   },
+   "format": {
+    "regulation": {
+     "periods": 4
+    }
+   },
+   "startDate": "2026-10-17T22:00Z",
+   "broadcast": "USA Net",
+   "geoBroadcasts": [
+    {
+     "type": {
+      "id": "1",
+      "shortName": "TV"
+     },
+     "market": {
+      "id": "1",
+      "type": "National"
+     },
+     "media": {
+      "shortName": "USA Net"
+     },
+     "lang": "en",
+     "region": "us"
+    }
+   ],
+   "highlights": []
+  }
+ ],
+ "links": [
+  {
+   "language": "en-US",
+   "rel": [
+    "live",
+    "desktop",
+    "event"
+   ],
+   "href": "https://www.espn.com/college-football/game?gameId=401860903",
+   "text": "Gamecast",
+   "shortText": "Gamecast",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "boxscore",
+    "desktop",
+    "event"
+   ],
+   "href": "https://www.espn.com/college-football/boxscore/_/gameId/401860903",
+   "text": "Box Score",
+   "shortText": "Box Score",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "pbp",
+    "desktop",
+    "event"
+   ],
+   "href": "https://www.espn.com/college-football/playbyplay/_/gameId/401860903",
+   "text": "Play-by-Play",
+   "shortText": "Play-by-Play",
+   "isExternal": false,
+   "isPremium": false
+  }
+ ],
+ "weather": {
+  "displayValue": "7",
+  "temperature": 66,
+  "highTemperature": 66,
+  "conditionId": "Cloudy",
+  "link": {
+   "language": "en-US",
+   "rel": [
+    "97331"
+   ],
+   "href": "http://www.accuweather.com/en/us/reser-stadium-or/97330/current-weather/53630_poi?lang=en-us",
+   "text": "Weather",
+   "shortText": "Weather",
+   "isExternal": true,
+   "isPremium": false
+  }
+ },
+ "status": {
+  "clock": 433,
+  "displayClock": "7:13",
+  "period": 1,
+  "type": {
+   "id": "2",
+   "name": "STATUS_IN_PROGRESS",
+   "state": "in",
+   "completed": false,
+   "description": "In Progress",
+   "detail": "7:13 - 1st Quarter",
+   "shortDetail": "7:13 - 1st"
+  }
+ }
+}

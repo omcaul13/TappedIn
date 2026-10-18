@@ -1,0 +1,681 @@
+{
+ "id": "401869966",
+ "uid": "s:20~l:23~e:401869966",
+ "date": "2026-10-17T21:00Z",
+ "name": "Troy Trojans at Louisiana Ragin' Cajuns",
+ "shortName": "TROY @ UL",
+ "season": {
+  "year": 2026,
+  "type": 2,
+  "slug": "regular-season"
+ },
+ "week": {
+  "number": 7
+ },
+ "competitions": [
+  {
+   "id": "401869966",
+   "uid": "s:20~l:23~e:401869966~c:401869966",
+   "date": "2026-10-17T21:00Z",
+   "attendance": 0,
+   "type": {
+    "id": "1",
+    "abbreviation": "STD"
+   },
+   "timeValid": true,
+   "dateValid": true,
+   "neutralSite": false,
+   "conferenceCompetition": true,
+   "playByPlayAvailable": true,
+   "recent": true,
+   "venue": {
+    "id": "3666",
+    "fullName": "Our Lady of Lourdes Stadium",
+    "address": {
+     "city": "Lafayette",
+     "state": "LA",
+     "country": "USA"
+    },
+    "indoor": false
+   },
+   "competitors": [
+    {
+     "id": "309",
+     "uid": "s:20~l:23~t:309",
+     "type": "team",
+     "order": 0,
+     "homeAway": "home",
+     "team": {
+      "id": "309",
+      "uid": "s:20~l:23~t:309",
+      "location": "Louisiana",
+      "name": "Ragin' Cajuns",
+      "abbreviation": "UL",
+      "displayName": "Louisiana Ragin' Cajuns",
+      "shortDisplayName": "Louisiana",
+      "color": "ce181e",
+      "alternateColor": "000000",
+      "isActive": true,
+      "venue": {
+       "id": "3666"
+      },
+      "links": [
+       {
+        "rel": [
+         "clubhouse",
+         "desktop",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/_/id/309/louisiana-ragin-cajuns",
+        "text": "Clubhouse",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "clubhouse",
+         "mobile",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/_/id/309/louisiana-ragin-cajuns",
+        "text": "Clubhouse",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "roster",
+         "desktop",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/roster/_/id/309",
+        "text": "Roster",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "roster",
+         "sportscenter",
+         "app",
+         "team"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:23~t:309&section=roster",
+        "text": "Roster",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "stats",
+         "desktop",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/stats/_/id/309",
+        "text": "Statistics",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "stats",
+         "sportscenter",
+         "app",
+         "team"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:23~t:309&section=stats",
+        "text": "Statistics",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "schedule",
+         "desktop",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/schedule/_/id/309",
+        "text": "Schedule",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "schedule",
+         "sportscenter",
+         "app",
+         "team"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:23~t:309&section=scores",
+        "text": "Schedule",
+        "isExternal": false,
+        "isPremium": false
+       }
+      ],
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/309.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/309.png",
+      "conferenceId": "37"
+     },
+     "score": "19",
+     "linescores": [
+      {
+       "value": 7,
+       "displayValue": "7",
+       "period": 1
+      },
+      {
+       "value": 12,
+       "displayValue": "12",
+       "period": 2
+      }
+     ],
+     "statistics": [],
+     "curatedRank": {
+      "current": 99
+     },
+     "records": [
+      {
+       "name": "overall",
+       "abbreviation": "overall",
+       "type": "total",
+       "summary": "4-2"
+      },
+      {
+       "name": "Home",
+       "abbreviation": "Home",
+       "type": "homerecord",
+       "summary": "3-0"
+      },
+      {
+       "name": "Away",
+       "abbreviation": "Away",
+       "type": "awayrecord",
+       "summary": "1-2"
+      },
+      {
+       "name": "vs. Conf.",
+       "abbreviation": "CONF",
+       "type": "vsconf",
+       "summary": "1-1"
+      }
+     ]
+    },
+    {
+     "id": "2653",
+     "uid": "s:20~l:23~t:2653",
+     "type": "team",
+     "order": 1,
+     "homeAway": "away",
+     "team": {
+      "id": "2653",
+      "uid": "s:20~l:23~t:2653",
+      "location": "Troy",
+      "name": "Trojans",
+      "abbreviation": "TROY",
+      "displayName": "Troy Trojans",
+      "shortDisplayName": "Troy",
+      "color": "862633",
+      "alternateColor": "b1b1b1",
+      "isActive": true,
+      "venue": {
+       "id": "3975"
+      },
+      "links": [
+       {
+        "rel": [
+         "clubhouse",
+         "desktop",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/_/id/2653/troy-trojans",
+        "text": "Clubhouse",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "clubhouse",
+         "mobile",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/_/id/2653/troy-trojans",
+        "text": "Clubhouse",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "roster",
+         "desktop",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/roster/_/id/2653",
+        "text": "Roster",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "roster",
+         "sportscenter",
+         "app",
+         "team"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:23~t:2653&section=roster",
+        "text": "Roster",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "stats",
+         "desktop",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/stats/_/id/2653",
+        "text": "Statistics",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "stats",
+         "sportscenter",
+         "app",
+         "team"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:23~t:2653&section=stats",
+        "text": "Statistics",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "schedule",
+         "desktop",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/schedule/_/id/2653",
+        "text": "Schedule",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "schedule",
+         "sportscenter",
+         "app",
+         "team"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:23~t:2653&section=scores",
+        "text": "Schedule",
+        "isExternal": false,
+        "isPremium": false
+       }
+      ],
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2653.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/2653.png",
+      "conferenceId": "37"
+     },
+     "score": "0",
+     "linescores": [
+      {
+       "value": 0,
+       "displayValue": "0",
+       "period": 1
+      },
+      {
+       "value": 0,
+       "displayValue": "0",
+       "period": 2
+      }
+     ],
+     "statistics": [],
+     "curatedRank": {
+      "current": 99
+     },
+     "records": [
+      {
+       "name": "overall",
+       "abbreviation": "overall",
+       "type": "total",
+       "summary": "3-2"
+      },
+      {
+       "name": "Home",
+       "abbreviation": "Home",
+       "type": "homerecord",
+       "summary": "3-0"
+      },
+      {
+       "name": "Away",
+       "abbreviation": "Away",
+       "type": "awayrecord",
+       "summary": "0-2"
+      },
+      {
+       "name": "vs. Conf.",
+       "abbreviation": "CONF",
+       "type": "vsconf",
+       "summary": "1-0"
+      }
+     ]
+    }
+   ],
+   "notes": [],
+   "situation": {
+    "lastPlay": {
+     "id": "401869966396",
+     "type": {
+      "id": "2",
+      "text": "End Period",
+      "abbreviation": "EP"
+     },
+     "text": "End of 2nd quarter.",
+     "scoreValue": 0,
+     "team": {
+      "id": "309"
+     },
+     "statYardage": 0,
+     "drive": {
+      "description": "5 plays, 25 yards, 0:41",
+      "start": {
+       "yardLine": 45,
+       "text": "UL 45"
+      },
+      "end": {
+       "yardLine": 70,
+       "text": "TROY 30"
+      },
+      "timeElapsed": {
+       "displayValue": "0:41"
+      },
+      "result": "FG"
+     },
+     "start": {
+      "yardLine": 71,
+      "team": {
+       "id": "309"
+      }
+     },
+     "end": {
+      "yardLine": 70,
+      "team": {
+       "id": "309"
+      }
+     }
+    },
+    "down": 2,
+    "yardLine": 70,
+    "distance": 10,
+    "downDistanceText": "2nd & 10 at TROY 30",
+    "shortDownDistanceText": "2nd & 10",
+    "possessionText": "TROY 30",
+    "isRedZone": false,
+    "homeTimeouts": 0,
+    "awayTimeouts": 2
+   },
+   "status": {
+    "clock": 0,
+    "displayClock": "0:00",
+    "period": 2,
+    "type": {
+     "id": "23",
+     "name": "STATUS_HALFTIME",
+     "state": "in",
+     "completed": false,
+     "description": "Halftime",
+     "detail": "Halftime",
+     "shortDetail": "Halftime"
+    }
+   },
+   "broadcasts": [
+    {
+     "market": "national",
+     "names": [
+      "ESPN+"
+     ]
+    }
+   ],
+   "leaders": [
+    {
+     "name": "passingYards",
+     "displayName": "Passing Leader",
+     "shortDisplayName": "PASS",
+     "abbreviation": "PYDS",
+     "leaders": [
+      {
+       "displayValue": "6/13, 40 YDS",
+       "value": 40,
+       "athlete": {
+        "id": "4431633",
+        "fullName": "Goose Crowder",
+        "displayName": "Goose Crowder",
+        "shortName": "G. Crowder",
+        "links": [
+         {
+          "rel": [
+           "playercard",
+           "desktop",
+           "athlete"
+          ],
+          "href": "https://www.espn.com/college-football/player/_/id/4431633/goose-crowder"
+         }
+        ],
+        "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4431633.png",
+        "jersey": "9",
+        "position": {
+         "abbreviation": "QB"
+        },
+        "team": {
+         "id": "2653"
+        },
+        "active": true
+       },
+       "team": {
+        "id": "2653"
+       }
+      }
+     ]
+    },
+    {
+     "name": "rushingYards",
+     "displayName": "Rushing Leader",
+     "shortDisplayName": "RUSH",
+     "abbreviation": "RYDS",
+     "leaders": [
+      {
+       "displayValue": "6 CAR, 51 YDS, 1 TD",
+       "value": 51,
+       "athlete": {
+        "id": "5258999",
+        "fullName": "JJ Garner",
+        "displayName": "JJ Garner",
+        "shortName": "J. Garner",
+        "links": [
+         {
+          "rel": [
+           "playercard",
+           "desktop",
+           "athlete"
+          ],
+          "href": "https://www.espn.com/college-football/player/_/id/5258999/jj-garner"
+         }
+        ],
+        "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5258999.png",
+        "jersey": "20",
+        "position": {
+         "abbreviation": "RB"
+        },
+        "team": {
+         "id": "309"
+        },
+        "active": true
+       },
+       "team": {
+        "id": "309"
+       }
+      }
+     ]
+    },
+    {
+     "name": "receivingYards",
+     "displayName": "Receiving Leader",
+     "shortDisplayName": "REC",
+     "abbreviation": "RECYDS",
+     "leaders": [
+      {
+       "displayValue": "2 REC, 20 YDS",
+       "value": 20,
+       "athlete": {
+        "id": "4701593",
+        "fullName": "Mojo Dortch",
+        "displayName": "Mojo Dortch",
+        "shortName": "M. Dortch",
+        "links": [
+         {
+          "rel": [
+           "playercard",
+           "desktop",
+           "athlete"
+          ],
+          "href": "https://www.espn.com/college-football/player/_/id/4701593/mojo-dortch"
+         }
+        ],
+        "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4701593.png",
+        "jersey": "5",
+        "position": {
+         "abbreviation": "WR"
+        },
+        "team": {
+         "id": "2653"
+        },
+        "active": true
+       },
+       "team": {
+        "id": "2653"
+       }
+      }
+     ]
+    }
+   ],
+   "groups": {
+    "id": "37",
+    "name": "Sun Belt Conference",
+    "shortName": "Sun Belt",
+    "isConference": true
+   },
+   "format": {
+    "regulation": {
+     "periods": 4
+    }
+   },
+   "startDate": "2026-10-17T21:00Z",
+   "broadcast": "ESPN+",
+   "geoBroadcasts": [
+    {
+     "type": {
+      "id": "4",
+      "shortName": "Streaming"
+     },
+     "market": {
+      "id": "1",
+      "type": "National"
+     },
+     "media": {
+      "shortName": "ESPN+",
+      "logo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default.png",
+      "darkLogo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default-dark.png"
+     },
+     "lang": "en",
+     "region": "us"
+    }
+   ],
+   "highlights": []
+  }
+ ],
+ "links": [
+  {
+   "language": "en-US",
+   "rel": [
+    "live",
+    "desktop",
+    "event"
+   ],
+   "href": "https://www.espn.com/college-football/game?gameId=401869966",
+   "text": "Gamecast",
+   "shortText": "Gamecast",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "boxscore",
+    "desktop",
+    "event"
+   ],
+   "href": "https://www.espn.com/college-football/boxscore/_/gameId/401869966",
+   "text": "Box Score",
+   "shortText": "Box Score",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "highlights",
+    "desktop"
+   ],
+   "href": "https://www.espn.com/college-football/video?gameId=401869966",
+   "text": "Highlights",
+   "shortText": "Highlights",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "pbp",
+    "desktop",
+    "event"
+   ],
+   "href": "https://www.espn.com/college-football/playbyplay/_/gameId/401869966",
+   "text": "Play-by-Play",
+   "shortText": "Play-by-Play",
+   "isExternal": false,
+   "isPremium": false
+  }
+ ],
+ "weather": {
+  "displayValue": "1",
+  "temperature": 70,
+  "highTemperature": 70,
+  "conditionId": "Sunny",
+  "link": {
+   "language": "en-US",
+   "rel": [
+    "70506"
+   ],
+   "href": "http://www.accuweather.com/en/us/cajun-field-la/70501/current-weather/53581_poi?lang=en-us",
+   "text": "Weather",
+   "shortText": "Weather",
+   "isExternal": true,
+   "isPremium": false
+  }
+ },
+ "status": {
+  "clock": 0,
+  "displayClock": "0:00",
+  "period": 2,
+  "type": {
+   "id": "23",
+   "name": "STATUS_HALFTIME",
+   "state": "in",
+   "completed": false,
+   "description": "Halftime",
+   "detail": "Halftime",
+   "shortDetail": "Halftime"
+  }
+ }
+}

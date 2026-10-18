@@ -1,0 +1,723 @@
+{
+ "id": "401856723",
+ "uid": "s:20~l:23~e:401856723",
+ "date": "2026-10-17T19:30Z",
+ "name": "Alabama Crimson Tide at Tennessee Volunteers",
+ "shortName": "ALA @ TENN",
+ "season": {
+  "year": 2026,
+  "type": 2,
+  "slug": "regular-season"
+ },
+ "week": {
+  "number": 7
+ },
+ "competitions": [
+  {
+   "id": "401856723",
+   "uid": "s:20~l:23~e:401856723~c:401856723",
+   "date": "2026-10-17T19:30Z",
+   "attendance": 0,
+   "type": {
+    "id": "1",
+    "abbreviation": "STD"
+   },
+   "timeValid": true,
+   "dateValid": true,
+   "neutralSite": false,
+   "conferenceCompetition": true,
+   "playByPlayAvailable": true,
+   "recent": true,
+   "venue": {
+    "id": "3853",
+    "fullName": "Neyland Stadium",
+    "address": {
+     "city": "Knoxville",
+     "state": "TN",
+     "country": "USA"
+    },
+    "indoor": false
+   },
+   "competitors": [
+    {
+     "id": "2633",
+     "uid": "s:20~l:23~t:2633",
+     "type": "team",
+     "order": 0,
+     "homeAway": "home",
+     "team": {
+      "id": "2633",
+      "uid": "s:20~l:23~t:2633",
+      "location": "Tennessee",
+      "name": "Volunteers",
+      "abbreviation": "TENN",
+      "displayName": "Tennessee Volunteers",
+      "shortDisplayName": "Tennessee",
+      "color": "ff8200",
+      "alternateColor": "ffffff",
+      "isActive": true,
+      "venue": {
+       "id": "3853"
+      },
+      "links": [
+       {
+        "rel": [
+         "clubhouse",
+         "desktop",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/_/id/2633/tennessee-volunteers",
+        "text": "Clubhouse",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "clubhouse",
+         "mobile",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/_/id/2633/tennessee-volunteers",
+        "text": "Clubhouse",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "roster",
+         "desktop",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/roster/_/id/2633",
+        "text": "Roster",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "roster",
+         "sportscenter",
+         "app",
+         "team"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:23~t:2633&section=roster",
+        "text": "Roster",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "stats",
+         "desktop",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/stats/_/id/2633",
+        "text": "Statistics",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "stats",
+         "sportscenter",
+         "app",
+         "team"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:23~t:2633&section=stats",
+        "text": "Statistics",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "schedule",
+         "desktop",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/schedule/_/id/2633",
+        "text": "Schedule",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "schedule",
+         "sportscenter",
+         "app",
+         "team"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:23~t:2633&section=scores",
+        "text": "Schedule",
+        "isExternal": false,
+        "isPremium": false
+       }
+      ],
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2633.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/2633.png",
+      "conferenceId": "8"
+     },
+     "score": "19",
+     "linescores": [
+      {
+       "value": 9,
+       "displayValue": "9",
+       "period": 1
+      },
+      {
+       "value": 3,
+       "displayValue": "3",
+       "period": 2
+      },
+      {
+       "value": 7,
+       "displayValue": "7",
+       "period": 3
+      },
+      {
+       "value": 0,
+       "displayValue": "0",
+       "period": 4
+      }
+     ],
+     "statistics": [],
+     "curatedRank": {
+      "current": 14
+     },
+     "records": [
+      {
+       "name": "overall",
+       "abbreviation": "overall",
+       "type": "total",
+       "summary": "5-1"
+      },
+      {
+       "name": "Home",
+       "abbreviation": "Home",
+       "type": "homerecord",
+       "summary": "3-1"
+      },
+      {
+       "name": "Away",
+       "abbreviation": "Away",
+       "type": "awayrecord",
+       "summary": "2-0"
+      },
+      {
+       "name": "vs. Conf.",
+       "abbreviation": "CONF",
+       "type": "vsconf",
+       "summary": "2-1"
+      }
+     ]
+    },
+    {
+     "id": "333",
+     "uid": "s:20~l:23~t:333",
+     "type": "team",
+     "order": 1,
+     "homeAway": "away",
+     "team": {
+      "id": "333",
+      "uid": "s:20~l:23~t:333",
+      "location": "Alabama",
+      "name": "Crimson Tide",
+      "abbreviation": "ALA",
+      "displayName": "Alabama Crimson Tide",
+      "shortDisplayName": "Alabama",
+      "color": "9e1b32",
+      "alternateColor": "ffffff",
+      "isActive": true,
+      "venue": {
+       "id": "3657"
+      },
+      "links": [
+       {
+        "rel": [
+         "clubhouse",
+         "desktop",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/_/id/333/alabama-crimson-tide",
+        "text": "Clubhouse",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "clubhouse",
+         "mobile",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/_/id/333/alabama-crimson-tide",
+        "text": "Clubhouse",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "roster",
+         "desktop",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/roster/_/id/333",
+        "text": "Roster",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "roster",
+         "sportscenter",
+         "app",
+         "team"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:23~t:333&section=roster",
+        "text": "Roster",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "stats",
+         "desktop",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/stats/_/id/333",
+        "text": "Statistics",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "stats",
+         "sportscenter",
+         "app",
+         "team"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:23~t:333&section=stats",
+        "text": "Statistics",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "schedule",
+         "desktop",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/schedule/_/id/333",
+        "text": "Schedule",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "schedule",
+         "sportscenter",
+         "app",
+         "team"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:23~t:333&section=scores",
+        "text": "Schedule",
+        "isExternal": false,
+        "isPremium": false
+       }
+      ],
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/333.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/333.png",
+      "conferenceId": "8"
+     },
+     "score": "10",
+     "linescores": [
+      {
+       "value": 0,
+       "displayValue": "0",
+       "period": 1
+      },
+      {
+       "value": 10,
+       "displayValue": "10",
+       "period": 2
+      },
+      {
+       "value": 0,
+       "displayValue": "0",
+       "period": 3
+      },
+      {
+       "value": 0,
+       "displayValue": "0",
+       "period": 4
+      }
+     ],
+     "statistics": [],
+     "curatedRank": {
+      "current": 6
+     },
+     "records": [
+      {
+       "name": "overall",
+       "abbreviation": "overall",
+       "type": "total",
+       "summary": "5-1"
+      },
+      {
+       "name": "Home",
+       "abbreviation": "Home",
+       "type": "homerecord",
+       "summary": "3-1"
+      },
+      {
+       "name": "Away",
+       "abbreviation": "Away",
+       "type": "awayrecord",
+       "summary": "2-0"
+      },
+      {
+       "name": "vs. Conf.",
+       "abbreviation": "CONF",
+       "type": "vsconf",
+       "summary": "3-1"
+      }
+     ]
+    }
+   ],
+   "notes": [],
+   "situation": {
+    "lastPlay": {
+     "id": "401856723657",
+     "type": {
+      "id": "2",
+      "text": "End Period",
+      "abbreviation": "EP"
+     },
+     "text": "End of 3rd quarter.",
+     "scoreValue": 0,
+     "team": {
+      "id": "333"
+     },
+     "probability": {
+      "tiePercentage": 0,
+      "homeWinPercentage": 0.7892,
+      "awayWinPercentage": 0.2108,
+      "secondsLeft": 900
+     },
+     "statYardage": 0,
+     "drive": {
+      "description": "5 plays, 21 yards, 2:46",
+      "start": {
+       "yardLine": 28,
+       "text": "TENN 28"
+      },
+      "end": {
+       "yardLine": 49,
+       "text": "TENN 49"
+      },
+      "timeElapsed": {
+       "displayValue": "2:46"
+      },
+      "result": "END OF QUARTER"
+     },
+     "start": {
+      "yardLine": 49,
+      "team": {
+       "id": "2633"
+      }
+     },
+     "end": {
+      "yardLine": 88,
+      "team": {
+       "id": "333"
+      }
+     }
+    },
+    "down": 1,
+    "yardLine": 88,
+    "distance": 10,
+    "downDistanceText": "1st & 10 at ALA 12",
+    "shortDownDistanceText": "1st & 10",
+    "possessionText": "ALA 12",
+    "isRedZone": false,
+    "homeTimeouts": 0,
+    "awayTimeouts": 0,
+    "possession": "333"
+   },
+   "status": {
+    "clock": 0,
+    "displayClock": "0:00",
+    "period": 4,
+    "type": {
+     "id": "2",
+     "name": "STATUS_IN_PROGRESS",
+     "state": "in",
+     "completed": false,
+     "description": "In Progress",
+     "detail": "End of 4th Quarter",
+     "shortDetail": "End of 4th"
+    }
+   },
+   "broadcasts": [
+    {
+     "market": "national",
+     "names": [
+      "ABC"
+     ]
+    }
+   ],
+   "leaders": [
+    {
+     "name": "passingYards",
+     "displayName": "Passing Leader",
+     "shortDisplayName": "PASS",
+     "abbreviation": "PYDS",
+     "leaders": [
+      {
+       "displayValue": "17/27, 153 YDS, 1 INT",
+       "value": 153,
+       "athlete": {
+        "id": "5141571",
+        "fullName": "George MacIntyre",
+        "displayName": "George MacIntyre",
+        "shortName": "G. MacIntyre",
+        "links": [
+         {
+          "rel": [
+           "playercard",
+           "desktop",
+           "athlete"
+          ],
+          "href": "https://www.espn.com/college-football/player/_/id/5141571/george-macintyre"
+         }
+        ],
+        "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5141571.png",
+        "jersey": "12",
+        "position": {
+         "abbreviation": "QB"
+        },
+        "team": {
+         "id": "2633"
+        },
+        "active": true
+       },
+       "team": {
+        "id": "2633"
+       }
+      }
+     ]
+    },
+    {
+     "name": "rushingYards",
+     "displayName": "Rushing Leader",
+     "shortDisplayName": "RUSH",
+     "abbreviation": "RYDS",
+     "leaders": [
+      {
+       "displayValue": "22 CAR, 111 YDS, 1 TD",
+       "value": 111,
+       "athlete": {
+        "id": "4921108",
+        "fullName": "DeSean Bishop",
+        "displayName": "DeSean Bishop",
+        "shortName": "D. Bishop",
+        "links": [
+         {
+          "rel": [
+           "playercard",
+           "desktop",
+           "athlete"
+          ],
+          "href": "https://www.espn.com/college-football/player/_/id/4921108/desean-bishop"
+         }
+        ],
+        "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4921108.png",
+        "jersey": "18",
+        "position": {
+         "abbreviation": "RB"
+        },
+        "team": {
+         "id": "2633"
+        },
+        "active": true
+       },
+       "team": {
+        "id": "2633"
+       }
+      }
+     ]
+    },
+    {
+     "name": "receivingYards",
+     "displayName": "Receiving Leader",
+     "shortDisplayName": "REC",
+     "abbreviation": "RECYDS",
+     "leaders": [
+      {
+       "displayValue": "4 REC, 45 YDS",
+       "value": 45,
+       "athlete": {
+        "id": "5079580",
+        "fullName": "Mike Matthews",
+        "displayName": "Mike Matthews",
+        "shortName": "M. Matthews",
+        "links": [
+         {
+          "rel": [
+           "playercard",
+           "desktop",
+           "athlete"
+          ],
+          "href": "https://www.espn.com/college-football/player/_/id/5079580/mike-matthews"
+         }
+        ],
+        "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5079580.png",
+        "jersey": "4",
+        "position": {
+         "abbreviation": "WR"
+        },
+        "team": {
+         "id": "2633"
+        },
+        "active": true
+       },
+       "team": {
+        "id": "2633"
+       }
+      }
+     ]
+    }
+   ],
+   "groups": {
+    "id": "8",
+    "name": "Southeastern Conference",
+    "shortName": "SEC",
+    "isConference": true
+   },
+   "format": {
+    "regulation": {
+     "periods": 4
+    }
+   },
+   "startDate": "2026-10-17T19:30Z",
+   "broadcast": "ABC",
+   "geoBroadcasts": [
+    {
+     "type": {
+      "id": "1",
+      "shortName": "TV"
+     },
+     "market": {
+      "id": "1",
+      "type": "National"
+     },
+     "media": {
+      "shortName": "ABC",
+      "logo": "https://a.espncdn.com/guid/2acff74d-269f-36ac-96eb-9c66f8ba52ff/logos/default.png",
+      "darkLogo": "https://a.espncdn.com/guid/2acff74d-269f-36ac-96eb-9c66f8ba52ff/logos/default-dark.png"
+     },
+     "lang": "en",
+     "region": "us"
+    },
+    {
+     "type": {
+      "id": "5",
+      "shortName": "Radio"
+     },
+     "market": {
+      "id": "1",
+      "type": "National"
+     },
+     "media": {
+      "shortName": "ERADM"
+     },
+     "lang": "en",
+     "region": "us"
+    }
+   ],
+   "highlights": []
+  }
+ ],
+ "links": [
+  {
+   "language": "en-US",
+   "rel": [
+    "live",
+    "desktop",
+    "event"
+   ],
+   "href": "https://www.espn.com/college-football/game?gameId=401856723",
+   "text": "Gamecast",
+   "shortText": "Gamecast",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "boxscore",
+    "desktop",
+    "event"
+   ],
+   "href": "https://www.espn.com/college-football/boxscore/_/gameId/401856723",
+   "text": "Box Score",
+   "shortText": "Box Score",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "highlights",
+    "desktop"
+   ],
+   "href": "https://www.espn.com/college-football/video?gameId=401856723",
+   "text": "Highlights",
+   "shortText": "Highlights",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "pbp",
+    "desktop",
+    "event"
+   ],
+   "href": "https://www.espn.com/college-football/playbyplay/_/gameId/401856723",
+   "text": "Play-by-Play",
+   "shortText": "Play-by-Play",
+   "isExternal": false,
+   "isPremium": false
+  }
+ ],
+ "weather": {
+  "displayValue": "3",
+  "temperature": 56,
+  "highTemperature": 56,
+  "conditionId": "Partly sunny",
+  "link": {
+   "language": "en-US",
+   "rel": [
+    "37916"
+   ],
+   "href": "http://www.accuweather.com/en/us/neyland-stadium-tn/37902/current-weather/53639_poi?lang=en-us",
+   "text": "Weather",
+   "shortText": "Weather",
+   "isExternal": true,
+   "isPremium": false
+  }
+ },
+ "status": {
+  "clock": 0,
+  "displayClock": "0:00",
+  "period": 4,
+  "type": {
+   "id": "2",
+   "name": "STATUS_IN_PROGRESS",
+   "state": "in",
+   "completed": false,
+   "description": "In Progress",
+   "detail": "End of 4th Quarter",
+   "shortDetail": "End of 4th"
+  }
+ }
+}

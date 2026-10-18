@@ -1,0 +1,408 @@
+{
+ "eventId": "401858489",
+ "videos": [
+  {
+   "id": 50203559,
+   "headline": "Rutgers Scarlet Knights vs. Maryland Terrapins: Full Highlights",
+   "description": "Rutgers Scarlet Knights vs. Maryland Terrapins: Full Highlights",
+   "originalPublishDate": "2026-10-17T20:11:18Z",
+   "lastModified": "2026-10-17T20:11:23Z",
+   "duration": 75,
+   "timeRestrictions": {
+    "embargoDate": "2026-10-17T20:11:16Z",
+    "expirationDate": "2038-01-01T04:59:59Z"
+   },
+   "deviceRestrictions": {
+    "devices": [
+     "settop",
+     "tablet",
+     "handset",
+     "ipad",
+     "desktop"
+    ],
+    "type": "whitelist"
+   },
+   "thumbnail": "https://espnmedia-cdn.akamaized.net/espn/media/common/wsc/2026/1017/bf4b3d47-9b5b-42d7-ae23-bd305555dc63/bf4b3d47-9b5b-42d7-ae23-bd305555dc63.jpg",
+   "links": {
+    "source": {
+     "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1017/bf4b3d47-9b5b-42d7-ae23-bd305555dc63/bf4b3d47-9b5b-42d7-ae23-bd305555dc63.mp4",
+     "HD": {
+      "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1017/bf4b3d47-9b5b-42d7-ae23-bd305555dc63/bf4b3d47-9b5b-42d7-ae23-bd305555dc63.mp4"
+     }
+    }
+   }
+  },
+  {
+   "id": 50202012,
+   "headline": "Damon Hall Jr. rushes in for 1-yard TD",
+   "description": "Damon Hall Jr. rushes in for 1-yard TD",
+   "originalPublishDate": "2026-10-17T17:06:50Z",
+   "lastModified": "2026-10-17T17:06:54Z",
+   "duration": 29,
+   "timeRestrictions": {
+    "embargoDate": "2026-10-17T17:06:47Z",
+    "expirationDate": "2038-01-01T04:59:59Z"
+   },
+   "deviceRestrictions": {
+    "devices": [
+     "settop",
+     "tablet",
+     "handset",
+     "ipad",
+     "desktop"
+    ],
+    "type": "whitelist"
+   },
+   "thumbnail": "https://espnmedia-cdn.akamaized.net/espn/media/common/wsc/2026/1017/1d2efa69-074c-49c6-8274-85d08c093228/1d2efa69-074c-49c6-8274-85d08c093228.jpg",
+   "links": {
+    "source": {
+     "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1017/1d2efa69-074c-49c6-8274-85d08c093228/1d2efa69-074c-49c6-8274-85d08c093228.mp4",
+     "HD": {
+      "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1017/1d2efa69-074c-49c6-8274-85d08c093228/1d2efa69-074c-49c6-8274-85d08c093228.mp4"
+     }
+    }
+   }
+  },
+  {
+   "id": 50202164,
+   "headline": "KJ Duff makes a preposterous one-handed TD grab for Rutgers",
+   "description": "KJ Duff makes a preposterous one-handed TD grab for Rutgers",
+   "originalPublishDate": "2026-10-17T17:16:34Z",
+   "lastModified": "2026-10-17T17:22:05Z",
+   "duration": 47,
+   "timeRestrictions": {
+    "embargoDate": "2026-10-17T17:16:33Z",
+    "expirationDate": "2038-01-01T04:59:00Z"
+   },
+   "deviceRestrictions": {
+    "devices": [
+     "settop",
+     "tablet",
+     "handset",
+     "ipad",
+     "desktop"
+    ],
+    "type": "whitelist"
+   },
+   "thumbnail": "https://espnmedia-cdn.akamaized.net/espn/media/common/2026/1017/8b1ac2a1e021428eaf82e55d21ef6945801/8b1ac2a1e021428eaf82e55d21ef6945801.jpg",
+   "links": {
+    "source": {
+     "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1017/8b1ac2a1-e021-428e-af82-e55d21ef6945/8b1ac2a1-e021-428e-af82-e55d21ef6945.mp4",
+     "HD": {
+      "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1017/8b1ac2a1-e021-428e-af82-e55d21ef6945/8b1ac2a1-e021-428e-af82-e55d21ef6945.mp4"
+     }
+    }
+   }
+  },
+  {
+   "id": 50202256,
+   "headline": "Jamare Glasker picks off Rutgers Scarlet Knights",
+   "description": "Jamare Glasker grabs interception vs. Rutgers Scarlet Knights",
+   "originalPublishDate": "2026-10-17T17:30:19Z",
+   "lastModified": "2026-10-17T17:30:23Z",
+   "duration": 18,
+   "timeRestrictions": {
+    "embargoDate": "2026-10-17T17:30:17Z",
+    "expirationDate": "2038-01-01T04:59:59Z"
+   },
+   "deviceRestrictions": {
+    "devices": [
+     "settop",
+     "tablet",
+     "handset",
+     "ipad",
+     "desktop"
+    ],
+    "type": "whitelist"
+   },
+   "thumbnail": "https://espnmedia-cdn.akamaized.net/espn/media/common/wsc/2026/1017/8efcc4ea-1751-4902-b584-b8a04655313d/8efcc4ea-1751-4902-b584-b8a04655313d.jpg",
+   "links": {
+    "source": {
+     "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1017/8efcc4ea-1751-4902-b584-b8a04655313d/8efcc4ea-1751-4902-b584-b8a04655313d.mp4",
+     "HD": {
+      "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1017/8efcc4ea-1751-4902-b584-b8a04655313d/8efcc4ea-1751-4902-b584-b8a04655313d.mp4"
+     }
+    }
+   }
+  },
+  {
+   "id": 50202270,
+   "headline": "Malik Washington throws 3-yard TD pass to Dorian Fleming",
+   "description": "Malik Washington throws 3-yard TD pass to Dorian Fleming",
+   "originalPublishDate": "2026-10-17T17:33:20Z",
+   "lastModified": "2026-10-17T17:33:24Z",
+   "duration": 20,
+   "timeRestrictions": {
+    "embargoDate": "2026-10-17T17:33:17Z",
+    "expirationDate": "2038-01-01T04:59:59Z"
+   },
+   "deviceRestrictions": {
+    "devices": [
+     "settop",
+     "tablet",
+     "handset",
+     "ipad",
+     "desktop"
+    ],
+    "type": "whitelist"
+   },
+   "thumbnail": "https://espnmedia-cdn.akamaized.net/espn/media/common/wsc/2026/1017/cc81185e-708e-40f7-ba79-2ad7d77150c1/cc81185e-708e-40f7-ba79-2ad7d77150c1.jpg",
+   "links": {
+    "source": {
+     "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1017/cc81185e-708e-40f7-ba79-2ad7d77150c1/cc81185e-708e-40f7-ba79-2ad7d77150c1.mp4",
+     "HD": {
+      "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1017/cc81185e-708e-40f7-ba79-2ad7d77150c1/cc81185e-708e-40f7-ba79-2ad7d77150c1.mp4"
+     }
+    }
+   }
+  },
+  {
+   "id": 50202373,
+   "headline": "Dylan Lonergan throws 9-yard touchdown",
+   "description": "Dylan Lonergan throws 9-yard touchdown",
+   "originalPublishDate": "2026-10-17T17:45:51Z",
+   "lastModified": "2026-10-17T17:45:55Z",
+   "duration": 23,
+   "timeRestrictions": {
+    "embargoDate": "2026-10-17T17:45:49Z",
+    "expirationDate": "2038-01-01T04:59:59Z"
+   },
+   "deviceRestrictions": {
+    "devices": [
+     "settop",
+     "tablet",
+     "handset",
+     "ipad",
+     "desktop"
+    ],
+    "type": "whitelist"
+   },
+   "thumbnail": "https://espnmedia-cdn.akamaized.net/espn/media/common/wsc/2026/1017/4ef21b9e-a95b-4037-a190-032763ce404c/4ef21b9e-a95b-4037-a190-032763ce404c.jpg",
+   "links": {
+    "source": {
+     "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1017/4ef21b9e-a95b-4037-a190-032763ce404c/4ef21b9e-a95b-4037-a190-032763ce404c.mp4",
+     "HD": {
+      "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1017/4ef21b9e-a95b-4037-a190-032763ce404c/4ef21b9e-a95b-4037-a190-032763ce404c.mp4"
+     }
+    }
+   }
+  },
+  {
+   "id": 50202466,
+   "headline": "Chris Durr Jr. rushes in for 16-yard TD",
+   "description": "Chris Durr Jr. rushes in for 16-yard TD",
+   "originalPublishDate": "2026-10-17T17:57:39Z",
+   "lastModified": "2026-10-17T17:57:43Z",
+   "duration": 29,
+   "timeRestrictions": {
+    "embargoDate": "2026-10-17T17:57:38Z",
+    "expirationDate": "2038-01-01T04:59:59Z"
+   },
+   "deviceRestrictions": {
+    "devices": [
+     "settop",
+     "tablet",
+     "handset",
+     "ipad",
+     "desktop"
+    ],
+    "type": "whitelist"
+   },
+   "thumbnail": "https://espnmedia-cdn.akamaized.net/espn/media/common/wsc/2026/1017/b9b749c4-7f0b-4603-98ab-996be4ec56cc/b9b749c4-7f0b-4603-98ab-996be4ec56cc.jpg",
+   "links": {
+    "source": {
+     "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1017/b9b749c4-7f0b-4603-98ab-996be4ec56cc/b9b749c4-7f0b-4603-98ab-996be4ec56cc.mp4",
+     "HD": {
+      "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1017/b9b749c4-7f0b-4603-98ab-996be4ec56cc/b9b749c4-7f0b-4603-98ab-996be4ec56cc.mp4"
+     }
+    }
+   }
+  },
+  {
+   "id": 50202596,
+   "headline": "Maryland gets defensive 2-point conversion on blocked kick",
+   "description": "Maryland gets defensive 2-point conversion on blocked kick",
+   "originalPublishDate": "2026-10-17T18:14:12Z",
+   "lastModified": "2026-10-17T18:15:52Z",
+   "duration": 52,
+   "timeRestrictions": {
+    "embargoDate": "2026-10-17T18:14:11Z",
+    "expirationDate": "2038-01-01T04:59:00Z"
+   },
+   "deviceRestrictions": {
+    "devices": [
+     "settop",
+     "tablet",
+     "handset",
+     "ipad",
+     "desktop"
+    ],
+    "type": "whitelist"
+   },
+   "thumbnail": "https://espnmedia-cdn.akamaized.net/espn/media/common/wsc/2026/1017/b664edff-f593-4497-94bc-e74dcfd57f0a/b664edff-f593-4497-94bc-e74dcfd57f0a.jpg",
+   "links": {
+    "source": {
+     "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1017/b664edff-f593-4497-94bc-e74dcfd57f0a/b664edff-f593-4497-94bc-e74dcfd57f0a.mp4",
+     "HD": {
+      "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1017/b664edff-f593-4497-94bc-e74dcfd57f0a/b664edff-f593-4497-94bc-e74dcfd57f0a.mp4"
+     }
+    }
+   }
+  },
+  {
+   "id": 50202768,
+   "headline": "Dane Pizzaro kicks 25-yard field goal",
+   "description": "Dane Pizzaro kicks 25-yard field goal",
+   "originalPublishDate": "2026-10-17T18:42:20Z",
+   "lastModified": "2026-10-17T18:42:24Z",
+   "duration": 10,
+   "timeRestrictions": {
+    "embargoDate": "2026-10-17T18:42:17Z",
+    "expirationDate": "2038-01-01T04:59:59Z"
+   },
+   "deviceRestrictions": {
+    "devices": [
+     "settop",
+     "tablet",
+     "handset",
+     "ipad",
+     "desktop"
+    ],
+    "type": "whitelist"
+   },
+   "thumbnail": "https://espnmedia-cdn.akamaized.net/espn/media/common/wsc/2026/1017/f32c2684-d240-43d5-b895-59adf622e102/f32c2684-d240-43d5-b895-59adf622e102.jpg",
+   "links": {
+    "source": {
+     "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1017/f32c2684-d240-43d5-b895-59adf622e102/f32c2684-d240-43d5-b895-59adf622e102.mp4",
+     "HD": {
+      "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1017/f32c2684-d240-43d5-b895-59adf622e102/f32c2684-d240-43d5-b895-59adf622e102.mp4"
+     }
+    }
+   }
+  },
+  {
+   "id": 50202905,
+   "headline": "Dylan Lonergan throws 19-yard touchdown",
+   "description": "Dylan Lonergan throws 19-yard touchdown",
+   "originalPublishDate": "2026-10-17T19:02:20Z",
+   "lastModified": "2026-10-17T19:02:24Z",
+   "duration": 30,
+   "timeRestrictions": {
+    "embargoDate": "2026-10-17T19:02:19Z",
+    "expirationDate": "2038-01-01T04:59:59Z"
+   },
+   "deviceRestrictions": {
+    "devices": [
+     "settop",
+     "tablet",
+     "handset",
+     "ipad",
+     "desktop"
+    ],
+    "type": "whitelist"
+   },
+   "thumbnail": "https://espnmedia-cdn.akamaized.net/espn/media/common/wsc/2026/1017/8aa6e25e-4b6a-4efe-8489-574f69e52cbd/8aa6e25e-4b6a-4efe-8489-574f69e52cbd.jpg",
+   "links": {
+    "source": {
+     "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1017/8aa6e25e-4b6a-4efe-8489-574f69e52cbd/8aa6e25e-4b6a-4efe-8489-574f69e52cbd.mp4",
+     "HD": {
+      "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1017/8aa6e25e-4b6a-4efe-8489-574f69e52cbd/8aa6e25e-4b6a-4efe-8489-574f69e52cbd.mp4"
+     }
+    }
+   }
+  },
+  {
+   "id": 50203265,
+   "headline": "Antwan Raymond rushes in for 2-yard TD",
+   "description": "Antwan Raymond rushes in for 2-yard TD",
+   "originalPublishDate": "2026-10-17T19:38:49Z",
+   "lastModified": "2026-10-17T19:38:53Z",
+   "duration": 29,
+   "timeRestrictions": {
+    "embargoDate": "2026-10-17T19:38:48Z",
+    "expirationDate": "2038-01-01T04:59:59Z"
+   },
+   "deviceRestrictions": {
+    "devices": [
+     "settop",
+     "tablet",
+     "handset",
+     "ipad",
+     "desktop"
+    ],
+    "type": "whitelist"
+   },
+   "thumbnail": "https://espnmedia-cdn.akamaized.net/espn/media/common/wsc/2026/1017/521dbaae-8cc5-490c-b985-c22612eb239c/521dbaae-8cc5-490c-b985-c22612eb239c.jpg",
+   "links": {
+    "source": {
+     "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1017/521dbaae-8cc5-490c-b985-c22612eb239c/521dbaae-8cc5-490c-b985-c22612eb239c.mp4",
+     "HD": {
+      "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1017/521dbaae-8cc5-490c-b985-c22612eb239c/521dbaae-8cc5-490c-b985-c22612eb239c.mp4"
+     }
+    }
+   }
+  },
+  {
+   "id": 50203322,
+   "headline": "Clay Thevenin scores 7-yard rushing TD",
+   "description": "Clay Thevenin scores 7-yard rushing TD",
+   "originalPublishDate": "2026-10-17T19:46:27Z",
+   "lastModified": "2026-10-17T19:46:35Z",
+   "duration": 28,
+   "timeRestrictions": {
+    "embargoDate": "2026-10-17T19:46:26Z",
+    "expirationDate": "2038-01-01T04:59:59Z"
+   },
+   "deviceRestrictions": {
+    "devices": [
+     "settop",
+     "tablet",
+     "handset",
+     "ipad",
+     "desktop"
+    ],
+    "type": "whitelist"
+   },
+   "thumbnail": "https://espnmedia-cdn.akamaized.net/espn/media/common/wsc/2026/1017/9ee1de21-64bb-4605-b409-e31a4cc94455/9ee1de21-64bb-4605-b409-e31a4cc94455.jpg",
+   "links": {
+    "source": {
+     "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1017/9ee1de21-64bb-4605-b409-e31a4cc94455/9ee1de21-64bb-4605-b409-e31a4cc94455.mp4",
+     "HD": {
+      "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1017/9ee1de21-64bb-4605-b409-e31a4cc94455/9ee1de21-64bb-4605-b409-e31a4cc94455.mp4"
+     }
+    }
+   }
+  },
+  {
+   "id": 50203336,
+   "headline": "Malik Washington throws 10-yard TD pass to DeJuan Williams",
+   "description": "Malik Washington throws 10-yard touchdown",
+   "originalPublishDate": "2026-10-17T19:48:51Z",
+   "lastModified": "2026-10-17T19:48:56Z",
+   "duration": 26,
+   "timeRestrictions": {
+    "embargoDate": "2026-10-17T19:48:49Z",
+    "expirationDate": "2038-01-01T04:59:59Z"
+   },
+   "deviceRestrictions": {
+    "devices": [
+     "settop",
+     "tablet",
+     "handset",
+     "ipad",
+     "desktop"
+    ],
+    "type": "whitelist"
+   },
+   "thumbnail": "https://espnmedia-cdn.akamaized.net/espn/media/common/wsc/2026/1017/de0a2aae-d71d-4e73-99a3-eebc342af06e/de0a2aae-d71d-4e73-99a3-eebc342af06e.jpg",
+   "links": {
+    "source": {
+     "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1017/de0a2aae-d71d-4e73-99a3-eebc342af06e/de0a2aae-d71d-4e73-99a3-eebc342af06e.mp4",
+     "HD": {
+      "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1017/de0a2aae-d71d-4e73-99a3-eebc342af06e/de0a2aae-d71d-4e73-99a3-eebc342af06e.mp4"
+     }
+    }
+   }
+  }
+ ]
+}

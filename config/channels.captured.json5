@@ -1,0 +1,81 @@
+// Captured by `npm run capture-channels`. Copy each url into config/redzone.config.json5 → channels.
+[
+  {
+    n: 1,
+    at: '18:34:22',
+    title: 'Xfinity on Campus - Setup, Features, Troubleshooting, and Support',
+    url: 'https://www.xfinityoncampus.com/login',
+  },
+  {
+    n: 2,
+    at: '18:39:29',
+    title: 'Xfinity on Campus - Setup, Features, Troubleshooting, and Support',
+    url: 'https://www.xfinityoncampus.com/sat?code=oi-824fe9949a294f7aa05a8e6af9f73264&activity_id=2dd11237-a7e3-4747-bf18-822a5558db06',
+  },
+  {
+    n: 3,
+    at: '18:39:33',
+    title: 'Xfinity on Campus - Setup, Features, Troubleshooting, and Support',
+    url: 'https://www.xfinityoncampus.com/home',
+  },
+  {
+    n: 4,
+    at: '18:40:53',
+    title: 'Xfinity on Campus - Setup, Features, Troubleshooting, and Support',
+    url: 'https://www.xfinityoncampus.com/terms',
+  },
+  {
+    n: 5,
+    at: '18:42:30',
+    title: 'Watch TV Online, Stream Episodes and Movies | Xfinity Stream',
+    url: 'https://www.xfinity.com/stream/',
+  },
+  {
+    n: 6,
+    at: '18:43:11',
+    title: 'Watch TV Online, Stream Episodes and Movies | Xfinity Stream',
+    url: 'https://www.xfinity.com/stream/listings',
+  },
+  {
+    n: 7,
+    at: '18:46:39',
+    title: 'All Channels - Xfinity Stream',
+    url: 'https://www.xfinity.com/stream/live/Watch-College-Football-Scoreboard/8713109229817176105/WCVBD',
+  },
+  {
+    n: 8,
+    at: '18:47:22',
+    title: 'Watch TV Online, Stream Episodes and Movies | Xfinity Stream',
+    url: 'https://www.xfinity.com/stream/live/Watch/5393524262902717104/WCVBD',
+  },
+  {
+    n: 9,
+    at: '18:47:32',
+    title: 'Watch TV Online, Stream Episodes and Movies | Xfinity Stream',
+    url: 'https://www.xfinity.com/stream/live/Watch/7520653947096964117/WCVBD',
+  },
+  {
+    n: 10,
+    at: '18:47:42',
+    title: 'Watch TV Online, Stream Episodes and Movies | Xfinity Stream',
+    url: 'https://www.xfinity.com/stream/live/x/8713109229817176105/WCVBD',
+  },
+  {
+    n: 11,
+    at: '18:49:00',
+    title: 'All Channels - Xfinity Stream',
+    url: 'https://www.xfinity.com/stream/live/Watch-College-Football-Scoreboard/7642769970651506105/ESPND',
+  },
+  {
+    n: 12,
+    at: '18:52:17',
+    title: 'All Channels - Xfinity Stream',
+    url: 'https://www.xfinity.com/stream/live/Watch-College-Football-Scoreboard/7642769970651506105/ES2HD',
+  },
+  {
+    n: 13,
+    at: '18:52:41',
+    title: 'All Channels - Xfinity Stream',
+    url: 'https://www.xfinity.com/stream/live/Watch-Individual-World-Championship/5628918118244997105/FS1HD',
+  },
+]

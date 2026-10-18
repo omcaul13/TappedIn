@@ -1,0 +1,621 @@
+import { appendFileSync, mkdirSync } from 'node:fs';
+import path from 'node:path';
+import { resolveChannel } from './channels';
+import { loadOverrides, parseOverrides, PROJECT_ROOT, saveOverrides, SETTINGS_FILE, watchConfig, withOverrides, type Config, type SettingsOverrides } from './config';
+import { excitement } from './engine/audio';
+import type { ScreenState, UserAction } from './engine/director';
+import { Engine, type TickResult } from './engine/engine';
+import type { GameView } from './engine/ranker';
+import { espnDateKey } from './espn/client';
+import { HighlightService } from './highlights/service';
+import { YouTubeClient } from './highlights/youtube';
+import { LiveSource, recordingDir } from './espn/source';
+import { clock as fmtClock, dailyLogFile, DecisionLog, type LogEntry } from './log';
+import { startServer, type LocalServer, type PostResult } from './server/server';
+import { gameDTO, type AppState, type FeedItem, type PickerDTO, type ScreenDTO } from './server/state';
+import { attachShell, startShell, type Shell, type SigninStatus } from './shell';
+import { autoHomes, recordedFeed, synthFeed } from './sim';
+import { connect, ensureChrome } from './windows/chrome';
+import { WindowController } from './windows/controller';
+import type { BridgeMessage, OverlayState, Popup } from './windows/screen';
+import type { SwitchTiming } from './windows/timing';
+
+// The whole app: ESPN data → engine → window controller, plus the UI and local pages.
+// Shells: "electron" (default) is one RedZone window with four Xfinity views and the UI drawn on top;
+// "chrome" is the original four Chrome tile windows plus a control panel window.
+// Modes:
+//   live     real ESPN polling, Xfinity video in four tiles
+//   dry-run  real ESPN polling, live data tiles instead of video (no streams used)
+//   replay   a recorded (or synthesized) game day on a sped-up clock, data tiles
+
+export interface AppOptions {
+  dryRun: boolean;
+  replay?: { date: string; fromMs: number; speed: number; synth: boolean };
+  homes?: string[];
+  /** Pick four home games automatically at start (you can change them in the panel). */
+  autoHomes: boolean;
+  audioMode?: 'manual' | 'auto';
+  record: boolean;
+  shell: 'electron' | 'chrome';
+}
+
+class Clock {
+  private base: number | null = null;
+  private realBase = 0;
+  constructor(private readonly speed = 1) {}
+  /** Replay: start the virtual clock at `t`. */
+  start(t: number): void {
+    this.base = t;
+    this.realBase = Date.now();
+  }
+  now(): number {
+    return this.base === null ? Date.now() : this.base + (Date.now() - this.realBase) * this.speed;
+  }
+}
+
+const ACTIONS = new Set(['setHome', 'lock', 'unlock', 'force', 'goHome', 'skip', 'cancelAutoPick']);
+const FEED_MAX = 150;
+const etTime = (iso: string) => new Date(iso).toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit' });
+
+export class App {
+  private readonly engine: Engine;
+  private readonly log: DecisionLog;
+  private readonly clock: Clock;
+  private readonly labelsFile: string;
+  private controller!: WindowController;
+  private server!: LocalServer;
+  private source: LiveSource | null = null;
+  private timers: NodeJS.Timeout[] = [];
+  private homesSet = false;
+  private focus = 0;
+  private stopped = false;
+  private stopWatching: (() => void) | null = null;
+  private feed: FeedItem[] = [];
+  private labels = 0;
+  private popupKeys = new Map<number, { key: string; ms: number }>();
+  private readonly highlights: HighlightService;
+  private shell: Shell | null = null;
+  private signin: SigninStatus | null = null;
+  /** The config file as loaded, and the settings changed in the app on top of it. */
+  private fileCfg: Config;
+  private overrides: SettingsOverrides;
+  private cfg: Config;
+  private lastSwitch = new Map<number, ScreenDTO['lastSwitch']>();
+  private broadcastTimer: NodeJS.Timeout | null = null;
+
+  constructor(
+    cfg: Config,
+    private readonly opts: AppOptions,
+  ) {
+    this.fileCfg = cfg;
+    this.overrides = loadOverrides();
+    this.cfg = cfg = withOverrides(cfg, this.overrides);
+    this.engine = new Engine(cfg);
+    const ytKey = process.env.YT_API_KEY?.trim();
+    const youtube = ytKey
+      ? new YouTubeClient({
+          apiKey: ytKey,
+          channels: cfg.highlights.youtubeChannels,
+          maxSearchesPerDay: cfg.highlights.maxYoutubeSearchesPerDay,
+          minMinutesAfterFinal: cfg.highlights.youtubeMinMinutesAfterFinal,
+          cacheFile: path.join(PROJECT_ROOT, '.state', 'youtube-cache.json'),
+        })
+      : null;
+    this.highlights = new HighlightService(cfg, youtube, (t) => this.info(t));
+    if (opts.audioMode) this.engine.setAudioMode(opts.audioMode);
+    this.clock = new Clock(opts.replay?.speed ?? 1);
+    const logs = path.join(PROJECT_ROOT, 'logs');
+    const file = opts.replay ? path.join(logs, `replay-${opts.replay.date}.jsonl`) : dailyLogFile(PROJECT_ROOT);
+    this.labelsFile = path.join(logs, opts.replay ? `labels-replay-${opts.replay.date}.jsonl` : 'labels.jsonl');
+    this.log = new DecisionLog({ file, console: true });
+  }
+
+  get mode(): AppState['mode'] {
+    return this.opts.replay ? 'replay' : this.opts.dryRun ? 'dry-run' : 'live';
+  }
+
+  async start(): Promise<void> {
+    const cfg = this.cfg;
+    this.server = await startServer(cfg.server.port, {
+      state: () => this.state(),
+      post: (p, b) => this.post(p, b),
+      reel: (n) => this.reel(n),
+      cardSeconds: () => this.cfg.highlights.cardSeconds,
+    });
+    this.info(`RedZone ${this.mode} mode (${this.opts.shell === 'electron' ? 'one window' : 'Chrome tiles'}); switch sensitivity ${cfg.switching.sensitivity}`);
+    this.info(`halftime highlights: ESPN clips ${cfg.highlights.espnClips ? 'on' : 'off'}, YouTube ${this.highlights.youtubeEnabled ? 'on' : 'off (set YT_API_KEY in .env to enable)'}`);
+
+    const controllerOpts = {
+      dryRun: this.mode !== 'live',
+      serverUrl: this.server.url,
+      stateFile: path.join(PROJECT_ROOT, '.state', 'tiles.json'),
+      cacheFile: path.join(PROJECT_ROOT, '.state', 'xfinity-urls.json'),
+    };
+    const events = {
+      tuned: (s: number, i: { gameId: string; channelName: string; channel: number; path: string; ms: number }) => {
+        this.info(`now on ${i.channelName} (${i.channel}) via ${i.path} in ${(i.ms / 1000).toFixed(1)}s`, s);
+        // Xfinity can still be signed in from before even when the Watch Now step timed out.
+        if (this.signin && this.signin.state !== 'ok') this.signin = { state: 'ok', detail: 'Xfinity Stream is playing' };
+        this.pushState();
+      },
+      streamProblem: (s: number, i: { state: string; detail: string; hint: string }) => {
+        this.info(`stream problem ${i.state}: ${i.detail} -- ${i.hint}`, s);
+        if (i.state === 'LOGIN_REQUIRED' && this.shell) {
+          this.info('Xfinity Stream signed out; signing in again through Xfinity On Campus');
+          this.shell.handoff();
+        }
+        this.handle(this.engine.act({ type: 'streamError', screen: s, detail: `${i.state}: ${i.detail}` }, this.clock.now()));
+      },
+      streamRecovered: (s: number) => this.handle(this.engine.act({ type: 'streamOk', screen: s }, this.clock.now())),
+      limitLearned: (l: number, d: string) => this.info(`Xfinity stream limit hit (${d}); video on ${l} screen(s), live data on the rest`),
+      info: (t: string) => this.info(t),
+      bridge: (s: number, msg: BridgeMessage) => this.onBridge(s, msg),
+      switchTiming: (t: SwitchTiming) => {
+        this.log.write({ type: 'timing', at: Date.now(), ...t });
+        this.pushState();
+      },
+    };
+
+    if (this.opts.shell === 'electron') {
+      this.shell = await startShell(cfg, `${this.server.url}/ui`, {
+        signin: (s) => {
+          const was = this.signin?.state;
+          this.signin = s;
+          this.info(`Xfinity sign-in: ${s.state}${s.detail ? ` (${s.detail})` : ''}`);
+          if (s.state === 'ok' && was && was !== 'ok' && this.controller) this.controller.restoreAll();
+          this.pushState();
+        },
+        exit: (code) => {
+          if (this.stopped) return;
+          this.info(`the RedZone window closed${code ? ` (exit ${code})` : ''}; stopping`);
+          void this.stop().then(() => process.exit(0));
+        },
+        log: (t) => this.info(t),
+      });
+      await this.shell.ready;
+      const { browser, screens, spares } = await attachShell(cfg, 4);
+      this.controller = new WindowController(cfg, browser, null, controllerOpts, events);
+      const shell = this.shell;
+      await this.controller.attach(screens, spares, (screen, view) => shell.present(screen, view));
+    } else {
+      const { launched } = await ensureChrome(cfg);
+      if (launched && this.mode === 'live') this.info('Started RedZone Chrome. If a tile shows "Signed out of Xfinity", run "npm run login" and sign in.');
+      const { browser, context } = await connect(cfg);
+      this.controller = new WindowController(cfg, browser, context, controllerOpts, events);
+      await this.controller.open(4);
+      this.info(`control panel at ${this.server.url}/panel (Alt+P)`);
+    }
+
+    if (this.opts.replay) void this.runReplay(this.opts.replay);
+    else {
+      this.source = new LiveSource(
+        cfg,
+        {
+          scoreboard: (body, at) => this.engine.ingestScoreboard(body, at),
+          summary: (id, body, at) => {
+            this.engine.ingestSummary(id, body, at);
+            this.highlights.ingestSummary(id, body, at);
+          },
+          error: (what, err) => this.info(`ESPN ${what} failed: ${err}`),
+        },
+        {
+          date: espnDateKey(),
+          interesting: () => this.engine.interestingGameIds(),
+          onScreen: () => [...this.engine.relevantGameIds()],
+          recordDir: this.opts.record ? recordingDir(PROJECT_ROOT, `${espnDateKey()}-live`) : null,
+        },
+      );
+      this.source.start();
+      this.startTicking();
+    }
+    this.timers.push(setInterval(() => void this.controller.tick().catch((e) => this.info(`window check failed: ${e}`)), 2000));
+
+    this.stopWatching = watchConfig(
+      (next) => {
+        this.fileCfg = next;
+        this.applyConfig();
+        this.info(`config reloaded${Object.keys(this.overrides).length ? ` (settings changed in the app still win: ${Object.keys(this.overrides).join(', ')})` : ''}`);
+      },
+      (msg) => this.info(`config NOT reloaded: ${msg}`),
+    );
+  }
+
+  async stop(): Promise<void> {
+    this.stopped = true;
+    for (const t of this.timers) clearInterval(t);
+    this.source?.stop();
+    this.stopWatching?.();
+    if (this.shell) this.shell.quit();
+    else await this.controller?.close();
+    await this.server?.close();
+    this.info('stopped');
+  }
+
+  /** Config file + settings changed in the app → every part of the app. */
+  private applyConfig(): void {
+    const next = withOverrides(this.fileCfg, this.overrides);
+    this.cfg = next;
+    this.engine.setConfig(next);
+    this.source?.setConfig(next);
+    this.controller?.setConfig(next);
+    this.highlights.setConfig(next);
+    this.pushState();
+  }
+
+  private changeSettings(body: Record<string, unknown>): PostResult {
+    if (body.reset === true) {
+      this.overrides = {};
+      saveOverrides({});
+      this.applyConfig();
+      this.info('settings reset to the config file');
+      return { ok: true };
+    }
+    let change: SettingsOverrides;
+    try {
+      change = parseOverrides(body);
+    } catch (err) {
+      return { ok: false, message: String(err instanceof Error ? err.message : err) };
+    }
+    this.overrides = { ...this.overrides, ...change };
+    saveOverrides(this.overrides);
+    this.applyConfig();
+    this.info(`settings: ${Object.entries(change).map(([k, v]) => `${k} ${v}`).join(', ')} (saved in ${path.relative(PROJECT_ROOT, SETTINGS_FILE)})`);
+    return { ok: true };
+  }
+
+  // ---- inputs: panel API, tile hotkeys / pop-up clicks -------------------------------------
+
+  private async post(p: string, body: Record<string, unknown>): Promise<PostResult> {
+    const screen = Number(body.screen);
+    const validScreen = Number.isInteger(screen) && screen >= 1 && screen <= 4;
+    switch (p) {
+      case '/api/action': {
+        const type = String(body.type);
+        if (!ACTIONS.has(type) || !validScreen) return { ok: false, message: 'bad action' };
+        if ((type === 'setHome' || type === 'force') && typeof body.gameId !== 'string') return { ok: false, message: 'gameId required' };
+        return this.userAction({ type, screen, gameId: body.gameId } as UserAction);
+      }
+      case '/api/audio': {
+        if (body.mode === 'manual' || body.mode === 'auto') {
+          this.engine.setAudioMode(body.mode);
+          this.info(`sound mode: ${body.mode}`);
+        }
+        // { screen: n } puts sound on screen n; 0 mutes every screen.
+        const focus = Number(body.screen ?? body.focus);
+        if (Number.isInteger(focus) && focus >= 0 && focus <= 4) this.focusAudio(focus);
+        this.refreshOverlays();
+        this.pushState();
+        return { ok: true };
+      }
+      case '/api/settings':
+        return this.changeSettings(body);
+      case '/api/label':
+        if (!validScreen || (body.label !== 'break' && body.label !== 'live')) return { ok: false, message: 'bad label' };
+        return this.label(screen, body.label);
+      case '/api/hotkey':
+        this.hotkey(validScreen ? screen : 0, String(body.key));
+        return { ok: true };
+      default:
+        return { ok: false, message: 'unknown endpoint' };
+    }
+  }
+
+  private onBridge(screen: number, msg: BridgeMessage): void {
+    if (msg.type === 'hotkey') this.hotkey(screen, msg.key);
+    else if (msg.type === 'pick' && screen > 0) this.userAction({ type: 'setHome', screen, gameId: msg.gameId });
+    else if (msg.type === 'keep' && screen > 0) this.userAction({ type: 'cancelAutoPick', screen });
+  }
+
+  private hotkey(screen: number, key: string): void {
+    const sc = screen > 0 ? this.engine.director.screens[screen - 1] : undefined;
+    switch (key) {
+      case 'panel':
+        void this.controller.togglePanel();
+        return;
+      case 'audioMode': {
+        const mode = this.engine.audio.mode === 'auto' ? 'manual' : 'auto';
+        this.engine.setAudioMode(mode);
+        this.info(`sound mode: ${mode}`);
+        this.refreshOverlays();
+        return;
+      }
+      case 'audio1':
+      case 'audio2':
+      case 'audio3':
+      case 'audio4':
+        this.focusAudio(Number(key.slice(-1)));
+        return;
+    }
+    if (!sc) return; // the keys below act on the tile they were pressed in
+    if (key === 'lock') this.userAction({ type: sc.mode === 'LOCKED' ? 'unlock' : 'lock', screen });
+    else if (key === 'home') this.userAction({ type: 'goHome', screen });
+    else if (key === 'skip') this.userAction({ type: 'skip', screen });
+    else if (key === 'labelBreak') this.label(screen, 'break');
+    else if (key === 'labelLive') this.label(screen, 'live');
+  }
+
+  private userAction(action: UserAction): PostResult {
+    const res = this.engine.act(action, this.clock.now());
+    this.handle(res);
+    this.refreshOverlays();
+    this.pushState();
+    const rejected = res.decisions.find((d) => d.rule === 'USER_REJECTED');
+    return rejected ? { ok: false, message: rejected.reasons.join('; ') } : { ok: true };
+  }
+
+  private focusAudio(screen: number): void {
+    const d = this.engine.focusAudio(screen, this.clock.now());
+    this.writeEntry({ type: 'audio', ...d });
+    this.focus = screen;
+    void this.controller.setAudioFocus(screen);
+    this.refreshOverlays();
+  }
+
+  /** "What this screen shows right now is a break / is live": ground truth for tuning. */
+  private label(screen: number, label: 'break' | 'live'): PostResult {
+    const sc = this.engine.director.screens[screen - 1];
+    const gameId = sc?.showing.kind === 'game' ? sc.showing.gameId : null;
+    if (!gameId) return { ok: false, message: 'this screen is not showing a game' };
+    const view = this.engine.views().get(gameId);
+    const a = view?.assessment;
+    const entry = {
+      at: this.clock.now(),
+      screen,
+      gameId,
+      game: view?.game.shortName ?? gameId,
+      label,
+      showing: gameId === sc.homeGameId ? 'home' : 'fill-in',
+      detector: a ? { state: a.state, score: a.score, signals: a.signals.map((s) => ({ name: s.name, weight: s.weight })), reasons: a.reasons } : null,
+      detail: view?.game.detail ?? null,
+    };
+    mkdirSync(path.dirname(this.labelsFile), { recursive: true });
+    appendFileSync(this.labelsFile, JSON.stringify(entry) + '\n');
+    this.labels++;
+    const agree = a ? (label === 'break') === (a.state === 'BREAK') : null;
+    const text = `label "${label}" for ${entry.game}; detector said ${a ? `${a.state} ${a.score.toFixed(2)}` : 'nothing'}${agree === false ? ' (DISAGREES)' : ''}`;
+    this.pushFeed({ at: entry.at, kind: 'label', screen, text });
+    this.log.write({ type: 'info', at: entry.at, text: `[S${screen}] ${text}` });
+    return { ok: true, message: text };
+  }
+
+  // ---- engine loop --------------------------------------------------------------------------
+
+  private startTicking(): void {
+    const ms = (this.cfg.director.tickSeconds * 1000) / (this.opts.replay?.speed ?? 1);
+    this.timers.push(setInterval(() => this.tick(), Math.max(100, ms)));
+  }
+
+  private snapshots() {
+    return this.engine.store.all().map((g) => g.snap);
+  }
+
+  private reel(screen: number): { items: unknown[]; youtube: boolean } {
+    const sc = this.engine.director.screens[screen - 1];
+    return { items: this.highlights.reel(sc?.homeGameId ?? null, this.snapshots(), this.clock.now()), youtube: this.highlights.youtubeEnabled };
+  }
+
+  private tick(): void {
+    const now = this.clock.now();
+    this.handle(this.engine.tick(now));
+    this.highlights.noteGames(this.snapshots(), now);
+    if (!this.homesSet && this.engine.store.all().length) {
+      this.homesSet = true;
+      const homes = this.opts.homes?.length ? this.opts.homes : this.opts.autoHomes ? autoHomes(this.engine.views(), now) : [];
+      homes.slice(0, 4).forEach((gameId, i) => this.handle(this.engine.act({ type: 'setHome', screen: i + 1, gameId }, now)));
+      if (!homes.length) this.info('No home games yet: pick them in the control panel (Alt+P).');
+    }
+    if (this.engine.audio.focus !== this.focus) {
+      this.focus = this.engine.audio.focus;
+      void this.controller.setAudioFocus(this.focus);
+    }
+    const views = this.engine.views();
+    this.controller.setExcitement(new Map(this.engine.director.screens.map((s) => [s.id, excitement(s, views).score])));
+    for (const s of this.engine.director.screens) this.controller.setHomeChannel(s.id, (s.homeGameId && views.get(s.homeGameId)?.channel?.number) || null);
+    this.refreshOverlays(views, now);
+    this.pushState();
+  }
+
+  /** Send the state to the UI soon (several changes in a burst go out once). */
+  private pushState(): void {
+    if (this.broadcastTimer || !this.server) return;
+    this.broadcastTimer = setTimeout(() => {
+      this.broadcastTimer = null;
+      if (!this.stopped) this.server.broadcast(this.state());
+    }, 80);
+  }
+
+  private refreshOverlays(views = this.engine.views(), now = this.clock.now()): void {
+    if (!this.controller) return;
+    for (const s of this.engine.director.screens) {
+      this.controller.setBadge(s.id, this.badgeFor(s, views, now));
+      this.controller.setPopup(s.id, this.popupFor(s, views, now));
+    }
+  }
+
+  private handle(res: TickResult): void {
+    for (const d of res.decisions) {
+      this.writeEntry({ type: 'decision', ...d });
+      if (d.switched) this.lastSwitch.set(d.screen, { at: d.at, rule: d.rule, reasons: d.reasons.slice(0, 4) });
+      // Warm the highlight cache as soon as a screen goes to halftime.
+      if (d.rule === 'HALFTIME') void this.highlights.refresh(this.snapshots(), d.gameId ?? null, this.clock.now());
+    }
+    for (const a of res.assessments) this.writeEntry({ type: 'assess', ...a });
+    for (const a of res.audio) this.writeEntry({ type: 'audio', ...a });
+    for (const c of res.commands) this.controller.execute(c);
+  }
+
+  private writeEntry(e: LogEntry): void {
+    this.log.write(e);
+    if (e.type === 'decision' && e.rule !== 'HOLD_DWELL') {
+      this.pushFeed({ at: e.at, kind: e.switched ? 'switch' : 'note', screen: e.screen, text: `${e.rule} ${e.switched ? `${e.from} -> ${e.to}` : e.from} | ${e.reasons.slice(0, 2).join(' | ')}` });
+    } else if (e.type === 'assess' && e.relevant) {
+      this.pushFeed({ at: e.at, kind: 'game', screen: null, text: `${e.game} ${e.from ?? '-'} -> ${e.to}${e.reasons[0] ? ` | ${e.reasons[0]}` : ''}` });
+    } else if (e.type === 'audio') {
+      this.pushFeed({ at: e.at, kind: 'audio', screen: e.to, text: `sound -> S${e.to} (${e.mode}) | ${e.reason}` });
+    }
+  }
+
+  private pushFeed(item: FeedItem): void {
+    this.feed.push(item);
+    if (this.feed.length > FEED_MAX) this.feed.splice(0, this.feed.length - FEED_MAX);
+  }
+
+  private info(text: string, screen: number | null = null): void {
+    const at = this.clock.now();
+    this.log.write({ type: 'info', at, text: screen ? `[S${screen}] ${text}` : text });
+    this.pushFeed({ at, kind: 'info', screen, text });
+  }
+
+  // ---- what the tiles and panel show ------------------------------------------------------
+
+  private badgeFor(sc: ScreenState, views: Map<string, GameView>, now: number): OverlayState['badge'] {
+    const home = sc.homeGameId ? views.get(sc.homeGameId) : undefined;
+    const on = sc.showing.kind === 'game' ? views.get(sc.showing.gameId) : undefined;
+    const sound = sc.id === this.engine.audio.focus ? ' \u{1F50A}' : '';
+    const s = `S${sc.id}`;
+    switch (sc.mode) {
+      case 'HOME': {
+        const st = home?.assessment.state ?? 'UNKNOWN';
+        const tone = st === 'BREAK' ? 'break' : st === 'LIVE' ? 'live' : st === 'FINAL' ? 'final' : 'idle';
+        return { text: `${s} ${st === 'BREAK' ? 'BREAK?' : st} · ${home?.game.shortName ?? ''}${sound}`, tone };
+      }
+      case 'FILL_IN':
+        return { text: `${s} FILL-IN · ${on?.game.shortName ?? ''}${on?.game.situation?.isRedZone ? ' (red zone)' : ''} · ${home?.game.shortName ?? ''} in break${sound}`, tone: 'break' };
+      case 'GAME_OVER': {
+        const left = sc.gameOver?.autoPickAt ? Math.max(0, Math.round((sc.gameOver.autoPickAt - now) / 1000)) : null;
+        return { text: `${s} FINAL · ${home?.game.shortName ?? ''}${left !== null ? ` · next game in ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}` : ''}${sound}`, tone: 'final' };
+      }
+      case 'LOCKED':
+        return { text: `${s} LOCKED · ${on?.game.shortName ?? ''} · Alt+H for home${sound}`, tone: 'idle' };
+      case 'ERROR':
+        return { text: `${s} ERROR${sound}`, tone: 'error' };
+      default:
+        return null;
+    }
+  }
+
+  private pickerFor(sc: ScreenState, views: Map<string, GameView>): PickerDTO | null {
+    if (sc.mode !== 'GAME_OVER') return null;
+    const home = sc.homeGameId ? views.get(sc.homeGameId)?.game : undefined;
+    const onScreen = new Map<string, number>();
+    for (const o of this.engine.director.screens) if (o.id !== sc.id && o.showing.kind === 'game') onScreen.set(o.showing.gameId, o.id);
+    const watchable = [...views.values()].filter((v) => v.channel && v.game.id !== sc.homeGameId);
+    const margin = (v: GameView) => Math.abs(v.game.home.score - v.game.away.score);
+    const live = watchable
+      .filter((v) => v.game.phase === 'LIVE' || v.game.phase === 'HALFTIME')
+      .sort((a, b) => margin(a) - margin(b))
+      .map((v) => ({
+        id: v.game.id,
+        label: `${v.game.away.abbr} ${v.game.away.score}-${v.game.home.score} ${v.game.home.abbr}`,
+        detail: [v.game.detail.replace(/^\d{1,2}:\d{2} - /, ''), v.channel!.name, v.game.situation?.isRedZone ? 'red zone' : '', onScreen.has(v.game.id) ? `on S${onScreen.get(v.game.id)}` : ''].filter(Boolean).join(' · '),
+      }));
+    const later = watchable
+      .filter((v) => v.game.phase === 'PRE')
+      .sort((a, b) => String(a.game.startTime).localeCompare(String(b.game.startTime)))
+      .map((v) => ({ id: v.game.id, label: v.game.shortName, detail: `${v.game.startTime ? etTime(v.game.startTime) : ''} · ${v.channel!.name} ${v.channel!.number}` }));
+    return { title: home ? `Final: ${home.away.abbr} ${home.away.score}-${home.home.score} ${home.home.abbr}. Pick the next game` : 'Pick the next game', live, later };
+  }
+
+  private popupFor(sc: ScreenState, views: Map<string, GameView>, now: number): Popup | null {
+    const picker = this.pickerFor(sc, views);
+    if (!picker || sc.gameOver?.autoPickAt == null) {
+      this.popupKeys.delete(sc.id);
+      return null;
+    }
+    // Keep the pop-up stable (no redraw under your mouse): the page counts down on its own, and
+    // "ms left" is only recomputed when the list or the deadline changes.
+    const key = JSON.stringify(picker) + sc.gameOver.autoPickAt;
+    const prev = this.popupKeys.get(sc.id);
+    if (prev?.key === key) return { ...picker, autoPickInMs: prev.ms };
+    const ms = Math.max(0, Math.round((sc.gameOver.autoPickAt - now) / (this.opts.replay?.speed ?? 1)));
+    this.popupKeys.set(sc.id, { key, ms });
+    return { ...picker, autoPickInMs: ms };
+  }
+
+  private state(): AppState {
+    const views = this.engine.views();
+    const c = this.cfg;
+    return {
+      now: this.clock.now(),
+      mode: this.mode,
+      shell: this.opts.shell,
+      signin: this.signin,
+      streamLimit: this.controller?.streamLimit ?? c.windows.maxConcurrentStreams,
+      audio: { mode: this.engine.audio.mode, focus: this.engine.audio.focus },
+      feed: this.feed.slice(-80),
+      labels: this.labels,
+      settings: {
+        sensitivity: c.switching.sensitivity,
+        breakModel: c.switching.breakModel,
+        dwellSeconds: c.director.dwellSeconds,
+        minSubstituteSeconds: c.switching.minSubstituteSeconds,
+        scoreboardLiveSeconds: c.espn.scoreboardLiveSeconds,
+        summarySeconds: c.espn.summarySeconds,
+        hotSummarySeconds: c.espn.hotSummarySeconds,
+        allowDuplicates: c.director.allowDuplicates,
+        gameOverAutoPickSeconds: c.director.gameOverAutoPickSeconds,
+        enterThreshold: c.breakDetector.enterThreshold,
+        youtube: this.highlights.youtubeEnabled,
+        overridden: Object.keys(this.overrides),
+      },
+      screens: this.engine.director.screens.map((s) => {
+        const r = this.controller?.renderOf(s.id) ?? { render: 'none' as const, reason: null };
+        const h = this.controller?.screens[s.id - 1]?.lastHealth;
+        return {
+          id: s.id,
+          mode: s.mode,
+          homeGameId: s.homeGameId,
+          showingGameId: s.showing.kind === 'game' ? s.showing.gameId : null,
+          showingKind: s.showing.kind,
+          render: r.render,
+          dataReason: r.reason,
+          health: h ? { state: h.state, detail: h.detail } : null,
+          error: this.controller?.failureOf(s.id) ?? null,
+          gameOverAutoPickAt: s.gameOver?.autoPickAt ?? null,
+          picker: this.pickerFor(s, views),
+          audio: s.id === this.engine.audio.focus,
+          switching: this.controller?.switchingOf(s.id) ?? null,
+          lastSwitch: this.lastSwitch.get(s.id) ?? null,
+        };
+      }),
+      games: [...views.values()].map((v) => {
+        const a = resolveChannel(this.cfg, v.game.networks);
+        return gameDTO(v.game, v.assessment, v.channel, a.available ? null : a.reason);
+      }),
+    };
+  }
+
+  private async runReplay(r: NonNullable<AppOptions['replay']>): Promise<void> {
+    const dir = recordingDir(PROJECT_ROOT, r.date);
+    const feed = r.synth ? synthFeed(dir, this.cfg) : recordedFeed(dir);
+    const warmFrom = r.fromMs - 15 * 60_000;
+    const tickMs = this.cfg.director.tickSeconds * 1000;
+    let warmTick: number | null = null;
+    let started = false;
+    this.clock.start(r.fromMs);
+    for await (const item of feed) {
+      if (this.stopped) return;
+      if (item.at < warmFrom) continue;
+      if (item.at < r.fromMs) {
+        // Warm-up: build game history and detector state before the replay window, silently.
+        while (warmTick !== null && warmTick <= item.at) {
+          this.engine.tick(warmTick);
+          warmTick += tickMs;
+        }
+        item.apply(this.engine);
+        warmTick ??= item.at;
+        continue;
+      }
+      if (!started) {
+        started = true;
+        this.clock.start(r.fromMs);
+        this.info(`replaying ${r.date} from ${fmtClock(r.fromMs)} ET at ${r.speed}x`);
+        this.startTicking();
+      }
+      const wait = (item.at - this.clock.now()) / r.speed;
+      if (wait > 0) await new Promise((res) => setTimeout(res, wait));
+      item.apply(this.engine);
+    }
+    this.info('replay finished');
+  }
+}

@@ -1,0 +1,1143 @@
+{
+ "id": "401858263",
+ "uid": "s:20~l:23~e:401858263",
+ "date": "2026-10-17T23:00Z",
+ "name": "Florida State Seminoles at Miami Hurricanes",
+ "shortName": "FSU @ MIA",
+ "season": {
+  "year": 2026,
+  "type": 2,
+  "slug": "regular-season"
+ },
+ "week": {
+  "number": 7
+ },
+ "competitions": [
+  {
+   "id": "401858263",
+   "uid": "s:20~l:23~e:401858263~c:401858263",
+   "date": "2026-10-17T23:00Z",
+   "attendance": 0,
+   "type": {
+    "id": "1",
+    "abbreviation": "STD"
+   },
+   "timeValid": true,
+   "dateValid": true,
+   "neutralSite": false,
+   "conferenceCompetition": true,
+   "playByPlayAvailable": false,
+   "recent": true,
+   "venue": {
+    "id": "3948",
+    "fullName": "Hard Rock Stadium",
+    "address": {
+     "city": "Miami Gardens",
+     "state": "FL",
+     "country": "USA"
+    },
+    "indoor": false
+   },
+   "competitors": [
+    {
+     "id": "2390",
+     "uid": "s:20~l:23~t:2390",
+     "type": "team",
+     "order": 0,
+     "homeAway": "home",
+     "team": {
+      "id": "2390",
+      "uid": "s:20~l:23~t:2390",
+      "location": "Miami",
+      "name": "Hurricanes",
+      "abbreviation": "MIA",
+      "displayName": "Miami Hurricanes",
+      "shortDisplayName": "Miami",
+      "color": "f47423",
+      "alternateColor": "035131",
+      "isActive": true,
+      "venue": {
+       "id": "3948"
+      },
+      "links": [
+       {
+        "rel": [
+         "clubhouse",
+         "desktop",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/_/id/2390/miami-hurricanes",
+        "text": "Clubhouse",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "clubhouse",
+         "mobile",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/_/id/2390/miami-hurricanes",
+        "text": "Clubhouse",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "roster",
+         "desktop",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/roster/_/id/2390",
+        "text": "Roster",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "roster",
+         "sportscenter",
+         "app",
+         "team"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:23~t:2390&section=roster",
+        "text": "Roster",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "stats",
+         "desktop",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/stats/_/id/2390",
+        "text": "Statistics",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "stats",
+         "sportscenter",
+         "app",
+         "team"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:23~t:2390&section=stats",
+        "text": "Statistics",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "schedule",
+         "desktop",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/schedule/_/id/2390",
+        "text": "Schedule",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "schedule",
+         "sportscenter",
+         "app",
+         "team"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:23~t:2390&section=scores",
+        "text": "Schedule",
+        "isExternal": false,
+        "isPremium": false
+       }
+      ],
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2390.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/2390.png",
+      "conferenceId": "1"
+     },
+     "score": "0",
+     "curatedRank": {
+      "current": 3
+     },
+     "statistics": [],
+     "records": [
+      {
+       "name": "overall",
+       "abbreviation": "overall",
+       "type": "total",
+       "summary": "5-0"
+      },
+      {
+       "name": "Home",
+       "abbreviation": "Home",
+       "type": "homerecord",
+       "summary": "2-0"
+      },
+      {
+       "name": "Away",
+       "abbreviation": "Away",
+       "type": "awayrecord",
+       "summary": "3-0"
+      },
+      {
+       "name": "vs. Conf.",
+       "abbreviation": "CONF",
+       "type": "vsconf",
+       "summary": "3-0"
+      }
+     ],
+     "leaders": [
+      {
+       "name": "passingLeader",
+       "displayName": "Passing Leader",
+       "shortDisplayName": "PASS",
+       "abbreviation": "PYDS",
+       "leaders": [
+        {
+         "displayValue": "112/133, 1438 YDS, 15 TD",
+         "value": 1438,
+         "athlete": {
+          "id": "5121169",
+          "fullName": "Darian Mensah",
+          "displayName": "Darian Mensah",
+          "shortName": "D. Mensah",
+          "links": [
+           {
+            "rel": [
+             "playercard",
+             "desktop",
+             "athlete"
+            ],
+            "href": "https://www.espn.com/college-football/player/_/id/5121169/darian-mensah"
+           }
+          ],
+          "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5121169.png",
+          "jersey": "10",
+          "position": {
+           "abbreviation": "QB"
+          },
+          "team": {
+           "id": "2390"
+          },
+          "active": true
+         },
+         "team": {
+          "id": "2390"
+         }
+        }
+       ]
+      },
+      {
+       "name": "rushingLeader",
+       "displayName": "Rushing Leader",
+       "shortDisplayName": "RUSH",
+       "abbreviation": "RYDS",
+       "leaders": [
+        {
+         "displayValue": "52 CAR, 307 YDS, 5 TD",
+         "value": 307,
+         "athlete": {
+          "id": "4870736",
+          "fullName": "Mark Fletcher Jr.",
+          "displayName": "Mark Fletcher Jr.",
+          "shortName": "M. Fletcher Jr.",
+          "links": [
+           {
+            "rel": [
+             "playercard",
+             "desktop",
+             "athlete"
+            ],
+            "href": "https://www.espn.com/college-football/player/_/id/4870736/mark-fletcher-jr"
+           }
+          ],
+          "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4870736.png",
+          "jersey": "4",
+          "position": {
+           "abbreviation": "RB"
+          },
+          "team": {
+           "id": "2390"
+          },
+          "active": true
+         },
+         "team": {
+          "id": "2390"
+         }
+        }
+       ]
+      },
+      {
+       "name": "receivingLeader",
+       "displayName": "Receiving Leader",
+       "shortDisplayName": "REC",
+       "abbreviation": "RECYDS",
+       "leaders": [
+        {
+         "displayValue": "39 REC, 604 YDS, 6 TD",
+         "value": 604,
+         "athlete": {
+          "id": "5159175",
+          "fullName": "Malachi Toney",
+          "displayName": "Malachi Toney",
+          "shortName": "M. Toney",
+          "links": [
+           {
+            "rel": [
+             "playercard",
+             "desktop",
+             "athlete"
+            ],
+            "href": "https://www.espn.com/college-football/player/_/id/5159175/malachi-toney"
+           }
+          ],
+          "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5159175.png",
+          "jersey": "1",
+          "position": {
+           "abbreviation": "WR"
+          },
+          "team": {
+           "id": "2390"
+          },
+          "active": true
+         },
+         "team": {
+          "id": "2390"
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "id": "52",
+     "uid": "s:20~l:23~t:52",
+     "type": "team",
+     "order": 1,
+     "homeAway": "away",
+     "team": {
+      "id": "52",
+      "uid": "s:20~l:23~t:52",
+      "location": "Florida State",
+      "name": "Seminoles",
+      "abbreviation": "FSU",
+      "displayName": "Florida State Seminoles",
+      "shortDisplayName": "Florida St",
+      "color": "782f40",
+      "alternateColor": "ceb888",
+      "isActive": true,
+      "venue": {
+       "id": "3697"
+      },
+      "links": [
+       {
+        "rel": [
+         "clubhouse",
+         "desktop",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/_/id/52/florida-state-seminoles",
+        "text": "Clubhouse",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "clubhouse",
+         "mobile",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/_/id/52/florida-state-seminoles",
+        "text": "Clubhouse",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "roster",
+         "desktop",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/roster/_/id/52",
+        "text": "Roster",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "roster",
+         "sportscenter",
+         "app",
+         "team"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:23~t:52&section=roster",
+        "text": "Roster",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "stats",
+         "desktop",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/stats/_/id/52",
+        "text": "Statistics",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "stats",
+         "sportscenter",
+         "app",
+         "team"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:23~t:52&section=stats",
+        "text": "Statistics",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "schedule",
+         "desktop",
+         "team"
+        ],
+        "href": "https://www.espn.com/college-football/team/schedule/_/id/52",
+        "text": "Schedule",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "rel": [
+         "schedule",
+         "sportscenter",
+         "app",
+         "team"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:23~t:52&section=scores",
+        "text": "Schedule",
+        "isExternal": false,
+        "isPremium": false
+       }
+      ],
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/52.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/52.png",
+      "conferenceId": "1"
+     },
+     "score": "0",
+     "curatedRank": {
+      "current": 99
+     },
+     "statistics": [],
+     "records": [
+      {
+       "name": "overall",
+       "abbreviation": "overall",
+       "type": "total",
+       "summary": "3-3"
+      },
+      {
+       "name": "Home",
+       "abbreviation": "Home",
+       "type": "homerecord",
+       "summary": "3-1"
+      },
+      {
+       "name": "Away",
+       "abbreviation": "Away",
+       "type": "awayrecord",
+       "summary": "0-2"
+      },
+      {
+       "name": "vs. Conf.",
+       "abbreviation": "CONF",
+       "type": "vsconf",
+       "summary": "1-2"
+      }
+     ],
+     "leaders": [
+      {
+       "name": "passingLeader",
+       "displayName": "Passing Leader",
+       "shortDisplayName": "PASS",
+       "abbreviation": "PYDS",
+       "leaders": [
+        {
+         "displayValue": "91/153, 1320 YDS, 8 TD, 7 INT",
+         "value": 1320,
+         "athlete": {
+          "id": "4838679",
+          "fullName": "Ashton Daniels",
+          "displayName": "Ashton Daniels",
+          "shortName": "A. Daniels",
+          "links": [
+           {
+            "rel": [
+             "playercard",
+             "desktop",
+             "athlete"
+            ],
+            "href": "https://www.espn.com/college-football/player/_/id/4838679/ashton-daniels"
+           }
+          ],
+          "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4838679.png",
+          "jersey": "14",
+          "position": {
+           "abbreviation": "QB"
+          },
+          "team": {
+           "id": "52"
+          },
+          "active": true
+         },
+         "team": {
+          "id": "52"
+         }
+        }
+       ]
+      },
+      {
+       "name": "rushingLeader",
+       "displayName": "Rushing Leader",
+       "shortDisplayName": "RUSH",
+       "abbreviation": "RYDS",
+       "leaders": [
+        {
+         "displayValue": "100 CAR, 565 YDS, 5 TD",
+         "value": 565,
+         "athlete": {
+          "id": "5141560",
+          "fullName": "Ousmane Kromah",
+          "displayName": "Ousmane Kromah",
+          "shortName": "O. Kromah",
+          "links": [
+           {
+            "rel": [
+             "playercard",
+             "desktop",
+             "athlete"
+            ],
+            "href": "https://www.espn.com/college-football/player/_/id/5141560/ousmane-kromah"
+           }
+          ],
+          "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5141560.png",
+          "jersey": "32",
+          "position": {
+           "abbreviation": "RB"
+          },
+          "team": {
+           "id": "52"
+          },
+          "active": true
+         },
+         "team": {
+          "id": "52"
+         }
+        }
+       ]
+      },
+      {
+       "name": "receivingLeader",
+       "displayName": "Receiving Leader",
+       "shortDisplayName": "REC",
+       "abbreviation": "RECYDS",
+       "leaders": [
+        {
+         "displayValue": "16 REC, 299 YDS, 1 TD",
+         "value": 299,
+         "athlete": {
+          "id": "5164350",
+          "fullName": "Jayvan Boggs",
+          "displayName": "Jayvan Boggs",
+          "shortName": "J. Boggs",
+          "links": [
+           {
+            "rel": [
+             "playercard",
+             "desktop",
+             "athlete"
+            ],
+            "href": "https://www.espn.com/college-football/player/_/id/5164350/jayvan-boggs"
+           }
+          ],
+          "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5164350.png",
+          "jersey": "15",
+          "position": {
+           "abbreviation": "WR"
+          },
+          "team": {
+           "id": "52"
+          },
+          "active": true
+         },
+         "team": {
+          "id": "52"
+         }
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "notes": [],
+   "status": {
+    "clock": 0,
+    "displayClock": "0:00",
+    "period": 0,
+    "type": {
+     "id": "1",
+     "name": "STATUS_SCHEDULED",
+     "state": "pre",
+     "completed": false,
+     "description": "Scheduled",
+     "detail": "Sat, October 17th at 7:00 PM EDT",
+     "shortDetail": "10/17 - 7:00 PM EDT"
+    }
+   },
+   "broadcasts": [
+    {
+     "market": "national",
+     "names": [
+      "ESPN",
+      "Disney+"
+     ]
+    }
+   ],
+   "leaders": [
+    {
+     "name": "passingYards",
+     "displayName": "Passing Leader",
+     "shortDisplayName": "PASS",
+     "abbreviation": "PYDS",
+     "leaders": [
+      {
+       "displayValue": "1438 YDS, 15 TD",
+       "value": 1438,
+       "athlete": {
+        "id": "5121169",
+        "fullName": "Darian Mensah",
+        "displayName": "Darian Mensah",
+        "shortName": "D. Mensah",
+        "links": [
+         {
+          "rel": [
+           "playercard",
+           "desktop",
+           "athlete"
+          ],
+          "href": "https://www.espn.com/college-football/player/_/id/5121169/darian-mensah"
+         }
+        ],
+        "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5121169.png",
+        "jersey": "10",
+        "position": {
+         "abbreviation": "QB"
+        },
+        "team": {
+         "id": "2390"
+        },
+        "active": true
+       },
+       "team": {
+        "id": "2390"
+       }
+      }
+     ]
+    },
+    {
+     "name": "rushingYards",
+     "displayName": "Rushing Leader",
+     "shortDisplayName": "RUSH",
+     "abbreviation": "RYDS",
+     "leaders": [
+      {
+       "displayValue": "100 CAR, 565 YDS, 5 TD",
+       "value": 565,
+       "athlete": {
+        "id": "5141560",
+        "fullName": "Ousmane Kromah",
+        "displayName": "Ousmane Kromah",
+        "shortName": "O. Kromah",
+        "links": [
+         {
+          "rel": [
+           "playercard",
+           "desktop",
+           "athlete"
+          ],
+          "href": "https://www.espn.com/college-football/player/_/id/5141560/ousmane-kromah"
+         }
+        ],
+        "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5141560.png",
+        "jersey": "32",
+        "position": {
+         "abbreviation": "RB"
+        },
+        "team": {
+         "id": "52"
+        },
+        "active": true
+       },
+       "team": {
+        "id": "52"
+       }
+      }
+     ]
+    },
+    {
+     "name": "receivingYards",
+     "displayName": "Receiving Leader",
+     "shortDisplayName": "REC",
+     "abbreviation": "RECYDS",
+     "leaders": [
+      {
+       "displayValue": "39 REC, 604 YDS, 6 TD",
+       "value": 604,
+       "athlete": {
+        "id": "5159175",
+        "fullName": "Malachi Toney",
+        "displayName": "Malachi Toney",
+        "shortName": "M. Toney",
+        "links": [
+         {
+          "rel": [
+           "playercard",
+           "desktop",
+           "athlete"
+          ],
+          "href": "https://www.espn.com/college-football/player/_/id/5159175/malachi-toney"
+         }
+        ],
+        "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5159175.png",
+        "jersey": "1",
+        "position": {
+         "abbreviation": "WR"
+        },
+        "team": {
+         "id": "2390"
+        },
+        "active": true
+       },
+       "team": {
+        "id": "2390"
+       }
+      }
+     ]
+    }
+   ],
+   "groups": {
+    "id": "1",
+    "name": "Atlantic Coast Conference",
+    "shortName": "ACC",
+    "isConference": true
+   },
+   "format": {
+    "regulation": {
+     "periods": 4
+    }
+   },
+   "tickets": [
+    {
+     "summary": "Tickets as low as $79",
+     "numberAvailable": 1455,
+     "links": [
+      {
+       "href": "https://www.vividseats.com/miami-hurricanes-football-tickets-hard-rock-stadium-9-2-2026--sports-ncaa-football/production/6209483?wsUser=717"
+      },
+      {
+       "href": "https://www.vividseats.com/hard-rock-stadium-tickets/venue/1366?wsUser=717"
+      }
+     ]
+    }
+   ],
+   "startDate": "2026-10-17T23:00Z",
+   "broadcast": "ESPN/Disney+",
+   "geoBroadcasts": [
+    {
+     "type": {
+      "id": "1",
+      "shortName": "TV"
+     },
+     "market": {
+      "id": "1",
+      "type": "National"
+     },
+     "media": {
+      "shortName": "ESPN",
+      "logo": "https://a.espncdn.com/guid/335fd2d2-97b9-336b-81ee-573eb6bdcffc/logos/default.png",
+      "darkLogo": ""
+     },
+     "lang": "en",
+     "region": "us"
+    },
+    {
+     "type": {
+      "id": "4",
+      "shortName": "Streaming"
+     },
+     "market": {
+      "id": "1",
+      "type": "National"
+     },
+     "media": {
+      "shortName": "Disney+",
+      "logo": "https://a.espncdn.com/guid/2f3d8704-2682-3195-9920-bb3e38d3e845/logos/default.png",
+      "darkLogo": "https://a.espncdn.com/guid/2f3d8704-2682-3195-9920-bb3e38d3e845/logos/default-dark.png"
+     },
+     "lang": "en",
+     "region": "us"
+    }
+   ],
+   "odds": [
+    {
+     "provider": {
+      "id": "100",
+      "name": "DraftKings",
+      "priority": 1,
+      "logos": [
+       {
+        "href": "https://a.espncdn.com/i/betting/Draftkings_Light.svg",
+        "rel": [
+         "light"
+        ]
+       },
+       {
+        "href": "https://a.espncdn.com/i/betting/Draftkings_Dark.svg",
+        "rel": [
+         "dark"
+        ]
+       }
+      ],
+      "displayName": "DraftKings"
+     },
+     "details": "MIA -19.5",
+     "overUnder": 56.5,
+     "spread": -19.5,
+     "awayTeamOdds": {
+      "favorite": false,
+      "underdog": true,
+      "team": {
+       "id": "52",
+       "uid": "s:20~l:23~t:52",
+       "abbreviation": "FSU",
+       "name": "Seminoles",
+       "displayName": "Florida State Seminoles",
+       "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/52.png"
+      },
+      "favoriteAtOpen": false
+     },
+     "homeTeamOdds": {
+      "favorite": true,
+      "underdog": false,
+      "team": {
+       "id": "2390",
+       "uid": "s:20~l:23~t:2390",
+       "abbreviation": "MIA",
+       "name": "Hurricanes",
+       "displayName": "Miami Hurricanes",
+       "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2390.png"
+      },
+      "favoriteAtOpen": true
+     },
+     "moneyline": {
+      "displayName": "Moneyline",
+      "shortDisplayName": "ML",
+      "home": {
+       "close": {
+        "odds": "-1600",
+        "link": {
+         "language": "en-US",
+         "rel": [
+          "home",
+          "desktop",
+          "bets",
+          "draftkings"
+         ],
+         "href": "https://sportsbook.draftkings.com/gateway?s=__s__&wpcid=__wpcid__&wpsrc=413&wpcn=ESPN&wpscn=Widget&wpcrn=BetSlipDeepLink&wpscid=__wpscid__&wpcrid=xx&preurl=https%3A%2F%2Fsportsbook.draftkings.com%2Fevent%2F34226106%3Foutcomes%3D0ML84998461_1",
+         "text": "Home Bet",
+         "shortText": "Home Bet",
+         "isExternal": true,
+         "isPremium": false,
+         "tracking": {
+          "campaign": "betting-integrations",
+          "tags": {
+           "league": "college-football",
+           "sport": "football",
+           "gameId": 401858263,
+           "betSide": "home",
+           "betType": "straight"
+          }
+         }
+        }
+       },
+       "open": {
+        "odds": "-950"
+       }
+      },
+      "away": {
+       "close": {
+        "odds": "+900",
+        "link": {
+         "language": "en-US",
+         "rel": [
+          "away",
+          "desktop",
+          "bets",
+          "draftkings"
+         ],
+         "href": "https://sportsbook.draftkings.com/gateway?s=__s__&wpcid=__wpcid__&wpsrc=413&wpcn=ESPN&wpscn=Widget&wpcrn=BetSlipDeepLink&wpscid=__wpscid__&wpcrid=xx&preurl=https%3A%2F%2Fsportsbook.draftkings.com%2Fevent%2F34226106%3Foutcomes%3D0ML84998461_3",
+         "text": "Away Bet",
+         "shortText": "Away Bet",
+         "isExternal": true,
+         "isPremium": false,
+         "tracking": {
+          "campaign": "betting-integrations",
+          "tags": {
+           "league": "college-football",
+           "sport": "football",
+           "gameId": 401858263,
+           "betSide": "away",
+           "betType": "straight"
+          }
+         }
+        }
+       },
+       "open": {
+        "odds": "+625"
+       }
+      }
+     },
+     "pointSpread": {
+      "displayName": "Spread",
+      "shortDisplayName": "Spread",
+      "home": {
+       "close": {
+        "line": "-19.5",
+        "odds": "-115",
+        "link": {
+         "language": "en-US",
+         "rel": [
+          "homeSpread",
+          "desktop",
+          "bets"
+         ],
+         "href": "https://sportsbook.draftkings.com/gateway?s=__s__&wpcid=__wpcid__&wpsrc=413&wpcn=ESPN&wpscn=Widget&wpcrn=BetSlipDeepLink&wpscid=__wpscid__&wpcrid=xx&preurl=https%3A%2F%2Fsportsbook.draftkings.com%2Fevent%2F34226106%3Foutcomes%3D0HC84998461N1950_1",
+         "text": "Home Point Spread",
+         "shortText": "Home Point Spread",
+         "isExternal": true,
+         "isPremium": false,
+         "tracking": {
+          "campaign": "betting-integrations",
+          "tags": {
+           "league": "college-football",
+           "sport": "football",
+           "gameId": 401858263,
+           "betSide": "none",
+           "betType": "straight",
+           "betDetails": "Spread:MIA-19.5"
+          }
+         }
+        }
+       },
+       "open": {
+        "line": "-16.5",
+        "odds": "-110"
+       }
+      },
+      "away": {
+       "close": {
+        "line": "+19.5",
+        "odds": "-105",
+        "link": {
+         "language": "en-US",
+         "rel": [
+          "awaySpread",
+          "desktop",
+          "bets"
+         ],
+         "href": "https://sportsbook.draftkings.com/gateway?s=__s__&wpcid=__wpcid__&wpsrc=413&wpcn=ESPN&wpscn=Widget&wpcrn=BetSlipDeepLink&wpscid=__wpscid__&wpcrid=xx&preurl=https%3A%2F%2Fsportsbook.draftkings.com%2Fevent%2F34226106%3Foutcomes%3D0HC84998461P1950_3",
+         "text": "Away Point Spread",
+         "shortText": "Away Point Spread",
+         "isExternal": true,
+         "isPremium": false,
+         "tracking": {
+          "campaign": "betting-integrations",
+          "tags": {
+           "league": "college-football",
+           "sport": "football",
+           "gameId": 401858263,
+           "betSide": "none",
+           "betType": "straight",
+           "betDetails": "Spread:FSU+19.5"
+          }
+         }
+        }
+       },
+       "open": {
+        "line": "+16.5",
+        "odds": "-110"
+       }
+      }
+     },
+     "total": {
+      "displayName": "Total",
+      "shortDisplayName": "Total",
+      "over": {
+       "close": {
+        "line": "o56.5",
+        "odds": "-115",
+        "link": {
+         "language": "en-US",
+         "rel": [
+          "over",
+          "desktop",
+          "bets"
+         ],
+         "href": "https://sportsbook.draftkings.com/gateway?s=__s__&wpcid=__wpcid__&wpsrc=413&wpcn=ESPN&wpscn=Widget&wpcrn=BetSlipDeepLink&wpscid=__wpscid__&wpcrid=xx&preurl=https%3A%2F%2Fsportsbook.draftkings.com%2Fevent%2F34226106%3Foutcomes%3D0OU84998461O5650_1",
+         "text": "Over Odds",
+         "shortText": "Over Odds",
+         "isExternal": true,
+         "isPremium": false,
+         "tracking": {
+          "campaign": "betting-integrations",
+          "tags": {
+           "league": "college-football",
+           "sport": "football",
+           "gameId": 401858263,
+           "betSide": "over",
+           "betType": "straight",
+           "betDetails": "Over:56.5"
+          }
+         }
+        }
+       },
+       "open": {
+        "line": "o53.5",
+        "odds": "-112"
+       }
+      },
+      "under": {
+       "close": {
+        "line": "u56.5",
+        "odds": "-105",
+        "link": {
+         "language": "en-US",
+         "rel": [
+          "under",
+          "desktop",
+          "bets"
+         ],
+         "href": "https://sportsbook.draftkings.com/gateway?s=__s__&wpcid=__wpcid__&wpsrc=413&wpcn=ESPN&wpscn=Widget&wpcrn=BetSlipDeepLink&wpscid=__wpscid__&wpcrid=xx&preurl=https%3A%2F%2Fsportsbook.draftkings.com%2Fevent%2F34226106%3Foutcomes%3D0OU84998461U5650_3",
+         "text": "Under Odds",
+         "shortText": "Under Odds",
+         "isExternal": true,
+         "isPremium": false,
+         "tracking": {
+          "campaign": "betting-integrations",
+          "tags": {
+           "league": "college-football",
+           "sport": "football",
+           "gameId": 401858263,
+           "betSide": "under",
+           "betType": "straight",
+           "betDetails": "Under:56.5"
+          }
+         }
+        }
+       },
+       "open": {
+        "line": "u53.5",
+        "odds": "-108"
+       }
+      }
+     },
+     "link": {
+      "language": "en-US",
+      "rel": [
+       "game",
+       "desktop",
+       "bets"
+      ],
+      "href": "https://sportsbook.draftkings.com/gateway?s=__s__&wpcid=__wpcid__&wpsrc=413&wpcn=ESPN&wpscn=Widget&wpcrn=BetSlipDeepLink&wpscid=__wpscid__&wpcrid=xx&preurl=https%3A%2F%2Fsportsbook.draftkings.com%2Fevent%2F34226106",
+      "text": "See More Odds",
+      "shortText": "Game",
+      "isExternal": true,
+      "isPremium": false,
+      "tracking": {
+       "campaign": "betting-integrations",
+       "tags": {
+        "league": "college-football",
+        "sport": "football",
+        "gameId": 401858263,
+        "betSide": "none",
+        "betType": "straight"
+       }
+      }
+     },
+     "header": {
+      "logo": {
+       "dark": "https://a.espncdn.com/i/espnbet/dark/espn-bet-square-off.svg",
+       "light": "https://a.espncdn.com/i/espnbet/espn-bet-square-off.svg",
+       "exclusivesLogoDark": "https://a.espncdn.com/i/espnbet/espn-bet-square-mint.svg",
+       "exclusivesLogoLight": "https://a.espncdn.com/i/espnbet/espn-bet-square-mint.svg"
+      },
+      "text": "Game Odds"
+     },
+     "footer": {
+      "disclaimer": "GAMBLING PROBLEM? CALL 1-800-GAMBLER or 1-800-MY-RESET, (800) 327-5050 or visit gamblinghelplinema.org (MA). Call 877-8-HOPENY/text HOPENY (467369) (NY). Call 888-789-7777/visit ccpg.org (CT), or visit www.mdgamblinghelp.org (MD), 1-800-981-0023 (PR). 21+ and present in most states. (18+ DC/KY/NH/PR/WY). Void in ONT. Eligibility restrictions apply. Terms: draftkings.com/sportsbook. On behalf of Boot Hill Casino (KS). Pass-thru of per wager tax may apply in IL."
+     }
+    }
+   ],
+   "highlights": []
+  }
+ ],
+ "links": [
+  {
+   "language": "en-US",
+   "rel": [
+    "summary",
+    "desktop",
+    "event"
+   ],
+   "href": "https://www.espn.com/college-football/game/_/gameId/401858263/florida-st-miami",
+   "text": "Gamecast",
+   "shortText": "Gamecast",
+   "isExternal": false,
+   "isPremium": false
+  }
+ ],
+ "weather": {
+  "displayValue": "Thunderstorms",
+  "temperature": 79,
+  "highTemperature": 79,
+  "conditionId": "15",
+  "link": {
+   "language": "en-US",
+   "rel": [
+    "33056"
+   ],
+   "href": "http://www.accuweather.com/en/us/hard-rock-stadium-fl/33056/hourly-weather-forecast/53559_poi?day=1&hbhhour=19&lang=en-us",
+   "text": "Weather",
+   "shortText": "Weather",
+   "isExternal": true,
+   "isPremium": false
+  }
+ },
+ "status": {
+  "clock": 0,
+  "displayClock": "0:00",
+  "period": 0,
+  "type": {
+   "id": "1",
+   "name": "STATUS_SCHEDULED",
+   "state": "pre",
+   "completed": false,
+   "description": "Scheduled",
+   "detail": "Sat, October 17th at 7:00 PM EDT",
+   "shortDetail": "10/17 - 7:00 PM EDT"
+  }
+ }
+}

@@ -1,0 +1,7 @@
+node_modules/
+recordings/
+logs/
+spike-report/
+.chrome-profile/
+.state/
+.env
