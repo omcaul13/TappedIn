@@ -80,6 +80,8 @@ if ($venvOk) {
 
 # 4. castLabs EVS account ----------------------------------------------------------------------------
 Write-Step '4/8  castLabs EVS account (free; signs the video player for Widevine)'
+# Only needed to sign. With a good signature, setup never contacts castLabs (no login, works offline).
+$needSigning = -not (Test-SignatureFresh)
 $evsConfig = $env:EVS_CONFIG_FILE
 if (-not $evsConfig) { $evsConfig = Join-Path $env:USERPROFILE '.config\evs\config.json' }
 $evsSaved = $false
@@ -89,7 +91,9 @@ if (Test-Path -LiteralPath $evsConfig) {
         $evsSaved = [bool]($auth.AccountName -and $auth.RefreshToken)
     } catch { $evsSaved = $false }
 }
-if ($CheckOnly) {
+if (-not $needSigning) {
+    Write-Ok 'Not needed: Electron is already signed.'
+} elseif ($CheckOnly) {
     if ($evsSaved) { Write-Ok 'An EVS login is saved on this PC (setup would refresh it).' } else { Write-Todo "No EVS login on this PC; setup would run castLabs' sign-in or sign-up." }
 } elseif (-not (Test-Path -LiteralPath $VenvPython)) {
     Stop-WithFix 'The signing tool is missing.' 'Run Setup RedZone.cmd again.'
@@ -101,20 +105,29 @@ if ($CheckOnly) {
     } else {
         Write-Info "RedZone needs a free castLabs EVS account to sign its video player. You type your details"
         Write-Info "into castLabs' own prompts below; RedZone never reads or saves them."
-        if (Read-YesNo 'Do you already have a castLabs EVS account?') {
-            $code = Invoke-Interactive $VenvPython @('-I', $EvsScript, 'account', 'refresh')
-        } else {
-            Write-Info 'castLabs will email you a confirmation code; type it when asked.'
-            $code = Invoke-Interactive $VenvPython @('-I', $EvsScript, 'account', 'signup')
+        Write-Info '  1  I have an EVS account'
+        Write-Info '  2  Create an EVS account (castLabs emails you a code to type in)'
+        Write-Info '  3  I signed up but did not finish the emailed code (sends a new code)'
+        Write-Info '  4  I forgot my EVS password (castLabs emails you a code to reset it)'
+        $choice = "$(Read-Host '   Type 1, 2, 3 or 4')".Trim()
+        switch ($choice) {
+            '1' { $code = Invoke-Interactive $VenvPython @('-I', $EvsScript, 'account', 'refresh') }
+            '2' { $code = Invoke-Interactive $VenvPython @('-I', $EvsScript, 'account', 'signup') }
+            '3' { $code = Invoke-Interactive $VenvPython @('-I', $EvsScript, 'account', 'resend') }
+            '4' {
+                $code = Invoke-Interactive $VenvPython @('-I', $EvsScript, 'account', 'reset')
+                if ($code -eq 0) { $code = Invoke-Interactive $VenvPython @('-I', $EvsScript, 'account', 'refresh') }
+            }
+            default { Stop-WithFix 'No choice was made.' 'Run Setup RedZone.cmd again and type 1, 2, 3 or 4.' }
         }
-        if ($code -ne 0) { Stop-WithFix 'The EVS sign-in or sign-up did not finish.' 'Read the castLabs message above, then run Setup RedZone.cmd again and answer its prompts.' }
+        if ($code -ne 0) { Stop-WithFix 'The EVS sign-in or sign-up did not finish.' 'Read the castLabs message above, then run Setup RedZone.cmd again (a typo in the emailed code: choose 3; a forgotten password: choose 4).' }
         Write-Ok 'Signed in to EVS.'
     }
 }
 
 # 5. Sign Electron for Widevine ----------------------------------------------------------------------
 Write-Step '5/8  Widevine signature for Electron'
-if (Test-SignatureFresh) {
+if (-not $needSigning) {
     Write-Ok 'electron.exe.sig is present and up to date.'
 } elseif ($CheckOnly) {
     Write-Todo 'Setup would run npm run sign-electron.'
@@ -129,10 +142,10 @@ if (-not (Get-NodeVersion)) {
     Write-Todo 'Needs Node.js first.'
 } elseif (Invoke-Doctor) {
     Write-Ok 'All checks passed.'
-} elseif ($CheckOnly) {
-    Write-Todo 'The doctor found problems (above).'
 } else {
-    Stop-WithFix 'The doctor found problems (above).' 'Follow each "Fix:" line, then run Setup RedZone.cmd again.'
+    # Not fatal: some problems (ESPN briefly down, RedZone already open) aren't install problems, and the
+    # shortcuts below are still worth making.
+    Write-Todo 'The doctor found problems (above). Follow each "Fix:" line.'
 }
 
 # 7. Shortcuts ---------------------------------------------------------------------------------------
@@ -175,5 +188,6 @@ if ($CheckOnly) {
 Start-Process -FilePath $Launcher -WorkingDirectory $Root
 Write-Ok 'RedZone is starting (its console window is minimized). The first start opens the setup screens.'
 Write-Host ''
-Write-Host 'Setup is done. Next time, open RedZone from the Start menu or the desktop.' -ForegroundColor Green
+if ($script:Todo -gt 0) { Write-Host "Setup is done, but $($script:Todo) item(s) above still need a look." -ForegroundColor Yellow }
+Write-Host 'Next time, open RedZone from the Start menu or the desktop.' -ForegroundColor Green
 exit 0

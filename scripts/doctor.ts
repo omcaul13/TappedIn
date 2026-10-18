@@ -3,10 +3,10 @@
 //   npm run doctor [-- --deps]
 // Exit code 0 when every check passes, 1 otherwise. The check* functions are pure (test/doctor.test.ts);
 // main() gathers the facts they judge.
-import { readFileSync, statSync } from 'node:fs';
+import { readFileSync, realpathSync, statSync } from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 import { loadConfig, loadOverrides, parseConfig, PROJECT_ROOT, withOverrides, type Config } from '../src/config';
 import { EspnClient, espnDateKey } from '../src/espn/client';
 import { loadProviderConfig } from '../src/providers/registry';
@@ -246,6 +246,14 @@ async function main(): Promise<void> {
   process.exitCode = failed === 0 ? 0 : 1;
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+// Real paths on both sides: through a junction or symlink argv[1] is the linked path, import.meta.url the real one.
+const isMain = (() => {
+  try {
+    return !!process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return false;
+  }
+})();
+if (isMain) {
   void main();
 }

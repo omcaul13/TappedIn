@@ -1,3 +1,7 @@
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, rmdirSync, symlinkSync, unlinkSync } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   checkDependencies,
@@ -142,5 +146,23 @@ describe('doctor: dependencies', () => {
     const none = checkDependencies(lock({ 'node_modules/zod': zod }), null);
     expect(none.ok).toBe(false);
     expect(none.fix).toMatch(/npm ci/);
+  });
+});
+
+describe('doctor: command line', () => {
+  // Run through a junction (a linked folder): import.meta.url is the real path, argv[1] the linked one.
+  it.runIf(process.platform === 'win32')('runs when started through a linked folder', () => {
+    const root = path.resolve(import.meta.dirname, '..');
+    const dir = mkdtempSync(path.join(os.tmpdir(), 'redzone-doctor-'));
+    const link = path.join(dir, 'linked');
+    symlinkSync(root, link, 'junction');
+    try {
+      const tsx = path.join(root, 'node_modules', 'tsx', 'dist', 'cli.mjs');
+      const r = spawnSync(process.execPath, [tsx, path.join(link, 'scripts', 'doctor.ts'), '--deps'], { encoding: 'utf8' });
+      expect(r.stdout).toContain('package-lock.json');
+    } finally {
+      unlinkSync(link); // removes the junction only, never what it points to
+      rmdirSync(dir);
+    }
   });
 });

@@ -103,8 +103,11 @@ function Get-ElectronVersion {
     try { return (Get-Content -LiteralPath $pkg -Raw | ConvertFrom-Json).version } catch { return $null }
 }
 
-# Whether node_modules matches package-lock.json (scripts\doctor.ts --deps; read-only).
+# Whether node_modules matches package-lock.json (scripts\doctor.ts --deps; read-only) and castLabs'
+# electron.exe is really there (antivirus can quarantine it while the lockfiles still match).
 function Test-DepsInSync {
+    if (-not (Test-Path -LiteralPath $ElectronExe)) { return $false }
+    if ("$(Get-ElectronVersion)" -notlike '*+wvcus*') { return $false }
     $tsx = Join-Path $Root 'node_modules\.bin\tsx.cmd'
     if (-not (Test-Path -LiteralPath $tsx)) { return $false }
     & $tsx (Join-Path $Root 'scripts\doctor.ts') --deps | Out-Null
