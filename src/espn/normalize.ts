@@ -28,7 +28,7 @@ export function normalizeEvent(ev: Json, observedAt: number, sport: SportId = 'c
   const phase = mod.phaseOf(statusName, str(status?.type?.state), detail, period);
   const home = team(comp, 'home');
   const away = team(comp, 'away');
-  const live = phase === 'LIVE' && comp?.situation ? mod.situationOf(comp.situation, home, away) : { situation: null, live: null };
+  const live = phase === 'LIVE' && comp?.situation ? mod.situationOf(comp.situation, home, away, { comp, detail }) : { situation: null, live: null };
   const snap: GameSnapshot = {
     id: String(ev.id),
     sport: mod.id,

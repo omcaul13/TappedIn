@@ -91,7 +91,8 @@ export interface SportModule {
   phaseOf(statusName: string, state: string | null, detail: string, period: number | null): Phase;
   /** Between periods while ESPN still says in progress ("End of 3rd"). */
   endOfPeriod(phase: Phase, statusName: string, detail: string): boolean;
-  situationOf(comp: Json, home: TeamSnap, away: TeamSnap): { situation: Situation | null; live: LiveDetail | null };
+  /** The live situation from ESPN's `competitions[0].situation` (`comp` and `detail` for sports that need more, e.g. hits, the half-inning). */
+  situationOf(situation: Json, home: TeamSnap, away: TeamSnap, ctx: { comp: Json; detail: string }): { situation: Situation | null; live: LiveDetail | null };
   /** Every play in a summary, deduped and in game order. */
   summaryPlays(body: Json): PlaySnap[];
   classifyPlay(typeText: string, scoringPlay: boolean, scoreValue: number): PlayKind;
