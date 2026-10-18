@@ -112,7 +112,7 @@ export interface ServiceDTO {
   measuredStreams: number | null;
   screens: number;
   standbyViews: number;
-  /** Each college-football network and the guide row it's mapped to. */
+  /** Each sports network and the guide row it's mapped to. */
   lineup: { key: string; row: number | null; label: string | null; number: number | null }[];
   /** Guide rows from the last scan (empty before the first scan). */
   rows: { index: number; label: string; number: number | null }[];

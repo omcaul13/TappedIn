@@ -12,7 +12,7 @@ import { YouTubeClient } from './highlights/youtube';
 import { LiveSource, recordingDir } from './espn/source';
 import { clock as fmtClock, dailyLogFile, DecisionLog, type LogEntry } from './log';
 import { startServer, type LocalServer, type PostResult } from './server/server';
-import { effectiveChannels } from './providers/lineup';
+import { effectiveChannels, upgradeLineup } from './providers/lineup';
 import { mkdirSync as mkdirp, writeFileSync } from 'node:fs';
 import { lineupFile } from './providers/lineup';
 import { listProviders } from './providers/registry';
@@ -121,6 +121,8 @@ export class App {
   ) {
     this.fileCfg = cfg;
     this.overrides = loadOverrides();
+    const added = upgradeLineup(withOverrides(cfg, this.overrides).provider, STATE_DIR);
+    if (added.length) console.log(`Channels: added ${added.length} networks for other sports from your last channel scan (${added.join(', ')})`);
     this.cfg = cfg = resolveConfig(cfg, this.overrides);
     this.setupState = migrateOwner(STATE_DIR, cfg) ?? loadSetup();
     this.screenCount = needsSetup(this.setupState, cfg) || opts.setup || opts.setupDemo ? 4 : this.setupState.screens;
@@ -692,7 +694,7 @@ export class App {
     try {
       const rows = await this.adapter.discoverLineup(this.controller.screens[0].page, this.controller.tools);
       const r = lineupFromScan(rows);
-      if (!r.found.length) return { ok: false, message: `No college-football channels found (${rows.length} guide rows read); kept your current lineup. Try Diagnostics.` };
+      if (!r.found.length) return { ok: false, message: `No sports channels found (${rows.length} guide rows read); kept your current lineup. Try Diagnostics.` };
       this.saveLineup(r.lineup, rows);
       this.setupState = { ...this.setupState, lineupAt: new Date().toISOString() };
       saveSetup(this.setupState);

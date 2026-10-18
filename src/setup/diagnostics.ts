@@ -93,7 +93,7 @@ export async function runStep(step: DiagStep, d: DiagDeps): Promise<DiagResult> 
         const rows = await d.discover();
         const { found, missing } = lineupFromScan(rows);
         const sample = rows.slice(0, 5).map((r) => r.label).join(', ');
-        if (!found.length) return result(false, `Read ${rows.length} guide rows but matched no college-football network.`, { rows: rows.length, sample });
+        if (!found.length) return result(false, `Read ${rows.length} guide rows but matched no sports network.`, { rows: rows.length, sample });
         const lineup = matchLineup(rows);
         return result(true, `Read ${rows.length} guide rows; found ${found.join(', ')}.`, { rows: rows.length, found: found.length, missing: missing.join(', '), withIds: Object.values(lineup).filter((e) => e.number !== null && (e.ref || e.callSign)).length, sample });
       }

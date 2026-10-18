@@ -1,8 +1,9 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
 import { ChannelSchema, type Config } from '../config';
-import type { ChannelRef } from './types';
+import { matchLineup } from './networks';
+import type { ChannelRef, DiscoveredChannel } from './types';
 
 // The channels a user's service carries. A lineup scan (or the settings page) saves them to
 // .state/lineups/<provider>.json; without that file the `channels` in the config file are used,
@@ -33,6 +34,32 @@ export function effectiveChannels(cfg: Config, providerId: string, stateDir: str
   } catch {
     return cfg.channels;
   }
+}
+
+export function scanFile(providerId: string, stateDir: string): string {
+  return lineupFile(providerId, stateDir).replace(/\.json$/, '.scan.json');
+}
+
+/**
+ * Networks added since the lineup was saved (other sports' networks, new regional ones): match them
+ * in the saved guide scan and add them. Existing entries, including your own mapping, never change.
+ * Returns the networks added that the guide carries.
+ */
+export function upgradeLineup(providerId: string, stateDir: string): string[] {
+  let lineup: Config['channels'];
+  let rows: DiscoveredChannel[];
+  try {
+    lineup = LineupFileSchema.parse(JSON.parse(readFileSync(lineupFile(providerId, stateDir), 'utf8')));
+    rows = JSON.parse(readFileSync(scanFile(providerId, stateDir), 'utf8')) as DiscoveredChannel[];
+  } catch {
+    return [];
+  }
+  const matched = matchLineup(rows);
+  const added = Object.keys(matched).filter((k) => !(k in lineup));
+  if (!added.length) return [];
+  for (const k of added) lineup[k] = matched[k];
+  writeFileSync(lineupFile(providerId, stateDir), JSON.stringify(lineup, null, 2));
+  return added.filter((k) => matched[k].number !== null);
 }
 
 /** The lineup entry for an engine channel number, as a screen tunes to it. */

@@ -183,7 +183,7 @@
     manualPinSeconds: 120,
   },
 
-  // Network name (as ESPN reports it) -> channel in YOUR Xfinity On Campus lineup.
+  // Network name (as ESPN reports it) -> channel in YOUR Xfinity On Campus lineup (every sport).
   // Xfinity's live URLs contain a per-program id that changes with every show, so we store the
   // channel NUMBER and tune by clicking that row in the Xfinity guide (like you would).
   // number: null means "not in my lineup" and those games are never picked.
@@ -207,9 +207,26 @@
     "TNT":                { number: 833,  callSign: "TNTHD", aliases: ["TNT"] },
     "truTV":              { number: 902,  callSign: "TRTVD", aliases: ["truTV", "TruTV"] },
     "USA Network":        { number: 835,  callSign: "USAHD", aliases: ["USA Network", "USA Net", "USA"] },
+    // Other sports (same lineup, read from the 10/17 guide scan). Regional networks for other
+    // markets are matched by a channel scan (Settings -> TV service -> Re-scan channels).
+    "NFL Network":        { number: 853,  callSign: "NFLHD", aliases: ["NFL Net", "NFL Network", "NFLN"] },
+    "NBA TV":             { number: 913,  callSign: "NBAHD", aliases: ["NBA TV", "NBATV"] },
+    "NHL Network":        { number: 822,  callSign: "NHLHD", aliases: ["NHL Net", "NHL Network", "NHLN"] },
+    "MLB Network":        { number: 914,  callSign: "MLBHD", aliases: ["MLB Net", "MLB Network", "MLBN"] },
+    "TBS":                { number: 831,  callSign: "TBSHD", aliases: ["TBS"] },
+    "ION":                { number: 803,  callSign: "IONHD", aliases: ["ION"] },
+    "Telemundo":          { number: 815,  callSign: "WNEUD", aliases: ["Telemundo"] },
+    "Universo":           { number: 1232, callSign: "UNVSH", aliases: ["Universo"] },
+    "Univision":          { number: 816,  callSign: "WUNID", aliases: ["Univision"] },
+    "TUDN":               { number: 710,  callSign: "TUDN",  aliases: ["TUDN"] },
+    "Fox Deportes":       { number: 1230, callSign: "FXDED", aliases: ["Fox Deportes", "FOX Deportes"] },
+    "NESN":               { number: 851,  callSign: "NESND", aliases: ["NESN"] },
+    "NESN+":              { number: 894,  callSign: "NESN+", aliases: ["NESN+", "NESNplus"] },
+    "NBC Sports Boston":  { number: 852,  callSign: "NBSBH", aliases: ["NBC Sports Boston", "NBCS Boston", "NBCSB", "NBCS-BOS", "NBC Sports BOS"] },
   },
 
   // Streaming-only services that are never in an Xfinity cable lineup.
   // Games only on these are shown as "not available" and never picked.
-  unavailable: ["ESPN+", "SECN+", "ACCNX", "Peacock", "MW+", "Disney+", "Big Ten+", "Paramount+", "Max", "Prime Video", "Netflix", "YouTube"],
+  unavailable: ["ESPN+", "SECN+", "ACCNX", "Peacock", "MW+", "Disney+", "Big Ten+", "Paramount+", "Max", "HBO Max", "Prime Video", "Prime Video (Local)", "Netflix", "YouTube",
+                "Apple TV", "MLS Season Pass", "MLB.TV", "NBA League Pass", "NHL Power Play", "WNBA League Pass", "NFL+", "Victory+", "Fubo"],
 }

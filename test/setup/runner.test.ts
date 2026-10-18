@@ -75,12 +75,12 @@ describe('first-run setup', () => {
     expect(tuned).toEqual([{ screen: 1, ch: 'ESPN' }]);
   });
 
-  it('scan saves the lineup only when it found college-football networks', async () => {
+  it('scan saves the lineup only when it found sports networks', async () => {
     const { runner, deps } = setup({ found: [{ label: 'Home Shopping', number: 5, callSign: null, ref: null }] });
     await runner.choose('xfinity-on-campus');
     await runner.scan();
     expect(deps.saveLineup).not.toHaveBeenCalled();
-    expect(runner.view().error).toMatch(/no college-football channels/i);
+    expect(runner.view().error).toMatch(/no sports channels/i);
   });
 
   it('playTest picks the first carried network in priority order', async () => {

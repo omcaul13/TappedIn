@@ -125,7 +125,7 @@ export class SetupRunner {
       const { lineup, found, missing } = lineupFromScan(rows);
       if (!found.length) {
         // Never replace a good lineup with an empty one: the guide probably didn't load or its layout changed.
-        this.set({ busy: null, scan: null, error: `No college-football channels found in the guide (${plural(rows.length, 'row')} read). The guide may not have loaded, or the service changed its page: open Diagnostics.` });
+        this.set({ busy: null, scan: null, error: `No sports channels found in the guide (${plural(rows.length, 'row')} read). The guide may not have loaded, or the service changed its page: open Diagnostics.` });
         return;
       }
       this.deps.saveLineup(lineup, rows);
