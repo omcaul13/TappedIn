@@ -3,6 +3,7 @@ import path from 'node:path';
 import { z } from 'zod';
 import { PROJECT_ROOT } from '../config';
 import { createComcastAdapter } from './comcast/adapter';
+import { createUrlAdapter } from './url/adapter';
 import { compileRegex, ProviderConfigSchema, type ProviderAdapter, type ProviderConfig, type ProviderSummary } from './types';
 
 export { compileRegex };
@@ -87,11 +88,12 @@ export function createAdapter(id: string, opts: LoadOptions = {}): ProviderAdapt
 }
 
 export function adapterFor(config: ProviderConfig): ProviderAdapter {
+  if (config.status === 'unsupported') throw new Error(`${config.name} isn't supported: ${config.notes}`);
   switch (config.family) {
     case 'comcast':
       return createComcastAdapter(config);
-    default:
-      throw new Error(`${config.name}: no adapter for the "${config.family}" family yet`);
+    case 'url':
+      return createUrlAdapter(config);
   }
 }
 

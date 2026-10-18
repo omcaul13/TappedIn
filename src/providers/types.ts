@@ -24,7 +24,8 @@ export function compileRegex(src: string, defaultFlags = 'i'): RegExp {
 export const ProviderStatusSchema = z.enum(['stable', 'experimental', 'unsupported']);
 export type ProviderStatus = z.infer<typeof ProviderStatusSchema>;
 
-export const ProviderFamilySchema = z.enum(['comcast', 'spectrum', 'youtube-tv', 'sling']);
+/** comcast: the Comcast TV-APP (guide clicks, cached URLs). url: a stable URL per channel. */
+export const ProviderFamilySchema = z.enum(['comcast', 'url']);
 export type ProviderFamily = z.infer<typeof ProviderFamilySchema>;
 
 const ShellSchema = z.object({
