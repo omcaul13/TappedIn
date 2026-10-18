@@ -9,12 +9,14 @@
 // Standby views are off here. Close the window or press Ctrl+C to stop early.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import type { Page } from 'playwright-core';
 import { parseFlags } from '../src/cli';
 import { loadConfig, loadOverrides, withOverrides } from '../src/config';
 import { channelRef, effectiveChannels, lineupFile } from '../src/providers/lineup';
 import { matchLineup } from '../src/providers/networks';
 import { adapterFor, loadProviderConfig, STATE_DIR } from '../src/providers/registry';
 import { attachShell, startShell } from '../src/shell';
+import { errorRules, probePage } from '../src/windows/health';
 import { ScreenWindow } from '../src/windows/screen';
 import { cacheFileFor, Tuner } from '../src/windows/tuner';
 
@@ -85,8 +87,10 @@ if (typeof flags.tune === 'string') {
         h = await sw.checkHealth();
       }
       results.push(`${name.padEnd(8)} ${view.name}: ${out.path} in ${(out.ms / 1000).toFixed(1)}s, ${landed ? 'right channel' : 'WRONG CHANNEL'}, ${h?.state ?? 'no health'}${h?.detail ? ` (${h.detail})` : ''}`);
+      if (h?.state !== 'PLAYING') results.push(await evidence(view.page, `${name}-${view.name}`));
     } catch (err) {
       results.push(`${name.padEnd(8)} ${view.name}: FAILED ${String(err).split('\n')[0]}`);
+      results.push(await evidence(view.page, `${name}-${view.name}-failed`));
     }
   };
   // Channels on the same view go one after another (the second one exercises the in-app switch);
@@ -99,6 +103,18 @@ if (typeof flags.tune === 'string') {
   );
   log('results:');
   for (const r of results) console.log(`  ${r}`);
+}
+
+/** When a channel doesn't play: the page's URL, any error text the probe sees, and a screenshot. */
+async function evidence(page: Page, label: string): Promise<string> {
+  const dir = path.join(STATE_DIR, 'provider-check');
+  mkdirSync(dir, { recursive: true });
+  const file = path.join(dir, `${new Date().toISOString().replace(/[:.]/g, '-')}-${label}.png`);
+  const shot = await page.screenshot({ path: file, timeout: 5000 }).then(() => file).catch((e) => `no screenshot (${String(e).split('\n')[0]})`);
+  const frames = await probePage(page, errorRules(provider).probePatterns).catch(() => []);
+  const lines = [...new Set(frames.flatMap((f) => f.errorLines))];
+  const vids = frames.flatMap((f) => f.videos).map((v) => `${v.rect.w}x${v.rect.h} rs${v.readyState} t${v.currentTime.toFixed(1)}${v.paused ? ' paused' : ''}${v.error ? ` err ${v.error.code} ${v.error.message}` : ''}`);
+  return `           url ${page.url().slice(0, 110)}\n           text ${lines.length ? lines.join(' | ').slice(0, 300) : '(no error text)'}\n           video ${vids.join('; ') || '(none)'}\n           ${shot}`;
 }
 
 log('done; closing the window');
