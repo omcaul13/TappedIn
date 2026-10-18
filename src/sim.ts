@@ -77,7 +77,7 @@ export type Feed = AsyncGenerator<{ at: number; apply: (e: Engine) => void }>;
 
 export async function* recordedFeed(dir: string, toMs?: number): Feed {
   for await (const rec of replayRecords({ dir, toMs })) {
-    if (rec.kind === 'scoreboard') yield { at: rec.at, apply: (e) => void e.ingestScoreboard(rec.body, rec.at) };
+    if (rec.kind === 'scoreboard') yield { at: rec.at, apply: (e) => void e.ingestScoreboard(rec.body, rec.at, rec.sport ?? 'cfb') };
     else if (rec.kind === 'summary' && rec.eventId) yield { at: rec.at, apply: (e) => e.ingestSummary(rec.eventId!, rec.body, rec.at) };
   }
 }

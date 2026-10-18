@@ -1,12 +1,15 @@
 import type { DirectorConfig } from '../config';
-import { describeGame, rankCandidates, type GameView, type RankedCandidate } from './ranker';
+import { sportOf } from '../sports';
+import { describeGame, rankCandidates, tierLabel, type GameView, type RankedCandidate, type Tier } from './ranker';
+import type { SportId } from './types';
 
 // The director: one small state machine per screen. Pure: (state, game views, time) in →
 // (new state, commands for the window controller, logged decisions) out.
 //
 // Rules (per screen):
 //  - Home game in play → show it.
-//  - Home game in a break → best live game elsewhere (red zone first …); back home when play resumes.
+//  - Home game in a break → best live game elsewhere: same sport first (red zone first …), then a
+//    sport another screen is watching, then any sport; back home when play resumes.
 //  - Home game at halftime → highlights reel; back home when the 2nd half starts.
 //  - Home game over → game-over pop-up; after gameOverAutoPickSeconds adopt the best live game.
 //  - LOCKED screens never change on their own. Every automatic switch respects dwellSeconds.
@@ -77,6 +80,8 @@ export interface Decision {
   /** The pick was already on another screen (allowed only when nothing else was available). */
   duplicate?: boolean;
   gameId?: string;
+  /** Fill-in tier: 1 same sport, 2 a sport another screen is watching, 3 any other sport. */
+  tier?: Tier;
 }
 
 export type UserAction =
@@ -149,14 +154,32 @@ function shownOnOtherScreen(screens: ScreenState[], self: number, gameId: string
   return screens.some((s) => s.id !== self && s.showing.kind === 'game' && s.showing.gameId === gameId);
 }
 
-function pickBest(screens: ScreenState[], sc: ScreenState, views: Map<string, GameView>, extraExclude: string[] = [], maxBreakRisk?: number): { best: RankedCandidate | null; ranked: RankedCandidate[]; duplicate: boolean } {
+/** The sport of a screen's home game. */
+export function screenSport(sc: ScreenState, views: Map<string, GameView>): SportId | undefined {
+  return sc.homeGameId ? views.get(sc.homeGameId)?.game.sport : undefined;
+}
+
+/** Sports the other screens are watching (their home games'). */
+export function otherScreenSports(screens: ScreenState[], self: number, views: Map<string, GameView>): Set<SportId> {
+  const out = new Set<SportId>();
+  for (const sc of screens) {
+    if (sc.id === self) continue;
+    const sp = screenSport(sc, views);
+    if (sp) out.add(sp);
+  }
+  return out;
+}
+
+export function pickBest(screens: ScreenState[], sc: ScreenState, views: Map<string, GameView>, extraExclude: string[] = [], maxBreakRisk?: number): { best: RankedCandidate | null; ranked: RankedCandidate[]; duplicate: boolean } {
   const shown = othersShowing(screens, sc.id);
   const exclude = new Set([...(sc.homeGameId ? [sc.homeGameId] : []), ...extraExclude]);
-  const { ranked, duplicateFallback } = rankCandidates(views.values(), { exclude, shownGames: shown.games, shownChannels: shown.channels, maxBreakRisk });
+  const { ranked, duplicateFallback } = rankCandidates(views.values(), { exclude, shownGames: shown.games, shownChannels: shown.channels, maxBreakRisk, homeSport: screenSport(sc, views), otherSports: otherScreenSports(screens, sc.id, views) });
   return { best: ranked[0] ?? null, ranked, duplicate: duplicateFallback };
 }
 
 const topList = (ranked: RankedCandidate[]) => ranked.slice(0, 3).map((c) => `${c.view.game.shortName} (${c.why})`);
+/** "pick: UTAH @ COLO — Same sport: red zone, margin 7, 2:10 - 4th". */
+const pickReason = (c: RankedCandidate) => `pick: ${c.view.game.shortName} — ${tierLabel(c)}: ${c.why}`;
 
 // ---------------------------------------------------------------------------------------------
 // Automatic step
@@ -169,6 +192,8 @@ export type DirectorStepConfig = DirectorConfig & {
   replaceIfHomeRemainingSeconds?: number;
   /** Skip substitutes whose own break forecast is at or above this. */
   candidateMaxBreakRisk?: number;
+  /** Per home sport, the sensitivity-dependent knobs above (absent = the top-level values). */
+  perSport?: Partial<Record<SportId, { replaceIfHomeRemainingSeconds: number; upgradeFillInToRedZone: boolean; halftimeMaxSeconds?: number }>>;
 };
 
 export function directorStep(prev: DirectorState, views: Map<string, GameView>, now: number, cfg: DirectorStepConfig): StepResult {
@@ -217,6 +242,8 @@ export function directorStep(prev: DirectorState, views: Map<string, GameView>, 
     const hs = home.assessment.state;
     const from = label(views, sc.showing, sc.mode);
     const homeReasons = [`home ${home.game.shortName} ${hs === 'BREAK' ? 'BREAK?' : hs} ${home.assessment.score.toFixed(2)}`, ...home.assessment.reasons];
+    const sportCfg = cfg.perSport?.[home.game.sport];
+    const halftimeMax = sportCfg?.halftimeMaxSeconds ?? cfg.halftimeMaxSeconds;
 
     // --- Home game over -------------------------------------------------------------------
     if (hs === 'FINAL') {
@@ -239,7 +266,7 @@ export function directorStep(prev: DirectorState, views: Map<string, GameView>, 
         sc.gameOver = null;
         commands.push({ type: 'hideGameOver', screen: sc.id });
         tune(sc, best.view);
-        decide(sc, 'AUTO_PICK', from, [`no pick within ${cfg.gameOverAutoPickSeconds}s`, `new home: ${best.view.game.shortName} (${best.why})`], { candidates: topList(ranked), duplicate, gameId: best.view.game.id });
+        decide(sc, 'AUTO_PICK', from, [`no pick within ${cfg.gameOverAutoPickSeconds}s`, `new home: ${best.view.game.shortName} (${best.why})`], { candidates: topList(ranked), duplicate, gameId: best.view.game.id, tier: best.tier });
       }
       continue;
     }
@@ -247,11 +274,11 @@ export function directorStep(prev: DirectorState, views: Map<string, GameView>, 
     // --- Halftime --------------------------------------------------------------------------
     if (hs === 'HALFTIME') {
       if (sc.mode === 'HALFTIME_REEL') {
-        if (sc.halftimeSince !== null && now - sc.halftimeSince > cfg.halftimeMaxSeconds * 1000) {
+        if (sc.halftimeSince !== null && now - sc.halftimeSince > halftimeMax * 1000) {
           sc.mode = 'HOME';
           sc.halftimeSince = null;
           tune(sc, home);
-          decide(sc, 'HALFTIME_OVER', from, [`halftime longer than ${cfg.halftimeMaxSeconds}s; going back to the home game`], { gameId: home.game.id });
+          decide(sc, 'HALFTIME_OVER', from, [`halftime longer than ${halftimeMax}s; going back to the home game`], { gameId: home.game.id });
         }
         continue;
       }
@@ -286,7 +313,7 @@ export function directorStep(prev: DirectorState, views: Map<string, GameView>, 
         }
         sc.mode = 'FILL_IN';
         tune(sc, best.view);
-        decide(sc, 'BREAK_FILL', from, [...homeReasons, `pick: ${best.view.game.shortName} — ${best.why}`], { candidates: topList(ranked), duplicate, gameId: best.view.game.id });
+        decide(sc, 'BREAK_FILL', from, [...homeReasons, pickReason(best)], { candidates: topList(ranked), duplicate, gameId: best.view.game.id, tier: best.tier });
         continue;
       }
       if (sc.mode === 'FILL_IN') {
@@ -305,14 +332,14 @@ export function directorStep(prev: DirectorState, views: Map<string, GameView>, 
           }
           // Don't hop to a third game if our own break is nearly over: just wait for home.
           const homeLeft = home.assessment.forecast?.remainingSec ?? null;
-          const replaceIf = cfg.replaceIfHomeRemainingSeconds ?? 0;
+          const replaceIf = sportCfg?.replaceIfHomeRemainingSeconds ?? cfg.replaceIfHomeRemainingSeconds ?? 0;
           if (!clash && replaceIf > 0 && homeLeft !== null && homeLeft < replaceIf) {
             note(sc, 'HOLD_DWELL', `wait-home-${currentId}`, [`${why}, but home ${home.game.shortName} has only ~${homeLeft}s of break left; staying until it resumes`]);
             continue;
           }
           if (best) {
             tune(sc, best.view);
-            decide(sc, 'FILL_REPLACE', from, [why, `pick: ${best.view.game.shortName} — ${best.why}`, ...homeReasons], { candidates: topList(ranked), duplicate, gameId: best.view.game.id });
+            decide(sc, 'FILL_REPLACE', from, [why, pickReason(best), ...homeReasons], { candidates: topList(ranked), duplicate, gameId: best.view.game.id, tier: best.tier });
           } else {
             sc.mode = 'HOME';
             tune(sc, home);
@@ -320,10 +347,12 @@ export function directorStep(prev: DirectorState, views: Map<string, GameView>, 
           }
           continue;
         }
-        const currentRz = current!.game.situation?.isRedZone ?? false;
-        if (cfg.upgradeFillInToRedZone && !currentRz && best?.redZone && !duplicate && dwellLeft(sc) === 0) {
+        // Upgrade only within the screen's own sport, to a game at a hot moment (red zone, power play…).
+        const currentHot = sportOf(current!.game.sport).excitement(current!.game).hot;
+        const upgrade = sportCfg?.upgradeFillInToRedZone ?? cfg.upgradeFillInToRedZone;
+        if (upgrade && !currentHot && best?.hot && best.tier === 1 && !duplicate && dwellLeft(sc) === 0) {
           tune(sc, best.view);
-          decide(sc, 'FILL_UPGRADE', from, [`${best.view.game.shortName} is in the red zone (${best.why})`, ...homeReasons], { candidates: topList(ranked), gameId: best.view.game.id });
+          decide(sc, 'FILL_UPGRADE', from, [`${best.view.game.shortName} ${best.hot.phrase} (${best.why})`, ...homeReasons], { candidates: topList(ranked), gameId: best.view.game.id, tier: best.tier });
         }
         continue;
       }
@@ -436,7 +465,7 @@ export function applyAction(prev: DirectorState, action: UserAction, views: Map<
       sc.halftimeSince = null;
       sc.mode = 'LOCKED';
       tuneTo(best.view);
-      record('USER_SKIP', true, [`you skipped to the best other game: ${best.view.game.shortName} (${best.why})${duplicate ? ' [already on another screen]' : ''}`, 'locked until you send it home'], best.view.game.id);
+      record('USER_SKIP', true, [`you skipped to the best other game: ${best.view.game.shortName} (${tierLabel(best)}: ${best.why})${duplicate ? ' [already on another screen]' : ''}`, 'locked until you send it home'], best.view.game.id);
       break;
     }
     case 'cancelAutoPick':

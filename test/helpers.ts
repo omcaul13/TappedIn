@@ -32,6 +32,7 @@ export function snap(o: Partial<GameSnapshot> & { id?: string } = {}): GameSnaps
   const id = o.id ?? `g${++idSeq}`;
   return {
     id,
+    sport: o.sport ?? 'cfb',
     shortName: o.shortName ?? `A${id} @ H${id}`,
     name: o.name ?? `Away ${id} at Home ${id}`,
     startTime: o.startTime ?? new Date(T0 - 3600_000).toISOString(),

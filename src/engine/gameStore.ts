@@ -1,4 +1,5 @@
-import { classifyPlay } from '../espn/normalize';
+import { sportOf } from '../sports';
+import type { InferContext } from '../sports/types';
 import type { GameSnapshot, Phase, PlayKind, PlaySnap } from './types';
 
 export type { PlayKind };
@@ -109,20 +110,15 @@ export class GameStore {
     const est = now - this.opts.dataDelaySeconds * 1000;
     let g = this.games.get(snap.id);
     if (!g) {
-      g = { id: snap.id, snap, prevSnap: null, phaseSince: now, prevPhase: null, events: [], lastActivityAt: null, dataUpdatedAt: now, playsCheckedAt: snap.situation?.lastPlay ? now : null, hasPlayByPlay: false, plays: [], lastPlay: null };
+      g = { id: snap.id, snap, prevSnap: null, phaseSince: now, prevPhase: null, events: [], lastActivityAt: null, dataUpdatedAt: now, playsCheckedAt: (snap.situation?.lastPlay ?? snap.live?.lastPlay) ? now : null, hasPlayByPlay: false, plays: [], lastPlay: null };
       this.games.set(snap.id, g);
       this.seenPlays.set(snap.id, new Map());
-      const lp = snap.situation?.lastPlay;
+      const lp = snap.situation?.lastPlay ?? snap.live?.lastPlay;
       if (lp) {
         this.seen(g.id).set(lp.id, now); // history before we started watching
-        this.setLastPlay(g, { playId: lp.id, at: est, order: this.syntheticOrder++, kind: classifyPlay(lp.typeText, lp.scoreValue > 0, lp.scoreValue), typeText: lp.typeText, text: lp.text, period: snap.period, isTurnover: false });
+        this.setLastPlay(g, { playId: lp.id, at: est, order: this.syntheticOrder++, kind: sportOf(snap.sport).classifyPlay(lp.typeText, lp.scoreValue > 0, lp.scoreValue), typeText: lp.typeText, text: lp.text, period: snap.period, isTurnover: false });
       }
-      // First seen between quarters (e.g. "15:00 - 2nd" before the first snap): that's a TV break.
-      if (snap.phase === 'LIVE' && (snap.endOfPeriod || (snap.clockSec === 900 && (snap.period === 2 || snap.period === 4)))) {
-        this.push(g, { kind: 'endPeriod', at: est, seenAt: now, order: this.syntheticOrder++, playId: null, source: 'scoreboard', detail: `quarter break (${snap.detail})` });
-        const ended = snap.endOfPeriod ? snap.period : (snap.period ?? 2) - 1;
-        this.setLastPlay(g, { playId: null, at: est, order: this.syntheticOrder++, kind: 'endPeriod', typeText: 'End Period', text: snap.detail, period: ended, isTurnover: false });
-      }
+      sportOf(snap.sport).inferFirstSeen?.(g, snap, this.inferContext(g, est, now));
       return;
     }
     const prev = g.snap;
@@ -135,43 +131,16 @@ export class GameStore {
     }
 
     // A new last play on the scoreboard (play-by-play may not be polled for this game).
-    const lp = snap.situation?.lastPlay;
+    const lp = snap.situation?.lastPlay ?? snap.live?.lastPlay;
     if (lp) g.playsCheckedAt = now;
     if (lp && !this.seen(g.id).has(lp.id)) {
       this.seen(g.id).set(lp.id, now);
-      const kind = classifyPlay(lp.typeText, lp.scoreValue > 0, lp.scoreValue);
+      const kind = sportOf(snap.sport).classifyPlay(lp.typeText, lp.scoreValue > 0, lp.scoreValue);
       this.addPlayEvents(g, { kind, id: lp.id, typeText: lp.typeText, text: lp.text, at: est, seenAt: now, order: this.syntheticOrder++, isTurnover: false, period: snap.period }, 'scoreboard');
     }
 
-    // Score changed (catches scores even if we missed the play).
-    if (snap.home.score + snap.away.score > prev.home.score + prev.away.score && snap.phase === 'LIVE') {
-      const diff = snap.home.score + snap.away.score - (prev.home.score + prev.away.score);
-      const kind: EventKind = diff === 1 || diff === 2 ? 'pat' : 'score';
-      this.pushInferred(g, { kind, at: est, seenAt: now, order: this.syntheticOrder++, playId: null, source: 'scoreboard', detail: `score ${prev.away.score}-${prev.home.score} -> ${snap.away.score}-${snap.home.score}` });
-    }
-
-    // Timeout counter dropped (counters reset upward at halftime; ignore increases).
-    const ps = prev.situation;
-    const s = snap.situation;
-    if (ps && s) {
-      for (const side of ['home', 'away'] as const) {
-        const before = side === 'home' ? ps.homeTimeouts : ps.awayTimeouts;
-        const after = side === 'home' ? s.homeTimeouts : s.awayTimeouts;
-        if (before !== null && after !== null && after < before) {
-          this.pushInferred(g, { kind: 'timeout', at: est, seenAt: now, order: this.syntheticOrder++, playId: null, source: 'scoreboard', detail: `${snap[side].abbr} timeouts ${before}->${after}` });
-        }
-      }
-    }
-
-    // End of a quarter shows up in the status detail before (or instead of) an "End Period" play.
-    if (snap.endOfPeriod && !prev.endOfPeriod) {
-      this.pushInferred(g, { kind: 'endPeriod', at: est, seenAt: now, order: this.syntheticOrder++, playId: null, source: 'scoreboard', detail: snap.detail });
-      this.setLastPlay(g, { playId: null, at: est, order: this.syntheticOrder++, kind: 'endPeriod', typeText: 'End Period', text: snap.detail, period: snap.period, isTurnover: false });
-    } else if (snap.phase === 'LIVE' && !prev.endOfPeriod && prev.period !== null && snap.period !== null && snap.period > prev.period && (snap.period === 2 || snap.period === 4)) {
-      // Jumped straight into the next quarter between two polls: we missed "End of 1st/3rd".
-      this.pushInferred(g, { kind: 'endPeriod', at: est, seenAt: now, order: this.syntheticOrder++, playId: null, source: 'scoreboard', detail: `quarter break (now ${snap.detail})` });
-      this.setLastPlay(g, { playId: null, at: est, order: this.syntheticOrder++, kind: 'endPeriod', typeText: 'End Period', text: snap.detail, period: prev.period, isTurnover: false });
-    }
+    // What else the poll implies (score changes, timeout counters, quarter breaks) is per sport.
+    sportOf(snap.sport).inferChange?.(g, prev, snap, this.inferContext(g, est, now));
     this.prune(g, now);
   }
 
@@ -214,6 +183,17 @@ export class GameStore {
 
   private static family(kind: EventKind): string {
     return kind === 'pat' ? 'score' : kind;
+  }
+
+  private inferContext(g: GameState, est: number, now: number): InferContext {
+    return {
+      est,
+      now,
+      order: () => this.syntheticOrder++,
+      push: (e) => this.push(g, e),
+      pushInferred: (e) => this.pushInferred(g, e),
+      setLastPlay: (p) => this.setLastPlay(g, p),
+    };
   }
 
   private hasPbpTwin(g: GameState, e: TimelineEvent): boolean {

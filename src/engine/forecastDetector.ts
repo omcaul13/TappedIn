@@ -1,5 +1,6 @@
 import { statusOutcome, type DetectorMemory } from './breakDetector';
-import { categorize, forecastBreak, type BreakCategory, type BreakModel } from './forecast';
+import type { BreakSpec } from '../sports/types';
+import { forecastBreak, type BreakModel } from './forecast';
 import type { GameState, LastPlay } from './gameStore';
 import type { Assessment, BreakState, Signal } from './types';
 
@@ -10,7 +11,8 @@ import type { Assessment, BreakState, Signal } from './types';
 //    a new scoreboard last play), never on clock movement or signals fading. A data safety net
 //    (`maxBreakSeconds`, default 10 min) covers ESPN going quiet.
 //  - TD/FG -> PAT -> kickoff: a kickoff after the play that triggered a score break continues the
-//    break (it becomes the "kickoff after score" stoppage) instead of ending it.
+//    break (it becomes the "kickoff after score" stoppage) instead of ending it. Each sport says which
+//    plays end or continue a break (`BreakSpec` from src/sports/).
 
 export interface ForecastDetectorOptions {
   model: BreakModel;
@@ -21,9 +23,12 @@ export interface ForecastDetectorOptions {
   minBreakSeconds: number;
   confidence: number;
   maxBreakSeconds: number;
+  /** The sport's stoppage rules (categories, what resumes play). */
+  breaks: BreakSpec;
+  /** Categories that never start a break at this sensitivity. */
+  excludeCategories?: readonly string[];
 }
 
-const RESUMES = new Set(['snap', 'kickoff', 'score']);
 const pct = (x: number) => `${Math.round(x * 100)}%`;
 const mmss = (s: number | null) => (s === null ? '?' : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`);
 
@@ -53,7 +58,7 @@ export function assessForecast(g: GameState, mem: DetectorMemory | undefined, no
 
   const timing = { dataDelaySeconds: o.dataDelaySeconds, streamDelaySeconds: o.streamDelaySeconds };
   const lp = g.lastPlay;
-  const fc = (category: BreakCategory, at: number) => forecastBreak(o.model, category, at, now, timing, o.minBreakSeconds, g.playsCheckedAt ?? now);
+  const fc = (category: string, at: number) => forecastBreak(o.model, category, at, now, timing, o.minBreakSeconds, g.playsCheckedAt ?? now, o.breaks.labels);
   const asForecast = (f: ReturnType<typeof fc>): Assessment['forecast'] => ({ category: f.category, label: f.label, confidence: f.confidence, remainingSec: f.remainingSec, quietSec: f.quietSec });
   const describe = (f: ReturnType<typeof fc>) => `${f.label}: ~${mmss(f.remainingSec)} left (${pct(f.confidence)} chance of ${o.minBreakSeconds}s+), quiet ${f.quietSec}s`;
 
@@ -61,30 +66,31 @@ export function assessForecast(g: GameState, mem: DetectorMemory | undefined, no
   if (prevState === 'BREAK' && mem?.trigger) {
     const t = mem.trigger;
     if (lp && isNewer(lp, t)) {
-      if (lp.kind === 'kickoff' && t.category === 'scorePAT') {
+      const continued = o.breaks.continues?.(lp, t.category);
+      if (continued) {
         // TD/FG -> PAT -> kickoff: the commercial usually comes after the kickoff; keep the break.
-        const f = fc('kickoffAfterScore', lp.at);
+        const f = fc(continued, lp.at);
         return finish('BREAK', f.confidence, [{ name: f.category, weight: f.confidence, detail: describe(f) }], [describe(f)], asForecast(f), {
-          trigger: { playId: lp.playId, at: lp.at, order: lp.order, category: 'kickoffAfterScore' },
+          trigger: { playId: lp.playId, at: lp.at, order: lp.order, category: continued },
         });
       }
-      if (RESUMES.has(lp.kind)) return finish('LIVE', 0, [], [`play resumed: ${lp.typeText}${lp.text ? `: ${lp.text.slice(0, 70)}` : ''}`]);
+      if (o.breaks.resumes.has(lp.kind)) return finish('LIVE', 0, [], [`play resumed: ${lp.typeText}${lp.text ? `: ${lp.text.slice(0, 70)}` : ''}`]);
     }
     if (now - (mem.breakStartedAt ?? now) > o.maxBreakSeconds * 1000) {
       return finish('LIVE', 0, [], [`no new play for ${o.maxBreakSeconds}s; assuming play resumed (data safety net)`], undefined, { suppressUntilAfter: lp?.at ?? now });
     }
-    const f = fc(t.category as BreakCategory, t.at);
+    const f = fc(t.category, t.at);
     return finish('BREAK', f.confidence, [{ name: f.category, weight: f.confidence, detail: describe(f) }], [describe(f)], asForecast(f));
   }
 
   // ---- in play: does the stoppage after the latest play look like a long break? -----------------
   if (!lp) return finish('LIVE', 0, [], ['in play']);
-  const cat = categorize(lp, lp.prevKind ? { kind: lp.prevKind } : null);
-  if (!cat) return finish('LIVE', 0, [], ['in play']);
+  const cat = o.breaks.categorize(lp, lp.prevKind ? { kind: lp.prevKind } : null);
+  if (!cat || o.excludeCategories?.includes(cat)) return finish('LIVE', 0, [], ['in play']);
   if (mem?.suppressUntilAfter != null && lp.at <= mem.suppressUntilAfter) return finish('LIVE', 0, [], ['in play (waiting for a new play after the safety net)']);
   const f = fc(cat, lp.at);
   const signal: Signal = { name: cat, weight: f.confidence, detail: describe(f) };
-  const linger = cat === 'scorePAT' || cat === 'kickoffAfterScore' ? o.lingerSeconds : 0;
+  const linger = o.breaks.linger.has(cat) ? o.lingerSeconds : 0;
   if (f.viewerElapsedSec < linger) return finish('LIVE', f.confidence, [signal], [`${f.label} still playing out on your screen`], asForecast(f));
   if (f.confidence >= o.confidence) {
     return finish('BREAK', f.confidence, [signal], [describe(f)], asForecast(f), { trigger: { playId: lp.playId, at: lp.at, order: lp.order, category: cat } });

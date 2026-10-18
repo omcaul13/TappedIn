@@ -68,7 +68,7 @@ function prepare(body: Json): SynthGame | null {
 }
 
 function snapshotAt(g: SynthGame, visible: number, t: number, delayMs: number): GameSnapshot {
-  const base = { id: g.id, shortName: g.shortName, name: g.name, startTime: new Date(g.start).toISOString(), networks: g.networks, observedAt: t };
+  const base = { id: g.id, sport: 'cfb' as const, shortName: g.shortName, name: g.name, startTime: new Date(g.start).toISOString(), networks: g.networks, observedAt: t };
   const last = visible > 0 ? g.plays[visible - 1] : null;
   const home = { ...g.home, score: last?.homeScore ?? 0 };
   const away = { ...g.away, score: last?.awayScore ?? 0 };
