@@ -2,6 +2,7 @@ import type { Config } from './config';
 import { Engine, type TickResult } from './engine/engine';
 import { InvariantChecker } from './engine/invariants';
 import type { GameView } from './engine/ranker';
+import type { SportId } from './engine/types';
 import { readRecords, recordingFiles } from './espn/recording';
 import { recordingDir, replayRecords } from './espn/source';
 import { synthesizeDay } from './espn/synth';
@@ -23,6 +24,8 @@ export interface SimOptions {
   homes?: string[];
   /** Screens in the grid (default 4). */
   screens?: number;
+  /** Each screen's sport for the automatic home pick (`--screen-sports nhl,nfl,cfb,nba`). */
+  screenSports?: (SportId | null)[];
   onEntry?: (e: LogEntry) => void;
   /** Record what every screen shows at every tick (for the before/after metrics). */
   captureTimeline?: boolean;
@@ -34,7 +37,7 @@ export interface TimelinePoint {
 }
 
 export interface SimResult {
-  homes: { screen: number; gameId: string; game: string }[];
+  homes: { screen: number; gameId: string; game: string; sport: SportId }[];
   entries: LogEntry[];
   violations: string[];
   ruleCounts: Record<string, number>;
@@ -58,17 +61,33 @@ export function etTime(date: string, hhmm: string): number {
   return guess - hours * 3600_000;
 }
 
-/** Pick up to `count` (four) watchable games: live ones with the closest scores, then the next kickoffs. */
-export function autoHomes(views: Map<string, GameView>, now: number, count = 4): string[] {
+/**
+ * Pick up to `count` (four) watchable games: live ones with the closest scores, then the next kickoffs.
+ * With `sports`, screen i prefers a game of sports[i] (its remembered sport, or "all screens: NBA"); a
+ * screen whose sport has nothing watchable gets the best game of any sport. Returns one id per screen
+ * picked (fewer when there aren't enough games).
+ */
+export function autoHomes(views: Map<string, GameView>, now: number, count = 4, sports?: readonly (SportId | null | undefined)[]): string[] {
   const watchable = [...views.values()].filter((v) => v.channel && v.channel.regional !== 'unconfirmed');
   const live = watchable.filter((v) => v.game.phase === 'LIVE' || v.game.phase === 'HALFTIME').sort((a, b) => Math.abs(a.game.home.score - a.game.away.score) - Math.abs(b.game.home.score - b.game.away.score));
   const soon = watchable.filter((v) => v.game.phase === 'PRE' && v.game.startTime && Date.parse(v.game.startTime) - now < 45 * 60_000).sort((a, b) => (a.game.startTime ?? '').localeCompare(b.game.startTime ?? ''));
+  const order = [...live, ...soon];
   const picked: GameView[] = [];
   const channels = new Set<number>();
-  for (const v of [...live, ...soon]) {
-    if (picked.length === count || channels.has(v.channel!.number)) continue;
+  const take = (v: GameView) => {
     picked.push(v);
     channels.add(v.channel!.number);
+  };
+  if (!sports?.some(Boolean)) {
+    for (const v of order) if (picked.length < count && !channels.has(v.channel!.number)) take(v);
+    return picked.map((v) => v.game.id);
+  }
+  const free = (v: GameView) => !channels.has(v.channel!.number) && !picked.includes(v);
+  for (let i = 0; i < count; i++) {
+    const want = sports[i];
+    const v = (want && order.find((x) => x.game.sport === want && free(x))) || order.find(free);
+    if (!v) break;
+    take(v);
   }
   return picked.map((v) => v.game.id);
 }
@@ -132,13 +151,13 @@ export async function runSim(cfg: Config, opts: SimOptions): Promise<SimResult> 
     result.ticks++;
     collect(res, now);
     if (!homesSet && (opts.fromMs === undefined || now >= opts.fromMs)) {
-      const homes = opts.homes?.length ? opts.homes : autoHomes(engine.views(), now, screenCount);
+      const homes = opts.homes?.length ? opts.homes : autoHomes(engine.views(), now, screenCount, opts.screenSports);
       if (!homes.length) return;
       homesSet = true;
       result.startedAt = now;
       homes.slice(0, screenCount).forEach((gameId, i) => {
         const r = engine.act({ type: 'setHome', screen: i + 1, gameId }, now);
-        result.homes.push({ screen: i + 1, gameId, game: engine.views().get(gameId)?.game.shortName ?? gameId });
+        result.homes.push({ screen: i + 1, gameId, game: engine.views().get(gameId)?.game.shortName ?? gameId, sport: engine.views().get(gameId)?.game.sport ?? 'cfb' });
         collect(r, now);
       });
     }

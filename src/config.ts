@@ -209,6 +209,8 @@ export const ConfigSchema = z.object({
         .default(() => [...SPORT_IDS]),
       /** Your TV market: its teams' regional NFL games count as the ones your CBS/FOX show. */
       market: z.string().default('Boston'),
+      /** Pick a game in a multi-game CBS/FOX NFL window only when your station is known to air it. */
+      nflRegionalCheck: z.boolean().default(true),
       /** Per sport: { nhl: { sensitivity: 'medium', presets: { low: { confidence: 0.8 } } } }. College football also follows `switching.presets`. */
       overrides: z.record(z.string(), SportOverride).default({}),
     })

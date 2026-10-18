@@ -244,6 +244,7 @@ export class GameStore {
 
   /** Keep the newest play (by time, then sequence) and remember what came right before it. */
   private setLastPlay(g: GameState, p: Omit<LastPlay, 'prevKind'>): void {
+    if (sportOf(g.snap.sport).breaks.ignore?.(p)) return; // e.g. a substitution during a timeout
     const cur = g.lastPlay;
     if (cur && (p.at < cur.at || (p.at === cur.at && p.order <= cur.order))) return;
     g.lastPlay = { ...p, prevKind: cur?.kind ?? null };

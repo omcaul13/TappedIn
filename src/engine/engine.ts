@@ -116,7 +116,7 @@ export class Engine {
     }
     // NFL Sunday windows: several games on CBS/FOX at once, and your station shows one.
     const nfl = [...out.values()].flatMap((v) => (v.game.sport === 'nfl' && v.channel ? [{ game: v.game, channel: v.channel.name }] : []));
-    if (nfl.length > 1) {
+    if (nfl.length > 1 && this.cfg.sports.nflRegionalCheck) {
       for (const [id, regional] of regionalStatus(nfl, marketTeams(this.cfg.sports.market, 'nfl'), this.programTitles)) {
         const v = out.get(id)!;
         v.channel = { ...v.channel!, regional };

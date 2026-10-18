@@ -43,8 +43,13 @@ for (const mod of SPORTS) {
     for (let i = 0; i < plays.length - 1; i++) {
       const cat = mod.breaks.categorize(plays[i], plays[i - 1]);
       if (!cat) continue;
-      const next = plays.find((x, k) => k > i && mod.breaks.resumes.has(x.kind));
-      if (!next) continue;
+      const j = plays.findIndex((x, k) => k > i && mod.breaks.resumes.has(x.kind));
+      if (j < 0) continue;
+      const next = plays[j];
+      // A timeout (review, period end…) between this play and the restart is what the viewer's break
+      // really follows: live, it replaces this play as the last one, so its gap counts there, not here.
+      // (College football's shipped model was built without this rule and stays as it is.)
+      if (sport !== 'cfb' && plays.slice(i + 1, j).some((x, k) => !mod.breaks.ignore?.(x) && mod.breaks.categorize(x, plays[i + k]) !== null)) continue;
       const gap = (next.wallclock! - plays[i].wallclock!) / 1000;
       if (gap < 0 || gap > 900) continue;
       addGap(model, cat, gap);

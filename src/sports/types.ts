@@ -30,6 +30,8 @@ export interface BreakSpec {
   continues?(play: { kind: PlayKind }, triggerCategory: string): string | null;
   /** Categories that first play out on screen for lingerSeconds (scores). */
   linger: ReadonlySet<string>;
+  /** Plays that don't change what stoppage the game is in (basketball substitutions during a timeout). */
+  ignore?(p: { kind: PlayKind; typeText: string }): boolean;
   /** Default model file, relative to the project root. */
   modelFile: string;
 }
