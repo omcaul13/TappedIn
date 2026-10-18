@@ -75,14 +75,16 @@ export class Engine {
     this.store.setOptions({ dataDelaySeconds: cfg.breakDetector.dataDelaySeconds });
   }
 
+  /** Sports you don't follow are ignored (live polling skips them; replays and sims may still contain them). */
   ingestScoreboard(body: unknown, now: number, sport: SportId = 'cfb'): GameSnapshot[] {
+    if (!this.cfg.sports.enabled.includes(sport)) return [];
     const snaps = normalizeScoreboard(body, now, sport);
     this.store.ingestSnapshots(snaps, now);
     return snaps;
   }
 
   ingestSnapshots(snaps: GameSnapshot[], now: number): void {
-    this.store.ingestSnapshots(snaps, now);
+    this.store.ingestSnapshots(snaps.filter((g) => this.cfg.sports.enabled.includes(g.sport)), now);
   }
 
   ingestSummary(gameId: string, body: unknown, now: number): void {

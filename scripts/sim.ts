@@ -4,6 +4,7 @@
 //   npm run sim -- --day 20261010 --synth                 # rebuilt from final play-by-play (npm run fetch-day first)
 //   npm run sim -- --day 20261017 --compare               # before (classic) vs forecast Low/Medium/High, same homes
 //   npm run sim -- --day 20261018 --synth --by-sport          # per home sport: switches, time away, false switches, tiers
+//   npm run sim -- --day 20261010 --synth --sports cfb        # only these sports (others in the recording are ignored)
 //   flags: --model classic|forecast  --sensitivity low|medium|high  --screen-sports nhl,nfl,cfb,nba  --games  --quiet  --log <file.jsonl>
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
@@ -30,6 +31,7 @@ const variant = (model: 'classic' | 'forecast', sensitivity?: 'low' | 'medium' |
 };
 if (flags['no-regional']) base.sports.nflRegionalCheck = false;
 if (flags['full-lineup']) base.simulation.fullLineup = true;
+if (typeof flags.sports === 'string') base.sports.enabled = flags.sports.split(',').filter(isSportId);
 const cfg = variant(
   flags.model === 'classic' ? 'classic' : flags.model === 'forecast' ? 'forecast' : base.switching.breakModel,
   flags.sensitivity === 'low' || flags.sensitivity === 'medium' || flags.sensitivity === 'high' ? flags.sensitivity : undefined,
