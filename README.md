@@ -15,6 +15,30 @@ Personal use only. The app plays Xfinity in castLabs' Widevine-licensed Electron
 | v2.1 | **One app window** (Electron) with per-screen overlays, settings drawer, team colors and logos | ✅ done (live-tested 10/17) |
 | v2.2 | **Faster switching:** standby views, in-window switching card, faster play-by-play for on-screen games | ✅ done (live-tested 10/17) |
 | v2.3 | **Switch less:** break forecast from 76 recorded games, Low/Medium/High sensitivity, hysteresis | ✅ done (replayed 10/10 and 10/17) |
+| v3.0 | **Other TV services:** provider adapters with per-service config files (Stage 2 of [the plan](docs/superpowers/plans/2026-10-18-provider-adapters.md)) | 🚧 in progress: Xfinity live re-check pending |
+
+## TV services
+
+Each service is an adapter driven by its own file in `config/providers/`. Every URL, page selector, timing and error message is in that file, so a site change can be fixed without touching code. Put your own fixes in `.state/providers/<id>.json`; they're merged over the shipped file, and a bad value is ignored with a warning. The research behind this list is in [docs/research/streaming-services.md](docs/research/streaming-services.md).
+
+| Service | `provider` id | Status | Changes channels by | Documented streams |
+|---|---|---|---|---|
+| Xfinity On Campus | `xfinity-on-campus` | **Stable** (the default) | guide clicks, remembered URLs | 1 (6 worked at Northeastern, 10/17) |
+| Xfinity Stream (Xfinity TV customers) | `xfinity-stream` | Experimental | same as On Campus | 5 at home, 3 away |
+| Spectrum TV / SpectrumU | `spectrum-tv` / `spectrumu` | Experimental | a URL per channel | unlimited at home, 3 away / several on campus |
+| Cox Contour / Cox Contour on Campus | `cox-contour` / `cox-contour-campus` | Experimental | guide clicks | — / 1 |
+| YouTube TV | `youtube-tv` | Experimental (sign-in not yet tested) | a URL per channel | 3 |
+| Sling TV | `sling` | Experimental | a URL per channel | Orange 1, Blue 3, both 4 |
+
+**Experimental** means it's built from the service's documentation and from open-source projects that drive the same web players, but nobody has tested it with a real account yet. To try one, put `provider: "spectrum-tv"` at the top of `config/redzone.config.json5` (or `"provider"` in `.state/settings.json`) and check it without the engine first:
+
+```bash
+npm run provider-check -- spectrum-tv --scan --save --tune ESPN,FS1
+```
+
+This signs in (you type your own password in the service's real page), reads the guide, saves the college-football networks it found to `.state/lineups/<id>.json`, and tunes two channels. It reports how each one went, with a screenshot when something doesn't play. The first-run setup, a settings page and a step-by-step diagnostics mode are next (Stage 3).
+
+RedZone isn't affiliated with or endorsed by any of these services. Each one's terms of service apply to your account. Standby views (extra streams) are off by default on every service; set `"standbyViews"` in `.state/settings.json` if yours allows more streams.
 
 ## Setup
 
