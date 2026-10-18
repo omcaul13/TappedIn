@@ -72,10 +72,10 @@ export function buildReel(input: ReelInput): ReelItem[] {
     for (const c of picks) clips.push({ ...espnItem(c, g), game: `Final: ${label(g)}` } as ReelItem);
   }
 
-  if (!clips.length) return [{ kind: 'card', id: 'card-0', title: 'Scores around the country' }];
+  if (!clips.length) return [{ kind: 'card', id: 'card-0', title: 'Scores' }];
   const out: ReelItem[] = [];
   clips.forEach((c, i) => {
-    if (i > 0 && i % opts.cardEveryClips === 0) out.push({ kind: 'card', id: `card-${i}`, title: 'Scores around the country' });
+    if (i > 0 && i % opts.cardEveryClips === 0) out.push({ kind: 'card', id: `card-${i}`, title: 'Scores' });
     out.push(c);
   });
   return out;

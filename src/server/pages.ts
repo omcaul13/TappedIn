@@ -107,7 +107,7 @@ export function halftimePage(screen: number, cardSeconds = 8): string {
   .cap{position:absolute;left:0;right:0;bottom:0;padding:22px 14px 10px;background:linear-gradient(#0000,#000d);z-index:5;pointer-events:none}
   .cap small{display:block;color:#fbbf24;font-weight:700;font-size:12px;letter-spacing:.03em}.cap b{font-size:15px}
   </style></head><body>
-  <div class="top"><span><span class="tag">HALFTIME</span> <span id="home"></span></span><span id="pos" class="dim"></span></div>
+  <div class="top"><span><span class="tag" id="ht">HALFTIME</span> <span id="home"></span></span><span id="pos" class="dim"></span></div>
   <video id="v" playsinline preload="auto"></video><div id="yt"></div><div id="card"><div class="grid" id="grid"></div></div>
   <div class="cap"><small id="cg"></small><b id="ct"></b></div>
   <script>${CLIENT_JS}
@@ -117,7 +117,7 @@ export function halftimePage(screen: number, cardSeconds = 8): string {
   const played=new Set(JSON.parse(sessionStorage.getItem('rz-played-'+N)||'[]'));
   const remember=(id)=>{played.add(id);sessionStorage.setItem('rz-played-'+N,JSON.stringify([...played].slice(-300)));};
   async function loadReel(){try{const r=await (await fetch('/api/reel/'+N)).json();const fresh=r.items.filter((i)=>i.kind==='card'||!played.has(i.id));
-    items=fresh.some((i)=>i.kind!=='card')?fresh:r.items;}catch(e){items=[{kind:'card',id:'card-x',title:'Scores around the country'}];}}
+    items=fresh.some((i)=>i.kind!=='card')?fresh:r.items;}catch(e){items=[{kind:'card',id:'card-x',title:'Scores'}];}}
   function hideAll(){clearTimeout(timer);v.pause();v.removeAttribute('src');v.load();v.style.display='none';$('yt').style.display='none';$('card').style.display='none';if(yt&&ytReady)try{yt.stopVideo();}catch(e){}}
   async function next(){idx++;if(idx>=items.length){await loadReel();idx=0;}play(items[idx]);}
   function caption(game,title){$('cg').textContent=game||'';$('ct').textContent=title||'';const n=items.filter((i)=>i.kind!=='card').length;
@@ -140,6 +140,7 @@ export function halftimePage(screen: number, cardSeconds = 8): string {
   setInterval(()=>{const it=items[idx];if(it&&it.kind==='youtube'&&ytReady)try{if(yt.getPlayerState()===1)lastMove=Date.now();}catch(e){}
     if(it&&it.kind!=='card'&&Date.now()-lastMove>15000)next();},3000);
   async function poll(){try{st=await (await fetch('/api/state')).json();const sc=st.screens.find((s)=>s.id===N);const home=st.games.find((g)=>g.id===sc?.homeGameId);
+    $('ht').textContent=home&&home.family==='hockey'?'INTERMISSION':'HALFTIME';
     $('home').textContent=home?home.away.abbr+' '+home.away.score+' - '+home.home.score+' '+home.home.abbr:'';if(sc&&sc.audio!==audio){audio=sc.audio;applySound();}}catch(e){}}
   poll().then(async()=>{await loadReel();next();});setInterval(poll,3000);
   </script></body></html>`;

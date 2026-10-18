@@ -73,14 +73,15 @@
   // When does a screen leave its home game? Every decision is logged with the forecast behind it;
   // see README "Switch sensitivity".
   switching: {
-    // "forecast": predicts how long the stoppage after the latest play will last, from 76 recorded games
-    // (config/break-model.json, rebuilt by `npm run build-break-model`). "classic": the original
-    // weighted signals in breakDetector below (kept for before/after comparison).
+    // "forecast": predicts how long the stoppage after the latest play will last, from recorded games
+    // (config/break-models/<sport>.json, rebuilt by `npm run build-break-model`). "classic": the original
+    // weighted signals in breakDetector below, college football only (kept for before/after comparison).
     breakModel: "forecast",
     // low = only clearly long breaks (ends of quarters, kickoffs after scores, injuries, TV timeouts once
     // the quiet makes them obvious). medium = also likely ones. high = chase most stoppages.
     sensitivity: "low",
-    // What each level means. Switch when P(at least minBreakSeconds of break left for you) >= confidence.
+    // What each level means FOR COLLEGE FOOTBALL (other sports: `sports.overrides` below).
+    // Switch when P(at least minBreakSeconds of break left for you) >= confidence.
     // A substitute that goes to break is swapped for a third game only if your game still has
     // replaceIfHomeRemainingSeconds of break predicted; otherwise the screen stays put until your game resumes.
     presets: {
@@ -94,6 +95,24 @@
     candidateMaxBreakRisk: 0.5,
     // Data safety net: no new play on your game for this long = go back anyway.
     maxBreakSeconds: 600,
+  },
+
+  // Sports: which ones to follow and per-sport tweaks. Each sport's defaults (its stoppage rules and
+  // Low/Medium/High numbers) live in src/sports/; see README "Supported sports".
+  sports: {
+    // Polled from ESPN, listed in the game menu, and used as fill-ins (the settings drawer can turn
+    // sports off too). Ids: cfb, nfl, mcbb (men's college basketball), nba, nhl, mlb, wcbb, wnba.
+    enabled: ["cfb", "nfl", "mcbb", "nba", "nhl", "mlb", "wcbb", "wnba"],
+    // Your TV market: in a Sunday CBS/FOX window with several NFL games, only your market's team's game
+    // (or the one the TV guide names) is picked automatically; your local station shows just one.
+    market: "Boston",
+    nflRegionalCheck: true,
+    // Per sport: its own sensitivity, and tweaks to one level's numbers. Leave a sport out to use its
+    // defaults and the global `switching.sensitivity`. For example:
+    //   nhl: { sensitivity: "medium" },
+    //   mlb: { presets: { low: { excludeCategories: [] } } },  // also switch between innings at Low
+    //   nba: { presets: { low: { confidence: 0.85 } } },
+    overrides: {},
   },
 
   // Classic break heuristic (breakModel: "classic"). streamDelaySeconds, dataDelaySeconds and
