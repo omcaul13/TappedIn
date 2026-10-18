@@ -91,6 +91,19 @@ export interface FeedItem {
 import type { ProviderSummary } from '../providers/types';
 import type { SetupView } from '../setup/runner';
 
+export interface DiagDTO {
+  providerId: string;
+  providerName: string;
+  status: 'stable' | 'experimental' | 'unsupported';
+  results: Partial<Record<'signin' | 'scan' | 'tune' | 'playback' | 'hide', import('../setup/diagnostics').DiagResult>>;
+  /** Editable values for each step's fields (current merged config). */
+  values: Record<string, unknown>;
+  /** The saved user override for this provider. */
+  override: Record<string, unknown>;
+  running: string | null;
+  exportPath: string | null;
+}
+
 export interface ServiceDTO {
   id: string;
   name: string;
@@ -117,6 +130,8 @@ export interface AppState {
   providers: ProviderSummary[];
   /** The settings page's "TV service" tab. */
   service: ServiceDTO;
+  /** Diagnostics mode, when open. */
+  diag: DiagDTO | null;
   /** The TV service the screens play. */
   provider: { id: string; name: string; shortName: string; status: 'stable' | 'experimental' | 'unsupported' };
   /** The service's sign-in progress (one-window app). */

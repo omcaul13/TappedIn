@@ -55,6 +55,19 @@ export interface SetupDeps {
 /** Channels tried for the playback test, best first (most services carry ESPN). */
 const TEST_ORDER = ['ESPN', 'ESPN2', 'FS1', 'ABC', 'CBS', 'FOX', 'NBC', 'ESPNU', 'SEC Network', 'ACC Network', 'Big Ten Network', 'CBS Sports Network', 'TNT', 'truTV', 'FS2', 'The CW', 'USA Network', 'ESPNews'];
 
+/** The lineup's carried networks in test order (best first), one per channel. */
+export function carriedChannels(channels: Config['channels']): ChannelRef[] {
+  const keys = [...TEST_ORDER, ...Object.keys(channels).filter((k) => !TEST_ORDER.includes(k))];
+  const out: ChannelRef[] = [];
+  for (const k of keys) {
+    const n = channels[k]?.number;
+    if (n === null || n === undefined) continue;
+    const ref = channelRef(channels, n);
+    if (ref && !out.some((c) => c.number === n)) out.push({ ...ref, name: k });
+  }
+  return out;
+}
+
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 export class SetupRunner {
@@ -180,18 +193,8 @@ export class SetupRunner {
 
   // ---------------------------------------------------------------------------------------------
 
-  /** Carried networks in test order, as screens tune to them. */
   private carried(): ChannelRef[] {
-    const channels = this.deps.channels();
-    const keys = [...TEST_ORDER, ...Object.keys(channels).filter((k) => !TEST_ORDER.includes(k))];
-    const out: ChannelRef[] = [];
-    for (const k of keys) {
-      const n = channels[k]?.number;
-      if (n === null || n === undefined) continue;
-      const ref = channelRef(channels, n);
-      if (ref && !out.some((c) => c.number === n)) out.push({ ...ref, name: k });
-    }
-    return out;
+    return carriedChannels(this.deps.channels());
   }
 
   /** Tune a screen and wait (up to the startup timeout) for it to play or to fail for good. */

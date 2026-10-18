@@ -19,10 +19,14 @@ import { listProviders } from './providers/registry';
 import type { DiscoveredChannel } from './providers/types';
 import { demoDeps } from './setup/demo';
 import { applyMapping, lineupFromScan, mappingRows } from './setup/lineupEdit';
-import { SetupRunner, type SetupDeps } from './setup/runner';
+import { carriedChannels, SetupRunner, type SetupDeps } from './setup/runner';
+import { DIAG_STEPS, fieldsFor, getPath, HIDE_PROBE_JS, runStep, type DiagResult, type DiagStep } from './setup/diagnostics';
+import { buildExport, writeExport } from './setup/export';
+import { compileRegex } from './providers/types';
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { loadSetup, migrateOwner, needsSetup, saveSetup, type SetupState } from './setup/state';
-import { createAdapter, STATE_DIR } from './providers/registry';
+import { createAdapter, previewOverride, readOverrideFile, saveOverride, STATE_DIR } from './providers/registry';
 import type { ProviderAdapter } from './providers/types';
 import { gameDTO, type AppState, type FeedItem, type PickerDTO, type ScreenDTO } from './server/state';
 import { attachShell, effectiveStandby, startShell, type Shell, type SigninStatus } from './shell';
@@ -103,6 +107,8 @@ export class App {
   private adapter: ProviderAdapter;
   /** First-run setup in progress, else null. */
   private setupRunner: SetupRunner | null = null;
+  /** Diagnostics mode, when open. */
+  private diag: { results: Partial<Record<DiagStep, DiagResult>>; running: string | null; exportPath: string | null } | null = null;
   private browser: import('playwright-core').Browser | null = null;
   /** First-run setup: done or not, and what it found. */
   private setupState: SetupState;
@@ -422,6 +428,13 @@ export class App {
       }
       case '/api/settings':
         return this.changeSettings(body);
+      case '/api/diag/open':
+      case '/api/diag/close':
+      case '/api/diag/run':
+      case '/api/diag/preview':
+      case '/api/diag/save':
+      case '/api/diag/export':
+        return this.diagAction(p.slice('/api/diag/'.length), body);
       case '/api/service/switch':
       case '/api/service/logout':
       case '/api/service/rescan':
@@ -555,6 +568,123 @@ export class App {
       }
     }
     return { ok: false, message: 'unknown service action' };
+  }
+
+  // ---- diagnostics ---------------------------------------------------------------------------
+
+  private diagDTO(): AppState['diag'] {
+    if (!this.diag) return null;
+    const c = this.adapter.config;
+    const values: Record<string, unknown> = {};
+    for (const step of DIAG_STEPS) for (const f of fieldsFor(step, c)) values[f] = getPath(c, f);
+    return { providerId: c.id, providerName: c.name, status: c.status, results: this.diag.results, values, override: readOverrideFile(c.id), running: this.diag.running, exportPath: this.diag.exportPath };
+  }
+
+  private async diagAction(action: string, body: Record<string, unknown>): Promise<PostResult> {
+    if (!this.shell) return { ok: false, message: 'only in the RedZone window (npm start)' };
+    switch (action) {
+      case 'open':
+        if (!this.diag) {
+          if (!this.setupRunner) this.stopNormal(); // auto-switching pauses: the steps use screen 1
+          this.diag = { results: {}, running: null, exportPath: null };
+        }
+        this.pushState();
+        return { ok: true };
+      case 'close':
+        this.diag = null;
+        if (!this.setupRunner && !this.timers.length) {
+          this.controller.restoreAll();
+          this.resyncController();
+          this.startNormal();
+        }
+        this.pushState();
+        return { ok: true };
+      case 'run': {
+        if (!this.diag) return { ok: false, message: 'open diagnostics first' };
+        const step = String(body.step) as DiagStep;
+        if (!DIAG_STEPS.includes(step)) return { ok: false, message: 'unknown step' };
+        if (this.diag.running) return { ok: false, message: `busy: ${this.diag.running}` };
+        this.diag.running = step;
+        this.pushState();
+        void runStep(step, this.diagDeps()).then((r) => {
+          if (!this.diag) return;
+          this.diag.results[step] = r;
+          this.diag.running = null;
+          this.info(`diagnostics ${step}: ${r.pass ? 'pass' : 'FAIL'} (${r.summary})`);
+          this.pushState();
+        });
+        return { ok: true };
+      }
+      case 'preview':
+      case 'save': {
+        const override = body.override;
+        if (!override || typeof override !== 'object' || Array.isArray(override)) return { ok: false, message: 'the override must be a JSON object' };
+        const id = this.adapter.config.id;
+        if (action === 'preview') {
+          const { warnings } = previewOverride(id, override as Record<string, unknown>);
+          return warnings.length ? { ok: false, message: warnings.join('; ') } : { ok: true, message: 'looks good' };
+        }
+        try {
+          saveOverride(id, override as Record<string, unknown>);
+        } catch (err) {
+          return { ok: false, message: String(err instanceof Error ? err.message : err) };
+        }
+        await this.reloadProvider();
+        this.info(`diagnostics: saved your fixes for ${this.adapter.config.name} in .state/providers/${id}.json`);
+        return { ok: true, message: 'saved' };
+      }
+      case 'export': {
+        if (!this.diag) return { ok: false, message: 'open diagnostics first' };
+        const c = this.adapter.config;
+        const data = buildExport({ provider: { id: c.id, name: c.name, status: c.status }, override: readOverrideFile(c.id), results: Object.values(this.diag.results), appVersion: appVersion(), gitCommit: gitCommit() });
+        const { documents } = await this.shell.paths();
+        const file = writeExport(data, documents, c.id);
+        this.diag.exportPath = file;
+        await this.shell.reveal(file).catch((e) => this.info(`couldn't open the folder: ${e}`));
+        this.pushState();
+        return { ok: true, message: file };
+      }
+    }
+    return { ok: false, message: 'unknown diagnostics action' };
+  }
+
+  /** The provider's config changed (diagnostics fixes): rebuild the adapter and the window's views. */
+  private async reloadProvider(): Promise<void> {
+    this.adapter = createAdapter(this.adapter.config.id, { onWarning: (m) => this.info(m) });
+    await this.shell!.configure({ provider: this.adapter.config, screens: this.screenCount, spares: this.shell!.layout.spares, signin: 'defer' });
+    await this.attachController();
+    this.pushState();
+  }
+
+  private diagDeps() {
+    const sw = () => this.controller.screens[0];
+    const channel = () => carriedChannels(this.cfg.channels)[0];
+    return {
+      config: this.adapter.config,
+      signinCheck: () => this.shell!.signinCheck(),
+      discover: () => this.adapter.discoverLineup(sw().page, this.controller.tools),
+      tune: async () => {
+        const ch = channel();
+        if (!ch) throw new Error('no channels in the lineup: run the channel scan first');
+        const out = await sw().tuneChannel(ch);
+        return { path: out.path, ms: out.ms, url: sw().page.url(), onChannel: this.adapter.onChannel(sw().page.url(), ch), channel: ch.name };
+      },
+      watch: async () => {
+        let last: { state: import('./windows/health').StreamState; detail: string } = { state: 'NO_VIDEO', detail: 'waiting for the player' };
+        const until = Date.now() + this.cfg.windows.startupTimeoutSeconds * 1000;
+        while (Date.now() < until) {
+          const h = await sw().checkHealth().catch(() => null);
+          if (h) last = { state: h.state, detail: h.detail };
+          if (last.state === 'PLAYING') break;
+          await new Promise((r) => setTimeout(r, 1000));
+        }
+        return last;
+      },
+      hideProbe: async () => {
+        const re = compileRegex(this.adapter.config.shell.playerUrl);
+        return (await sw().page.evaluate(HIDE_PROBE_JS(re.source, re.flags))) as import('./setup/diagnostics').HideProbe;
+      },
+    };
   }
 
   /** Read the guide again on screen 1 (it shows the guide for a few seconds), then put screen 1 back. */
@@ -856,6 +986,7 @@ export class App {
       setup: this.setupRunner?.view() ?? null,
       providers: listProviders(),
       service: this.serviceDTO(),
+      diag: this.diagDTO(),
       provider: { id: this.adapter.config.id, name: this.adapter.config.name, shortName: this.adapter.config.shortName, status: this.adapter.config.status },
       signin: this.signin,
       streamLimit: this.controller?.streamLimit ?? c.windows.maxConcurrentStreams,
@@ -942,4 +1073,20 @@ export class App {
 function resolveConfig(file: Config, overrides: SettingsOverrides): Config {
   const c = withOverrides(file, overrides);
   return { ...c, channels: effectiveChannels(c, c.provider, STATE_DIR) };
+}
+
+function appVersion(): string {
+  try {
+    return JSON.parse(readFileSync(path.join(PROJECT_ROOT, 'package.json'), 'utf8')).version ?? 'unknown';
+  } catch {
+    return 'unknown';
+  }
+}
+
+function gitCommit(): string | null {
+  try {
+    return execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: PROJECT_ROOT, encoding: 'utf8', windowsHide: true }).trim() || null;
+  } catch {
+    return null;
+  }
 }

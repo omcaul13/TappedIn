@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
 import { PROJECT_ROOT } from '../config';
@@ -39,6 +39,12 @@ export function listProviders(opts: LoadOptions = {}): ProviderSummary[] {
  * is dropped with a warning and the shipped section is kept, so a typo never stops the app.
  */
 export function loadProviderConfig(id: string, opts: LoadOptions = {}): ProviderConfig {
+  const shipped = shippedConfig(id);
+  const override = readOverride(id, opts);
+  return override ? mergeOverride(shipped, override, (key, why) => opts.onWarning?.(`.state/providers/${id}.json: ignoring "${key}": ${why}`)) : shipped;
+}
+
+function shippedConfig(id: string): ProviderConfig {
   const file = path.join(PROVIDERS_DIR, `${id}.json`);
   let raw: unknown;
   try {
@@ -49,19 +55,48 @@ export function loadProviderConfig(id: string, opts: LoadOptions = {}): Provider
   }
   const shipped = ProviderConfigSchema.safeParse(raw);
   if (!shipped.success) throw new Error(`config/providers/${id}.json is invalid:\n${z.prettifyError(shipped.error)}`);
+  return shipped.data;
+}
 
-  const override = readOverride(id, opts);
-  if (!override) return shipped.data;
-
-  let merged = shipped.data as Record<string, unknown>;
+/** Apply an override one top-level section at a time; a section that doesn't validate is skipped and reported. */
+function mergeOverride(shipped: ProviderConfig, override: Record<string, unknown>, skipped: (key: string, why: string) => void): ProviderConfig {
+  let merged = shipped as Record<string, unknown>;
   for (const [key, value] of Object.entries(override)) {
     if (key === 'id') continue;
     const candidate = { ...merged, [key]: key in merged ? deepMerge(merged[key], value) : value };
     const r = ProviderConfigSchema.safeParse(candidate);
     if (r.success) merged = r.data as Record<string, unknown>;
-    else opts.onWarning?.(`.state/providers/${id}.json: ignoring "${key}": ${z.prettifyError(r.error).split('\n').slice(0, 3).join(' ')}`);
+    else skipped(key, z.prettifyError(r.error).split('\n').slice(0, 3).join(' '));
   }
   return merged as ProviderConfig;
+}
+
+/** What an override would do, without reading or writing any file (diagnostics' "Save & retry" checks this first). */
+export function previewOverride(id: string, override: Record<string, unknown>): { config: ProviderConfig; warnings: string[] } {
+  const warnings: string[] = [];
+  const config = mergeOverride(shippedConfig(id), override, (key, why) => warnings.push(`"${key}": ${why}`));
+  if (config.family !== shippedConfig(id).family) warnings.push('"family" can\'t be changed by an override');
+  try {
+    adapterFor(config);
+  } catch (err) {
+    warnings.push(String(err instanceof Error ? err.message : err).split('\n').slice(0, 3).join(' '));
+  }
+  return { config, warnings };
+}
+
+/** Save a user override for a provider. Refuses (throws) if any part of it wouldn't be used. */
+export function saveOverride(id: string, override: Record<string, unknown>, stateDir = STATE_DIR): string {
+  const { warnings } = previewOverride(id, override);
+  if (warnings.length) throw new Error(`not saved: ${warnings.join('; ')}`);
+  const file = path.join(stateDir, 'providers', `${id}.json`);
+  mkdirSync(path.dirname(file), { recursive: true });
+  writeFileSync(file, JSON.stringify(override, null, 2));
+  return file;
+}
+
+/** The user's override for a provider as saved (empty when there is none). */
+export function readOverrideFile(id: string, stateDir = STATE_DIR): Record<string, unknown> {
+  return readOverride(id, { stateDir }) ?? {};
 }
 
 function readOverride(id: string, opts: LoadOptions): Record<string, unknown> | null {
