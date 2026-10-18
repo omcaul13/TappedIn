@@ -52,7 +52,7 @@ $sig = 'kept'
 if (Test-DepsInSync) {
     Write-Ok 'Installed and matching package-lock.json.'
 } elseif ($CheckOnly) {
-    Write-Todo 'npm ci would reinstall them (package-lock.json changed).'
+    Write-Todo 'npm ci would install them (node_modules is missing or does not match package-lock.json).'
 } else {
     $sig = Invoke-NpmCi
     Write-Ok 'Dependencies installed.'

@@ -163,5 +163,9 @@ function Invoke-SignElectron {
 }
 
 function Invoke-Doctor {
+    if (-not (Test-Path -LiteralPath (Join-Path $Root 'node_modules\.bin\tsx.cmd'))) {
+        Write-Info 'The check needs the app dependencies (npm ci) first.'
+        return $false
+    }
     return ((Invoke-Interactive 'npm.cmd' @('run', '-s', 'doctor')) -eq 0)
 }
