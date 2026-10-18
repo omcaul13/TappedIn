@@ -65,6 +65,33 @@ describe('network matching', () => {
     expect(m.CBS.number).toBe(804);
   });
 
+  it('real Xfinity channel map (Northeastern, 10/18): call signs tell ESPN, ESPN2 and ESPNews apart', () => {
+    // Comcast labels every ESPN channel with its parent network, "ESPN"; only the call signs differ.
+    // Rows as the channel map listed them, mirrored ranges (1205, 11205) and an ESWHD feed included.
+    const rows: DiscoveredChannel[] = [
+      { label: 'ESPN', number: 49, callSign: 'ESPN', ref: null },
+      { label: 'ESPN', number: 50, callSign: 'ESPN2', ref: null },
+      { label: 'ESPN', number: 248, callSign: 'ESPNN', ref: null },
+      { label: 'ESPNU', number: 263, callSign: 'ESPNU', ref: null },
+      { label: 'ESPN HD', number: 796, callSign: 'ESWHD', ref: null },
+      { label: 'ESPN HD', number: 849, callSign: 'ESPND', ref: null },
+      { label: 'ESPN HD', number: 850, callSign: 'ES2HD', ref: null },
+      { label: 'ESPNU HD', number: 900, callSign: 'ESPNU', ref: null },
+      { label: 'ESPN HD', number: 1205, callSign: 'ESPND', ref: null },
+      { label: 'ESPN HD', number: 1206, callSign: 'ES2HD', ref: null },
+      { label: 'ESPN HD', number: 1210, callSign: 'ESWHD', ref: null },
+      { label: 'ESPNU HD', number: 1301, callSign: 'ESPNU', ref: null },
+      { label: 'ESPN HD', number: 11205, callSign: 'ESPND', ref: null },
+      { label: 'ESPN HD', number: 11206, callSign: 'ES2HD', ref: null },
+    ];
+    const m = matchLineup(rows);
+    // The same channels as the hand-made Northeastern config.
+    expect(m.ESPN).toMatchObject({ number: 849, callSign: 'ESPND' });
+    expect(m.ESPN2).toMatchObject({ number: 850, callSign: 'ES2HD' });
+    expect(m.ESPNU).toMatchObject({ number: 900, callSign: 'ESPNU' });
+    expect(m.ESPNews).toMatchObject({ number: 248, callSign: 'ESPNN' });
+  });
+
   it('matches a local whose label names the network', () => {
     const m = matchLineup([row('ABC 5 Boston (WCVB)', 805)]);
     expect(m.ABC.number).toBe(805);

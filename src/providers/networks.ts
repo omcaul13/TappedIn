@@ -2,35 +2,39 @@ import type { Config } from '../config';
 import type { DiscoveredChannel } from './types';
 
 // The networks that carry college football, with the names ESPN uses for them (`espnNames`, which
-// become the lineup's `aliases`) and the ways a TV guide tends to label them (`guideNames`, already
-// normalized). A lineup scan matches every guide row against this table.
+// become the lineup's `aliases`), the ways a TV guide tends to label them (`guideNames`, already
+// normalized) and the station call signs they go by (`callSigns`). A lineup scan matches every guide
+// row against this table. Call signs win over names: Comcast's channel map labels ESPN, ESPN2 and
+// ESPNews all as "ESPN" (their parent network) and only the call signs tell them apart.
 
 export interface CfbNetwork {
   /** Lineup key (same keys as `channels` in config/redzone.config.json5). */
   key: string;
   espnNames: string[];
   guideNames: string[];
+  /** Upper-case call signs (local stations vary by market, so broadcast networks have none). */
+  callSigns: string[];
 }
 
 export const CFB_NETWORKS: CfbNetwork[] = [
-  { key: 'ESPN', espnNames: ['ESPN'], guideNames: ['espn'] },
-  { key: 'ESPN2', espnNames: ['ESPN2'], guideNames: ['espn2', 'espn 2'] },
-  { key: 'ESPNU', espnNames: ['ESPNU'], guideNames: ['espnu', 'espn u'] },
-  { key: 'ESPNews', espnNames: ['ESPNEWS', 'ESPNews'], guideNames: ['espnews', 'espn news'] },
-  { key: 'ABC', espnNames: ['ABC'], guideNames: ['abc'] },
-  { key: 'CBS', espnNames: ['CBS'], guideNames: ['cbs'] },
-  { key: 'NBC', espnNames: ['NBC'], guideNames: ['nbc'] },
-  { key: 'FOX', espnNames: ['FOX', 'Fox'], guideNames: ['fox'] },
-  { key: 'FS1', espnNames: ['FS1'], guideNames: ['fs1', 'fox sports 1', 'fox sports1'] },
-  { key: 'FS2', espnNames: ['FS2'], guideNames: ['fs2', 'fox sports 2', 'fox sports2'] },
-  { key: 'SEC Network', espnNames: ['SEC Network', 'SECN'], guideNames: ['sec', 'secn'] },
-  { key: 'ACC Network', espnNames: ['ACC Network', 'ACCN'], guideNames: ['acc', 'accn'] },
-  { key: 'Big Ten Network', espnNames: ['Big Ten Network', 'BTN'], guideNames: ['big ten', 'btn', 'b1g'] },
-  { key: 'CBS Sports Network', espnNames: ['CBS Sports Network', 'CBSSN'], guideNames: ['cbs sports', 'cbssn'] },
-  { key: 'The CW', espnNames: ['The CW', 'CW'], guideNames: ['cw'] },
-  { key: 'TNT', espnNames: ['TNT'], guideNames: ['tnt'] },
-  { key: 'truTV', espnNames: ['truTV', 'TruTV'], guideNames: ['trutv', 'tru tv'] },
-  { key: 'USA Network', espnNames: ['USA Network', 'USA Net', 'USA'], guideNames: ['usa'] },
+  { key: 'ESPN', espnNames: ['ESPN'], guideNames: ['espn'], callSigns: ['ESPN', 'ESPND', 'ESPNHD'] },
+  { key: 'ESPN2', espnNames: ['ESPN2'], guideNames: ['espn2', 'espn 2'], callSigns: ['ESPN2', 'ES2HD', 'ESPN2HD', 'ES2'] },
+  { key: 'ESPNU', espnNames: ['ESPNU'], guideNames: ['espnu', 'espn u'], callSigns: ['ESPNU', 'ESPNUHD', 'ESPUHD'] },
+  { key: 'ESPNews', espnNames: ['ESPNEWS', 'ESPNews'], guideNames: ['espnews', 'espn news'], callSigns: ['ESPNN', 'ESPNEWS', 'ESNHD', 'ESPNNHD'] },
+  { key: 'ABC', espnNames: ['ABC'], guideNames: ['abc'], callSigns: [] },
+  { key: 'CBS', espnNames: ['CBS'], guideNames: ['cbs'], callSigns: [] },
+  { key: 'NBC', espnNames: ['NBC'], guideNames: ['nbc'], callSigns: [] },
+  { key: 'FOX', espnNames: ['FOX', 'Fox'], guideNames: ['fox'], callSigns: [] },
+  { key: 'FS1', espnNames: ['FS1'], guideNames: ['fs1', 'fox sports 1', 'fox sports1'], callSigns: ['FS1', 'FS1HD', 'FS1D'] },
+  { key: 'FS2', espnNames: ['FS2'], guideNames: ['fs2', 'fox sports 2', 'fox sports2'], callSigns: ['FS2', 'FS2HD'] },
+  { key: 'SEC Network', espnNames: ['SEC Network', 'SECN'], guideNames: ['sec', 'secn'], callSigns: ['SECN', 'SECND', 'SECHD', 'SEC'] },
+  { key: 'ACC Network', espnNames: ['ACC Network', 'ACCN'], guideNames: ['acc', 'accn'], callSigns: ['ACCN', 'ACCHD', 'ACCND'] },
+  { key: 'Big Ten Network', espnNames: ['Big Ten Network', 'BTN'], guideNames: ['big ten', 'btn', 'b1g'], callSigns: ['BTN', 'BTNHD', 'BIGTEN'] },
+  { key: 'CBS Sports Network', espnNames: ['CBS Sports Network', 'CBSSN'], guideNames: ['cbs sports', 'cbssn'], callSigns: ['CBSSN', 'CBSSD', 'CBSSNHD', 'CBSSHD'] },
+  { key: 'The CW', espnNames: ['The CW', 'CW'], guideNames: ['cw'], callSigns: [] },
+  { key: 'TNT', espnNames: ['TNT'], guideNames: ['tnt'], callSigns: ['TNT', 'TNTHD'] },
+  { key: 'truTV', espnNames: ['truTV', 'TruTV'], guideNames: ['trutv', 'tru tv'], callSigns: ['TRUTV', 'TRTVD', 'TRUHD', 'TRTV'] },
+  { key: 'USA Network', espnNames: ['USA Network', 'USA Net', 'USA'], guideNames: ['usa'], callSigns: ['USA', 'USAHD', 'USAN'] },
 ];
 
 /** Words dropped before matching: they decorate names without changing the network. */
@@ -48,8 +52,9 @@ export function normalizeGuideName(s: string): string {
     .join(' ');
 }
 
-/** How well a guide row matches a network: 4 affiliate call sign, 3 exact name, 2 name first, 1 name anywhere. */
+/** How well a guide row matches a network: 5 its call sign, 4 affiliate call sign, 3 exact name, 2 name first, 1 name anywhere. */
 function score(ch: DiscoveredChannel, norm: string, net: CfbNetwork, affiliate: string | undefined): number {
+  if (ch.callSign && net.callSigns.includes(ch.callSign.trim().toUpperCase())) return 5;
   if (affiliate) {
     const a = affiliate.toLowerCase();
     if ((ch.callSign ?? '').toLowerCase().startsWith(a) || ch.label.trim().toLowerCase().split(/\s+/)[0]?.startsWith(a)) return 4;
@@ -70,7 +75,8 @@ function score(ch: DiscoveredChannel, norm: string, net: CfbNetwork, affiliate: 
  * Turn the rows of a guide scan into lineup channels. Every network in CFB_NETWORKS gets an entry
  * (`number: null` when the guide doesn't have it). Each guide row counts for at most one network (its
  * best match), so "ESPN 2" can't also be taken for ESPN. When a network matches several rows, the
- * best match wins, then an HD row, then the first in guide order. Services without channel numbers
+ * best match wins, then an HD row, then the lowest real channel number (mirrored ranges like 849 /
+ * 1205 / 11205), then the first in guide order. Services without channel numbers
  * get stable synthetic numbers in guide order. `localAffiliates` maps a network to the call sign of
  * the user's local station (e.g. { ABC: 'WCVB' }).
  */
@@ -100,7 +106,8 @@ export function matchLineup(found: DiscoveredChannel[], localAffiliates: Record<
 
   const out: Config['channels'] = {};
   for (const net of CFB_NETWORKS) {
-    const cands = (picks.get(net.key) ?? []).sort((a, b) => b.score - a.score || Number(b.row.hd) - Number(a.row.hd) || a.row.i - b.row.i);
+    const real = (r: (typeof rows)[number]) => (r.f.number && r.f.number > 0 ? r.f.number : Number.POSITIVE_INFINITY);
+    const cands = (picks.get(net.key) ?? []).sort((a, b) => b.score - a.score || Number(b.row.hd) - Number(a.row.hd) || real(a.row) - real(b.row) || a.row.i - b.row.i);
     const hit = cands[0]?.row;
     out[net.key] = hit
       ? { number: hit.number, ...(hit.f.callSign ? { callSign: hit.f.callSign } : {}), ...(hit.f.ref ? { ref: hit.f.ref } : {}), aliases: net.espnNames }
