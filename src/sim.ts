@@ -60,7 +60,7 @@ export function etTime(date: string, hhmm: string): number {
 
 /** Pick up to `count` (four) watchable games: live ones with the closest scores, then the next kickoffs. */
 export function autoHomes(views: Map<string, GameView>, now: number, count = 4): string[] {
-  const watchable = [...views.values()].filter((v) => v.channel);
+  const watchable = [...views.values()].filter((v) => v.channel && v.channel.regional !== 'unconfirmed');
   const live = watchable.filter((v) => v.game.phase === 'LIVE' || v.game.phase === 'HALFTIME').sort((a, b) => Math.abs(a.game.home.score - a.game.away.score) - Math.abs(b.game.home.score - b.game.away.score));
   const soon = watchable.filter((v) => v.game.phase === 'PRE' && v.game.startTime && Date.parse(v.game.startTime) - now < 45 * 60_000).sort((a, b) => (a.game.startTime ?? '').localeCompare(b.game.startTime ?? ''));
   const picked: GameView[] = [];

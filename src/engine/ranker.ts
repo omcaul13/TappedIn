@@ -14,8 +14,12 @@ import type { Assessment, GameSnapshot, SportId } from './types';
 export interface GameView {
   game: GameSnapshot;
   assessment: Assessment;
-  /** Channel name + guide number, or null when the network isn't in the lineup. */
-  channel: { name: string; number: number } | null;
+  /**
+   * Channel name + guide number, or null when the network isn't in the lineup. `regional` marks a
+   * game sharing a regional CBS/FOX NFL window: 'unconfirmed' ones may not be what your station
+   * shows, so they're never picked automatically.
+   */
+  channel: { name: string; number: number; regional?: 'confirmed' | 'unconfirmed' } | null;
 }
 
 /** 1 = same sport as the screen's home game, 2 = a sport another screen is watching, 3 = any other sport. */
@@ -83,7 +87,7 @@ export function rankCandidates(views: Iterable<GameView>, opts: RankOptions): { 
   for (const view of views) {
     const g = view.game;
     if (opts.exclude.has(g.id)) continue;
-    if (!view.channel) continue;
+    if (!view.channel || view.channel.regional === 'unconfirmed') continue;
     if (view.assessment.state !== 'LIVE' || g.phase !== 'LIVE') continue;
     if (opts.maxBreakRisk !== undefined && (view.assessment.forecast?.confidence ?? 0) >= opts.maxBreakRisk) continue;
     const mod = sportOf(g.sport);

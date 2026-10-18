@@ -3,6 +3,8 @@ import { resolveChannel } from '../channels';
 import { directorSettings, PROJECT_ROOT, sportPreset, type Config } from '../config';
 import { normalizeScoreboard } from '../espn/normalize';
 import { sportOf } from '../sports';
+import { marketTeams } from '../sports/markets';
+import { regionalStatus } from '../sports/nfl';
 import { audioStep, createAudio, setAudioFocus, setAudioMode, type AudioDecision, type AudioState } from './audio';
 import { assess, type DetectorMemory } from './breakDetector';
 import { applyAction, createDirector, directorStep, type Command, type Decision, type DirectorState, type UserAction } from './director';
@@ -45,6 +47,7 @@ export class Engine {
   private memory = new Map<string, DetectorMemory>();
   private assessments = new Map<string, Assessment>();
   private channelCache = new Map<string, GameView['channel']>();
+  private programTitles: ReadonlyMap<string, string> = new Map();
 
   constructor(
     private cfg: Config,
@@ -111,7 +114,20 @@ export class Engine {
       const a = this.assessments.get(g.id);
       if (a) out.set(g.id, { game: g.snap, assessment: a, channel: this.channelFor(g.snap) });
     }
+    // NFL Sunday windows: several games on CBS/FOX at once, and your station shows one.
+    const nfl = [...out.values()].flatMap((v) => (v.game.sport === 'nfl' && v.channel ? [{ game: v.game, channel: v.channel.name }] : []));
+    if (nfl.length > 1) {
+      for (const [id, regional] of regionalStatus(nfl, marketTeams(this.cfg.sports.market, 'nfl'), this.programTitles)) {
+        const v = out.get(id)!;
+        v.channel = { ...v.channel!, regional };
+      }
+    }
     return out;
+  }
+
+  /** What the TV guide says is on a channel now (lineup key → program title), when the service's adapter can read it. */
+  setProgramTitles(titles: ReadonlyMap<string, string>): void {
+    this.programTitles = titles;
   }
 
   /**
