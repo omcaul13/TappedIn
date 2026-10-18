@@ -92,7 +92,9 @@ export interface AppState {
   now: number;
   mode: 'live' | 'dry-run' | 'replay';
   shell: 'electron' | 'chrome';
-  /** Xfinity sign-in progress (one-window app). */
+  /** The TV service the screens play. */
+  provider: { id: string; name: string; shortName: string; status: 'stable' | 'experimental' | 'unsupported' };
+  /** The service's sign-in progress (one-window app). */
   signin: { state: 'signing-in' | 'needed' | 'ok' | 'failed'; detail: string } | null;
   streamLimit: number;
   screens: ScreenDTO[];

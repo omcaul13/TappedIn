@@ -103,7 +103,7 @@ function App() {
         {si && si.state !== 'ok' && (
           <span class={`chip ${si.state === 'failed' ? 'bad' : 'warn'}`} title={si.detail}>
             <span class="dot" />
-            {si.state === 'signing-in' ? 'Signing in to Xfinity…' : si.state === 'needed' ? 'Sign in to Xfinity' : 'Xfinity sign-in failed'}
+            {si.state === 'signing-in' ? `Signing in to ${st.provider.shortName}…` : si.state === 'needed' ? `Sign in to ${st.provider.shortName}` : `${st.provider.shortName} sign-in failed`}
           </span>
         )}
         <span class="spacer" />
@@ -152,7 +152,7 @@ function App() {
 
       {settings && <Settings st={st} onClose={() => setSettings(false)} onError={setToast} />}
       {!connected && <div class="banner bad">Lost contact with the RedZone app. Reconnecting…</div>}
-      {connected && si?.state === 'needed' && <div class="banner">Sign in to Xfinity On Campus in the window that opened, then click Watch Now.</div>}
+      {connected && si?.state === 'needed' && <div class="banner">{si.detail.replace(/\.?$/, '.')}</div>}
       {toast && <div class="toast">{toast}</div>}
     </div>
   );

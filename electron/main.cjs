@@ -1,17 +1,22 @@
-// RedZone app window (castLabs Electron with Widevine): one frameless window, a 2x2 grid of Xfinity
-// views, and the RedZone UI drawn on top of them in a transparent view.
+// RedZone app window (castLabs Electron with Widevine): one frameless window, a 2x2 grid of video
+// views showing the TV service's web player, and the RedZone UI drawn on top in a transparent view.
 //
-// The shell only lays things out and signs Xfinity Stream in. The app (npm start) runs the engine
-// and drives the Xfinity views over the local debugging port with the same tuning and stream-health
-// code as the Chrome tiles. Nothing here bypasses DRM or login: Widevine is castLabs' licensed CDM,
-// and sign-in is the "Watch Now" click you'd make on your own Xfinity On Campus page.
+// The shell only lays things out and signs the service in. The app (npm start) runs the engine and
+// drives the views over the local debugging port with the same tuning and stream-health code as the
+// Chrome tiles. Nothing here bypasses DRM or login: Widevine is castLabs' licensed CDM, and sign-in is
+// the user's own: either they sign in themselves in a window shown for it, or (Xfinity On Campus only)
+// RedZone presses the "Watch Now" button you'd press on your own portal page.
+// Everything about the service (URLs, partition, sign-in rules) comes from the --provider file that
+// src/shell.ts writes from config/providers/<id>.json.
 //
 // Started by src/shell.ts with:
-//   --port=<debugging port> --ui=<url> --user-data=<dir> [--screens=4] [--no-dcomp]
+//   --port=<debugging port> --ui=<url> --user-data=<dir> --provider=<file> [--screens=4] [--no-dcomp]
 // (always --name=value: Electron exits at once on some space-separated values like "--screens 4")
 // Talks to the app over the Node IPC channel: sends ready / signin / closed, accepts handoff / quit.
+const fs = require('node:fs');
 const path = require('node:path');
 const { app, BrowserWindow, Menu, WebContentsView, components, ipcMain, session } = require('electron');
+const { compile, rules } = require('./signin-rules.cjs');
 
 const args = process.argv.slice(2);
 const value = (name, d) => {
@@ -24,7 +29,16 @@ const SCREENS = Math.max(1, Math.min(4, Number(value('screens', '4'))));
 // Standby views: the app loads a substitute in one while the screen keeps showing its game, and keeps
 // a screen's own game playing in one (under the substitute) so going back is instant.
 const SPARES = Math.max(0, Math.min(4, Number(value('spares', '0'))));
-const PARTITION = 'persist:xfinity';
+const PROVIDER_FILE = value('provider', '');
+if (!PROVIDER_FILE) {
+  console.error('main.cjs needs --provider=<file> (written by src/shell.ts)');
+  process.exit(2);
+}
+/** The TV service: see ShellProvider in src/shell.ts. */
+const SP = JSON.parse(fs.readFileSync(PROVIDER_FILE, 'utf8'));
+const SIGNIN = SP.signin;
+const R = rules(SP);
+const PARTITION = SP.partition;
 const TOP_BAR = 36; // keep in sync with --top in src/ui/style.css
 const GAP = 2;
 const BG = '#05070a';
@@ -46,16 +60,19 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // While the player is up, shows only the main <video> (the one actually playing), filling the view.
 // Visibility inherits through shadow DOM, so hiding the document and re-showing one video works inside
-// Xfinity's components. The guide stays visible: the in-app channel switch clicks a row in it (the UI
-// covers the screen with a "Switching to…" card meanwhile).
+// web components (Xfinity's player). The guide stays visible: the in-app channel switch clicks a row
+// in it (the UI covers the screen with a "Switching to…" card meanwhile). The provider can add CSS.
+const PLAYER_RE = compile(SP.playerUrl);
+const HIDE_CSS = 'html.rz-hide,html.rz-hide body{background:#000!important;cursor:none!important;overflow:hidden!important} html.rz-hide{visibility:hidden!important}' + (SP.hideCss ? ` ${SP.hideCss}` : '');
 const HIDE_JS = `(() => {
   if (window.__rzHide) return; window.__rzHide = true;
   const style = document.createElement('style');
-  style.textContent = 'html.rz-hide,html.rz-hide body{background:#000!important;cursor:none!important;overflow:hidden!important} html.rz-hide{visibility:hidden!important}';
+  style.textContent = ${JSON.stringify(HIDE_CSS)};
   document.documentElement.appendChild(style);
+  const playerRe = new RegExp(${JSON.stringify(PLAYER_RE.source)}, ${JSON.stringify(PLAYER_RE.flags)});
   let shown = null;
   const pick = () => {
-    const player = location.pathname.includes('/stream/live/');
+    const player = playerRe.test(location.href);
     document.documentElement.classList.toggle('rz-hide', player);
     if (!player) return;
     const vids = [];
@@ -70,14 +87,14 @@ const HIDE_JS = `(() => {
     v.style.setProperty('object-fit', 'contain', 'important');
     shown = v;
   };
-  pick(); setInterval(pick, 500);
+  pick(); setInterval(pick, ${Number(SP.hidePollMs) || 500});
 })()`;
 
-const isXfinity = (url) => /^https:\/\/www\.xfinity\.com\/stream/.test(url);
+const isApp = (url) => R.isApp(url);
 const marker = (label) =>
   `data:text/html,${encodeURIComponent(`<title>${label}</title><body style="margin:0;background:#000;color:#334155;font:600 15px system-ui;display:grid;place-items:center;height:100vh">${label}</body>`)}`;
 
-/** Chrome's identifier without "Electron/…" (Xfinity sends Electron to an "update your browser" page). */
+/** Chrome's identifier without "Electron/…" (some services, Xfinity included, send Electron to an "update your browser" page). */
 function useChromeUserAgent() {
   const ua = session.defaultSession.getUserAgent().replace(/ Electron\/\S+/, '').replace(/ RedZone\/\S+/, '');
   app.userAgentFallback = ua;
@@ -87,82 +104,124 @@ function useChromeUserAgent() {
 
 let win = null;
 let ui = null;
-/** Every Xfinity view by name (S1..S4, X1..): { view, cell } where cell is the screen it sits in. */
+/** Every video view by name (S1..S4, X1..): { view, cell } where cell is the screen it sits in. */
 const views = new Map();
 let signingIn = null;
 
 /**
- * Xfinity Stream's own session doesn't survive a restart; your Xfinity On Campus sign-in does.
- * Clicking its "Watch Now" (in a hidden window) hands it to Xfinity Stream again. If the portal itself
- * wants a sign-in, the window is shown so you can sign in yourself.
+ * Signing the service in. First check whether it is still signed in from last time. If not:
+ *  - with a portal (Xfinity On Campus): Xfinity Stream's own session doesn't survive a restart, but
+ *    your Xfinity On Campus sign-in does, and clicking its "Watch Now" (in a hidden window) hands it to
+ *    Xfinity Stream again. If the portal itself wants a sign-in, the window is shown so you can sign in.
+ *  - without one: the service's page is shown and you sign in yourself (school SSO pop-ups included);
+ *    RedZone only watches for the signed-in page.
  */
 const withTimeout = (p, ms, what) => Promise.race([p, sleep(ms).then(() => Promise.reject(new Error(`${what} took over ${ms / 1000}s`)))]);
-const SIGNED_OUT_JS = `/\\bSign In\\b/.test(document.body ? document.body.innerText.slice(0, 4000) : '')`;
+const BODY_TEXT_JS = `document.body ? document.body.innerText.slice(0, 4000) : ''`;
+const bodyText = (wc) => wc.executeJavaScript(BODY_TEXT_JS).catch(() => '');
 
-/** Is Xfinity Stream still signed in from last time? (Then the Watch Now hand-off isn't needed.) */
+/** Is the service still signed in from last time? (Then no sign-in is needed.) */
 async function streamSignedIn(w) {
   try {
-    await withTimeout(w.loadURL('https://www.xfinity.com/stream/'), 20000, 'Xfinity Stream');
-    await sleep(4000);
-    return isXfinity(w.webContents.getURL()) && !(await w.webContents.executeJavaScript(SIGNED_OUT_JS));
+    await withTimeout(w.loadURL(SIGNIN.checkUrl), SIGNIN.checkTimeoutMs, SP.shortName);
+    await sleep(SIGNIN.checkSettleMs);
+    return isApp(w.webContents.getURL()) && !R.signedOut(await w.webContents.executeJavaScript(BODY_TEXT_JS));
   } catch (err) {
     send({ type: 'log', text: `sign-in check: ${err && err.message ? err.message : err}` });
     return false;
   }
 }
 
+/** Log each page of the sign-in flow by site and path only: sign-in URLs carry one-time codes and tokens in their query and fragment. */
+function logNavigation(wc) {
+  wc.on('did-navigate', (_e, url) => {
+    let where = 'page';
+    try {
+      const u = new URL(url);
+      where = `${u.origin}${u.pathname}`;
+    } catch {}
+    send({ type: 'log', text: `sign-in: ${where.slice(0, 100)}` });
+  });
+}
+
+/** Portal hand-off (Xfinity On Campus "Watch Now"). */
+async function portalHandoff(w) {
+  send({ type: 'signin', state: 'signing-in', detail: `Opening ${SP.shortName} from ${SP.name}` });
+  w.webContents.setWindowOpenHandler(() => ({ action: 'allow', overrideBrowserWindowOptions: { show: false, webPreferences: { partition: PARTITION } } }));
+  const stream = new Promise((resolve) => {
+    const watch = (wc) => {
+      logNavigation(wc);
+      wc.on('did-finish-load', () => {
+        if (isApp(wc.getURL())) resolve(wc);
+      });
+    };
+    const onCreated = (_e, wc) => watch(wc);
+    app.on('web-contents-created', onCreated);
+    w.on('closed', () => app.off('web-contents-created', onCreated));
+    watch(w.webContents);
+  });
+  await withTimeout(w.loadURL(SIGNIN.portalUrl), SIGNIN.portalTimeoutMs, SP.name);
+  const click = SIGNIN.autoClick;
+  let clicked = false;
+  for (let i = 0; click && i < SIGNIN.autoClickTries && !clicked; i++) {
+    clicked = await w.webContents
+      .executeJavaScript(`(() => { const re = new RegExp(${JSON.stringify(click.text)}, 'i'); const el = document.querySelector(${JSON.stringify(click.selector)}) || [...document.querySelectorAll('a,button,[role=button]')].find((e) => re.test(e.textContent || '')); if (!el) return false; el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window })); return true; })()`)
+      .catch(() => false);
+    if (!clicked) await sleep(SIGNIN.autoClickIntervalMs);
+  }
+  if (!clicked) {
+    w.show();
+    send({ type: 'signin', state: 'needed', detail: SIGNIN.instructions });
+  }
+  const wc = await Promise.race([stream, sleep(clicked ? SIGNIN.waitAfterClickMs : SIGNIN.waitForUserMs).then(() => null)]);
+  if (!wc) throw new Error(`${SP.shortName} did not open after the ${SP.name} hand-off`);
+  await sleep(SIGNIN.handoffSettleMs); // let the service finish setting up its session
+  const out = await wc.executeJavaScript(BODY_TEXT_JS).then((t) => R.signedOut(t)).catch(() => null);
+  send({ type: 'signin', state: out === true ? 'failed' : 'ok', detail: out === true ? `${SP.shortName} still looks signed out` : `Signed in to ${SP.shortName}` });
+}
+
+/** No portal: show the service's own sign-in and wait for any window of the flow to reach the signed-in page. */
+async function interactiveSignin(w) {
+  w.webContents.setWindowOpenHandler(() => ({ action: 'allow', overrideBrowserWindowOptions: { show: true, autoHideMenuBar: true, webPreferences: { partition: PARTITION } } }));
+  const onCreated = (_e, wc) => logNavigation(wc);
+  app.on('web-contents-created', onCreated);
+  logNavigation(w.webContents);
+  try {
+    w.show();
+    send({ type: 'signin', state: 'needed', detail: SIGNIN.instructions });
+    const deadline = Date.now() + SIGNIN.waitForUserMs;
+    while (Date.now() < deadline) {
+      await sleep(1000);
+      const wins = BrowserWindow.getAllWindows().filter((bw) => bw !== win && !bw.isDestroyed());
+      if (!wins.length) throw new Error('the sign-in window was closed');
+      const pages = await Promise.all(wins.map(async (bw) => ({ url: bw.webContents.getURL(), bodyText: await bodyText(bw.webContents) })));
+      if (R.signinDone(pages)) {
+        await sleep(SIGNIN.handoffSettleMs);
+        send({ type: 'signin', state: 'ok', detail: `Signed in to ${SP.shortName}` });
+        return;
+      }
+    }
+    throw new Error(`no sign-in to ${SP.shortName} within ${Math.round(SIGNIN.waitForUserMs / 60000)} min`);
+  } finally {
+    app.off('web-contents-created', onCreated);
+  }
+}
+
 async function handoff() {
   if (signingIn) return signingIn;
   signingIn = (async () => {
-    send({ type: 'signin', state: 'signing-in', detail: 'Checking Xfinity Stream' });
-    const w = new BrowserWindow({ width: 1100, height: 760, show: false, title: 'RedZone: sign in to Xfinity On Campus', backgroundColor: BG, webPreferences: { partition: PARTITION } });
+    send({ type: 'signin', state: 'signing-in', detail: `Checking ${SP.shortName}` });
+    const w = new BrowserWindow({ width: 1100, height: 760, show: false, title: SIGNIN.windowTitle, backgroundColor: BG, webPreferences: { partition: PARTITION } });
     w.setMenuBarVisibility(false);
     if (await streamSignedIn(w)) {
-      send({ type: 'signin', state: 'ok', detail: 'Signed in to Xfinity Stream' });
+      send({ type: 'signin', state: 'ok', detail: `Signed in to ${SP.shortName}` });
       w.destroy();
       signingIn = null;
       return;
     }
-    send({ type: 'signin', state: 'signing-in', detail: 'Opening Xfinity Stream from Xfinity On Campus' });
-    w.webContents.setWindowOpenHandler(() => ({ action: 'allow', overrideBrowserWindowOptions: { show: false, webPreferences: { partition: PARTITION } } }));
-    const stream = new Promise((resolve) => {
-      const watch = (wc) => {
-        // Site and path only: sign-in URLs carry one-time codes and tokens in their query and fragment.
-        wc.on('did-navigate', (_e, url) => {
-          let where = 'page';
-          try {
-            const u = new URL(url);
-            where = `${u.origin}${u.pathname}`;
-          } catch {}
-          send({ type: 'log', text: `sign-in: ${where.slice(0, 100)}` });
-        });
-        wc.on('did-finish-load', () => {
-          if (isXfinity(wc.getURL())) resolve(wc);
-        });
-      };
-      const onCreated = (_e, wc) => watch(wc);
-      app.on('web-contents-created', onCreated);
-      w.on('closed', () => app.off('web-contents-created', onCreated));
-      watch(w.webContents);
-    });
     try {
-      await withTimeout(w.loadURL('https://www.xfinityoncampus.com/'), 30000, 'Xfinity On Campus');
-      let clicked = false;
-      for (let i = 0; i < 30 && !clicked; i++) {
-        clicked = await w.webContents
-          .executeJavaScript(`(() => { const el = document.querySelector('a.watch-now-btn') || [...document.querySelectorAll('a,button,[role=button]')].find((e) => /watch now/i.test(e.textContent || '')); if (!el) return false; el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window })); return true; })()`)
-          .catch(() => false);
-        if (!clicked) await sleep(500);
-      }
-      if (!clicked) {
-        w.show();
-        send({ type: 'signin', state: 'needed', detail: 'Sign in to Xfinity On Campus in the window that opened, then click Watch Now' });
-      }
-      const wc = await Promise.race([stream, sleep(clicked ? 40_000 : 600_000).then(() => null)]);
-      if (!wc) throw new Error('Xfinity Stream did not open after Watch Now');
-      await sleep(5000); // let Xfinity Stream finish setting up its session
-      const signedIn = await wc.executeJavaScript(`!(${SIGNED_OUT_JS})`).catch(() => null);
-      send({ type: 'signin', state: signedIn === false ? 'failed' : 'ok', detail: signedIn === false ? 'Xfinity Stream still shows "Sign In"' : 'Signed in to Xfinity Stream' });
+      if (SIGNIN.portalUrl) await portalHandoff(w);
+      else await interactiveSignin(w);
     } catch (err) {
       send({ type: 'signin', state: 'failed', detail: String(err && err.message ? err.message : err) });
     } finally {
@@ -208,7 +267,7 @@ function createViews() {
     const v = new WebContentsView({ webPreferences: { partition: PARTITION, backgroundThrottling: false } });
     v.setBackgroundColor('#000000');
     const hide = () => {
-      if (isXfinity(v.webContents.getURL())) v.webContents.executeJavaScript(HIDE_JS).catch(() => {});
+      if (isApp(v.webContents.getURL())) v.webContents.executeJavaScript(HIDE_JS).catch(() => {});
     };
     v.webContents.on('did-finish-load', hide);
     v.webContents.on('did-navigate-in-page', hide);
@@ -230,7 +289,7 @@ function toggleFullscreen() {
 app.whenReady().then(async () => {
   Menu.setApplicationMenu(null);
   await components.whenReady();
-  useChromeUserAgent();
+  if (SP.userAgent === 'chrome') useChromeUserAgent();
 
   win = new BrowserWindow({
     width: 1600,

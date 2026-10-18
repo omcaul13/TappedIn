@@ -1,4 +1,5 @@
 import { spawn, type ChildProcess } from 'node:child_process';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { createInterface } from 'node:readline';
@@ -6,8 +7,9 @@ import { chromium, type Browser, type Page } from 'playwright-core';
 import { PROJECT_ROOT, type Config } from './config';
 import type { ProviderConfig } from './providers/types';
 
-// Starts the one-window app shell (electron/main.cjs) and finds its Xfinity views over the local
-// debugging port, so the window controller can drive them like the Chrome tiles.
+// Starts the one-window app shell (electron/main.cjs) and finds its video views over the local
+// debugging port, so the window controller can drive them like the Chrome tiles. The shell knows
+// nothing about any TV service: it reads the provider's shell settings from a JSON file written here.
 
 export interface SigninStatus {
   state: 'signing-in' | 'needed' | 'ok' | 'failed';
@@ -22,9 +24,9 @@ export interface ShellEvents {
 }
 
 export interface Shell {
-  /** Resolves once Xfinity Stream is signed in (or tried) and the views exist. */
+  /** Resolves once the service is signed in (or tried) and the views exist. */
   ready: Promise<void>;
-  /** Run the Xfinity On Campus "Watch Now" sign-in again (e.g. after Xfinity signed out). */
+  /** Run the sign-in again (e.g. after the service signed out). */
   handoff(): void;
   /** Show view `view` (S1..S4, X1..) in a screen's cell, on top. */
   present(screen: number, view: string): void;
@@ -34,6 +36,43 @@ export interface Shell {
 const require = createRequire(import.meta.url);
 // Chromium chatter on stderr that isn't ours.
 const NOISE = /^\[\d+:\d+:\d+\/\d+\.\d+:(INFO|WARNING|ERROR|VERBOSE\d?):|^DevTools listening|^\s*$/;
+
+/** What electron/main.cjs needs to know about the service (passed as --provider=<file>). */
+export interface ShellProvider {
+  id: string;
+  name: string;
+  shortName: string;
+  partition: string;
+  userAgent: 'chrome' | 'default';
+  appUrl: string;
+  playerUrl: string;
+  hideCss: string;
+  hidePollMs: number;
+  signin: ProviderConfig['signin'];
+}
+
+export function shellProvider(p: ProviderConfig): ShellProvider {
+  return {
+    id: p.id,
+    name: p.name,
+    shortName: p.shortName,
+    partition: p.shell.partition,
+    userAgent: p.shell.userAgent,
+    appUrl: p.shell.appUrl,
+    playerUrl: p.shell.playerUrl,
+    hideCss: p.shell.hideCss,
+    hidePollMs: p.timing.hidePollMs,
+    signin: p.signin,
+  };
+}
+
+/** Write the shell provider file and return its path. */
+export function writeShellProvider(p: ProviderConfig): string {
+  const file = path.join(PROJECT_ROOT, '.state', 'shell-provider.json');
+  mkdirSync(path.dirname(file), { recursive: true });
+  writeFileSync(file, JSON.stringify(shellProvider(p), null, 2));
+  return file;
+}
 
 /** Standby views to create: a setting changed in the app or the config file wins, else the service's default. */
 export function effectiveStandby(cfg: Config, provider: ProviderConfig): number {
@@ -53,6 +92,7 @@ export async function startShell(cfg: Config, uiUrl: string, events: ShellEvents
     `--user-data=${cfg.electron.userDataDir}`,
     '--screens=4',
     `--spares=${effectiveStandby(cfg, provider)}`,
+    `--provider=${writeShellProvider(provider)}`,
     ...(cfg.electron.disableDirectComposition ? ['--no-dcomp'] : []),
   ];
   // The app runs under tsx, whose NODE_OPTIONS loader would make Electron exit at once.
@@ -97,7 +137,7 @@ export interface ShellView {
   page: Page;
 }
 
-/** Attach to the shell and return its Xfinity views (found by their marker titles): screens in order, then spares. */
+/** Attach to the shell and return its video views (found by their marker titles): screens in order, then spares. */
 export async function attachShell(cfg: Config, count: number, provider: ProviderConfig, timeoutMs = 30_000): Promise<{ browser: Browser; screens: ShellView[]; spares: ShellView[] }> {
   const browser = await chromium.connectOverCDP(`http://127.0.0.1:${cfg.electron.debugPort}`);
   const deadline = Date.now() + timeoutMs;

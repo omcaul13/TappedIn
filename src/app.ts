@@ -253,8 +253,10 @@ export class App {
 
   private changeSettings(body: Record<string, unknown>): PostResult {
     if (body.reset === true) {
-      this.overrides = {};
-      saveOverrides({});
+      // Setup choices (which service, how many standby streams) aren't tuning: reset keeps them.
+      const { provider, standbyViews } = this.overrides;
+      this.overrides = { ...(provider ? { provider } : {}), ...(standbyViews !== undefined ? { standbyViews } : {}) };
+      saveOverrides(this.overrides);
       this.applyConfig();
       this.info('settings reset to the config file');
       return { ok: true };
@@ -548,6 +550,7 @@ export class App {
       now: this.clock.now(),
       mode: this.mode,
       shell: this.opts.shell,
+      provider: { id: this.adapter.config.id, name: this.adapter.config.name, shortName: this.adapter.config.shortName, status: this.adapter.config.status },
       signin: this.signin,
       streamLimit: this.controller?.streamLimit ?? c.windows.maxConcurrentStreams,
       audio: { mode: this.engine.audio.mode, focus: this.engine.audio.focus },
