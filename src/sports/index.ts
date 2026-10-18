@@ -4,12 +4,13 @@ import { cfb } from './cfb';
 import { mcbb, nba, wcbb, wnba } from './leagues';
 import { nhl } from './hockey';
 import { nfl } from './nfl';
+import { epl, laliga, mls, ucl } from './soccer';
 import type { SportModule } from './types';
 
 // Every sport the app knows, in the order the picker lists them. Adding a sport: write its module
 // (see README "Adding a sport"), then list it here.
 
-export const SPORTS: readonly SportModule[] = [cfb, nfl, mcbb, nba, nhl, mlb, wcbb, wnba];
+export const SPORTS: readonly SportModule[] = [cfb, nfl, mcbb, nba, nhl, mlb, wcbb, wnba, mls, epl, ucl, laliga];
 
 const BY_ID = new Map<string, SportModule>(SPORTS.map((s) => [s.id, s]));
 

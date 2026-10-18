@@ -97,6 +97,8 @@ export function computeMetrics(label: string, res: SimResult, finals: Map<string
       for (const h of homes) {
         const plays = finals.get(h);
         if (!plays || (sport && plays.sport !== sport)) continue;
+        // Sports with no commercials during play (soccer) have no breaks to catch.
+        if (!sportOf(plays.sport).breaks.categories.length) continue;
         anyFinals = true;
         const resume = resumes(h);
         for (let i = 0; i < plays.length - 1; i++) {

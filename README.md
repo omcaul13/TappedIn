@@ -1,6 +1,6 @@
 # RedZone Director
 
-A "RedZone" for college football, the NFL, college and pro basketball, the NHL and MLB, on the TV service you already have. One app window shows up to four channels in a grid, each screen on its own sport. A director watches ESPN's live game data and changes each screen's channel:
+A "RedZone" for college football, the NFL, college and pro basketball, the NHL, MLB and soccer, on the TV service you already have. One app window shows up to four channels in a grid, each screen on its own sport. A director watches ESPN's live game data and changes each screen's channel:
 
 - **Long commercial break on a screen's game:** the screen fills in with the best live game: the same sport first (red zone, power play, clutch time…), then a sport another screen is watching, then any sport.
 - **Play resumes:** the screen goes back to its game.
@@ -22,7 +22,7 @@ RedZone isn't affiliated with or endorsed by any TV service, school, league or n
 | v2.3 | **Switch less:** break forecast from 76 recorded games, Low/Medium/High sensitivity, hysteresis | ✅ done (replayed 10/10 and 10/17) |
 | v3.0 | **Other TV services:** provider adapters with per-service config files | ✅ Xfinity re-verified live 10/18 through the adapter; full app check on a game day pending |
 | v3.1 | **Setup for everyone:** one-click installer, first-run setup, TV service settings, diagnostics | ✅ setup run live on Xfinity On Campus 10/18 (sign-in, scan 17 networks, playback, 4 streams); installer checked in check-only mode |
-| v4.0 | **Multi-sport:** sport modules (NFL, men's and women's college basketball, NBA, WNBA, NHL, MLB), sport picker, 3-tier fill-ins | ✅ built and tested on recorded and rebuilt days (10/18); college football unchanged (identical decisions on its recorded days); not yet watched live with streams |
+| v4.0 | **Multi-sport:** sport modules (NFL, men's and women's college basketball, NBA, WNBA, NHL, MLB, MLS, Premier League, Champions League, La Liga), sport picker, 3-tier fill-ins | ✅ built and tested on recorded and rebuilt days (10/18); college football unchanged (identical decisions on its recorded days); not yet watched live with streams |
 
 ## Supported sports
 
@@ -38,12 +38,13 @@ Each sport is a module in `src/sports/` with its own ESPN feed, break detector (
 | **MLB** | ✅ | (Low: nothing; your call) Medium/High: **between innings** (median 147 s, never < 90 s) | pitches, new batters | — (rain delay = delay) | no-hitter through 6+, extra innings, bases loaded, runners in scoring position late | Medium: 13.1/h, 2% false, 75% caught (8/15) |
 | **Women's college basketball** | ✅ | official TV timeouts (under 5:00 of each quarter), ends of quarters | fouls, baskets | halftime | crunch time, OT | 11.8/h, 3% false, 71% caught (2/22) |
 | **WNBA** | ✅ (14 recorded games: thin data) | official and full timeouts, ends of quarters | fouls, baskets | halftime | clutch time, OT | tested on recorded games only |
-| Soccer (MLS, major leagues) | not built yet | only halftime would switch (no commercials during play); good fill-in destination | — | halftime | close late, stoppage time | — |
+| **Soccer:** MLS, Premier League, Champions League, La Liga | ✅ | nothing during play (no commercials while the ball is in play); weather delays only. Soccer games are good fill-ins for other sports | everything during play | halftime, the break before extra time | level or one-goal game from 75', stoppage time, extra time, shootout | never switched during play on 10/17 (EPL, La Liga) and 9/8 (UCL) games; MLS games filled other sports' breaks at tier 3 |
 
 What ESPN's data can and can't tell (and how the app copes):
 - **TV timeouts are explicit** in college basketball (`OfficialTVTimeOut`), the WNBA (`Official Timeout`) and the NHL (a `Stoppage` play "TV Timeout"). Football's aren't, so football still reads them from the quiet after a play.
 - **Pulled goalies aren't marked** in NHL data (only "Empty Net" goals), so the late hot moment is "a one-goal game in the last 2:30", when teams pull the goalie.
 - **NFL Sunday afternoons:** ESPN labels every CBS/FOX game "national", but your local station airs one of the 3–4 in each window. In a multi-game window only your market's team (`sports.market`, default Boston) is picked automatically; the others show **REGIONAL** in the game list and can still be picked by hand. (Reading the TV guide's program title to confirm the others is wired in, `Engine.setProgramTitles`, but no service adapter reads titles yet.)
+- **Soccer:** most MLS games stream on Apple TV and many Premier League and Champions League games on Peacock or Paramount+; only the ones on cable networks (USA, NBC, CBS, FOX/FS1, ESPN, Telemundo/Universo, Univision/TUDN) are offered.
 - **Most NBA (and many NHL/MLB) games air only on regional sports networks.** Games on networks your lineup doesn't carry are greyed out with the reason ("not in lineup: NBC Sports Philadelphia", "no network listed").
 
 ## Choosing sports

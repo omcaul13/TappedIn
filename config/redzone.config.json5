@@ -101,8 +101,9 @@
   // Low/Medium/High numbers) live in src/sports/; see README "Supported sports".
   sports: {
     // Polled from ESPN, listed in the game menu, and used as fill-ins (the settings drawer can turn
-    // sports off too). Ids: cfb, nfl, mcbb (men's college basketball), nba, nhl, mlb, wcbb, wnba.
-    enabled: ["cfb", "nfl", "mcbb", "nba", "nhl", "mlb", "wcbb", "wnba"],
+    // sports off too). Ids: cfb, nfl, mcbb (men's college basketball), nba, nhl, mlb, wcbb, wnba,
+    // mls, epl (Premier League), ucl (Champions League), laliga.
+    enabled: ["cfb", "nfl", "mcbb", "nba", "nhl", "mlb", "wcbb", "wnba", "mls", "epl", "ucl", "laliga"],
     // Your TV market: in a Sunday CBS/FOX window with several NFL games, only your market's team's game
     // (or the one the TV guide names) is picked automatically; your local station shows just one.
     market: "Boston",

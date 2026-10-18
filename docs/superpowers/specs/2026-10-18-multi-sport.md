@@ -328,4 +328,5 @@ I'll also run the multi-sport recorder in the background tonight (SNF + NHL + ML
 - **`liveFromPlays`:** the NHL power play comes from the latest play's strength (the scoreboard doesn't carry it).
 - **Sim flags added:** `--by-sport`, `--screen-sports`, `--full-lineup` (every game watchable, for judging a detector), `--no-regional`; config `sports.nflRegionalCheck`, `simulation.fullLineup`.
 - **NFL guide titles:** the engine accepts program titles (`Engine.setProgramTitles`), but no adapter reads them yet (needs a live Sunday check). Until then only the market team is confirmed in a multi-game CBS/FOX window.
-- **Not built:** lead changes as an excitement signal (needs score history per game); soccer (waiting on the league list).
+- **Not built:** lead changes as an excitement signal (needs score history per game).
+- **Soccer** (you confirmed MLS, Premier League, Champions League, La Liga): one family module; nothing during play starts a break; the score comes from goal text in `keyEvents`; synth runs the match clock between events.
