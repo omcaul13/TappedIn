@@ -187,6 +187,7 @@ async function interactiveSignin(w) {
   app.on('web-contents-created', onCreated);
   logNavigation(w.webContents);
   try {
+    if (SIGNIN.startUrl) await w.loadURL(SIGNIN.startUrl).catch(() => {});
     w.show();
     send({ type: 'signin', state: 'needed', detail: SIGNIN.instructions });
     const deadline = Date.now() + SIGNIN.waitForUserMs;

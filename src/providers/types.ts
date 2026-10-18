@@ -46,6 +46,8 @@ const SigninSchema = z.object({
   checkUrl: z.string().url(),
   /** Text near the top of the page that means "signed out" (first 4000 characters). */
   signedOutPattern: RegexSource,
+  /** Where a user's own sign-in starts, when not at checkUrl (e.g. campus.cox.com's school picker). */
+  startUrl: z.string().url().nullable().default(null),
   /** A portal whose button hands the session to the service (Xfinity On Campus "Watch Now"). */
   portalUrl: z.string().url().nullable().default(null),
   /** The portal button RedZone presses for you. Only the user's own hand-off button, never a terms/consent control. */

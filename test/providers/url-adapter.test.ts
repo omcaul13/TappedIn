@@ -84,3 +84,15 @@ describe('reading channels from a guide API response', () => {
     expect(items).toEqual([{ label: 'ESPN', number: 5, callSign: null, ref: '0123456789abcdef0123456789abcdef' }]);
   });
 });
+
+describe('guide-reading options', () => {
+  it('itemsFromJson can require a path (Sling: only ribbons that can play)', () => {
+    const json = { ribbons: [{ stitch_id: '0123456789abcdef0123456789abcdef', tiles: [{ actions: { PLAY_CONTENT: {}, DETAIL_VIEW: { adobe: { ChannelName: 'ESPN' } } } }] }, { stitch_id: 'fedcba9876543210fedcba9876543210', tiles: [{ actions: { DETAIL_VIEW: { adobe: { ChannelName: 'ESPN VOD' } } } }] }] };
+    const items = itemsFromJson(json, { items: 'ribbons[]', ref: 'stitch_id', label: 'tiles[].actions.DETAIL_VIEW.adobe.ChannelName', number: null, refPattern: '^([0-9a-f]{32})$', require: 'tiles[].actions.PLAY_CONTENT' });
+    expect(items.map((i) => i.label)).toEqual(['ESPN']);
+  });
+
+  it('refFromText cuts a label out with a pattern (YouTube TV "watch ESPN")', () => {
+    expect(refFromText('watch ESPN', '^watch (.+)$')).toBe('ESPN');
+  });
+});

@@ -13,7 +13,8 @@ const DomLineup = z.object({
   guideUrl: z.string().url(),
   /** One element per channel. */
   row: z.string(),
-  label: z.object({ selector: z.string().nullable().default(null), attr: z.string().nullable().default(null) }).prefault({}),
+  /** The channel's name: text (or `attr`) of the row or of `selector` inside it, optionally cut out with `pattern` (group 1). */
+  label: z.object({ selector: z.string().nullable().default(null), attr: z.string().nullable().default(null), pattern: z.string().nullable().default(null) }).prefault({}),
   number: z.object({ selector: z.string().nullable().default(null), attr: z.string().nullable().default(null) }).nullable().default(null),
   /** Where the channel id is: an attribute of the row (or of `selector` inside it), cut out with `pattern` (group 1). */
   ref: z.object({ selector: z.string().nullable().default(null), attr: z.string(), pattern: z.string().nullable().default(null) }),
@@ -34,6 +35,12 @@ const ResponseLineup = z.object({
   label: z.string(),
   number: z.string().nullable().default(null),
   refPattern: z.string().nullable().default(null),
+  /** Only items that have a value here count (e.g. Sling ribbons that can play). */
+  require: z.string().nullable().default(null),
+  /** Guides that load their data as you scroll: scroll this element and collect every response. */
+  scrollContainer: z.string().nullable().default(null),
+  settleMs: z.number().int().min(0).default(300),
+  maxScrolls: z.number().int().min(0).default(0),
   timeoutMs: z.number().int().positive().default(30000),
 });
 
@@ -75,9 +82,10 @@ export function collectPath(root: unknown, path: string): unknown[] {
   return cur;
 }
 
-export function itemsFromJson(json: unknown, paths: { items: string; ref: string; label: string; number: string | null; refPattern: string | null }): DiscoveredChannel[] {
+export function itemsFromJson(json: unknown, paths: { items: string; ref: string; label: string; number: string | null; refPattern: string | null; require?: string | null }): DiscoveredChannel[] {
   const out: DiscoveredChannel[] = [];
   for (const item of collectPath(json, paths.items)) {
+    if (paths.require && !collectPath(item, paths.require).length) continue;
     const ref = refFromText(String(collectPath(item, paths.ref)[0] ?? ''), paths.refPattern);
     if (!ref) continue;
     const n = paths.number ? Number(collectPath(item, paths.number)[0]) : NaN;
@@ -130,10 +138,32 @@ export function createUrlAdapter(config: ProviderConfig): ProviderAdapter {
     async discoverLineup(page: Page, tools: TuneTools): Promise<DiscoveredChannel[]> {
       const l = t.lineup;
       if (l.mode === 'response') {
+        // Read the guide data the page downloads itself (passively: nothing is changed or replayed).
         const re = compileRegex(l.responseUrl);
-        const response = page.waitForResponse((r) => re.test(r.url()), { timeout: l.timeoutMs });
-        await tools.load(page, l.guideUrl, t.pageTimeoutMs);
-        return itemsFromJson(await (await response).json(), { items: l.items, ref: l.ref, label: l.label, number: l.number, refPattern: l.refPattern });
+        const bodies: Promise<unknown>[] = [];
+        const onResponse = (r: { url(): string; status(): number; json(): Promise<unknown> }) => {
+          if (re.test(r.url()) && r.status() === 200) bodies.push(r.json().catch(() => null));
+        };
+        page.on('response', onResponse);
+        try {
+          const first = page.waitForResponse((r) => re.test(r.url()), { timeout: l.timeoutMs }).catch(() => null);
+          await tools.load(page, l.guideUrl, t.pageTimeoutMs);
+          await first;
+          if (l.scrollContainer && l.maxScrolls > 0) await page.evaluate(`(${SCROLL_ALL})(${JSON.stringify(l)})`).catch(() => {});
+          await page.waitForTimeout(l.settleMs);
+        } finally {
+          page.off('response', onResponse);
+        }
+        const seen = new Set<string>();
+        const out: DiscoveredChannel[] = [];
+        for (const body of await Promise.all(bodies)) {
+          for (const item of itemsFromJson(body, { items: l.items, ref: l.ref, label: l.label, number: l.number, refPattern: l.refPattern, require: l.require })) {
+            if (seen.has(item.ref!)) continue;
+            seen.add(item.ref!);
+            out.push(item);
+          }
+        }
+        return out;
       }
       await tools.load(page, l.guideUrl, t.pageTimeoutMs);
       await page.waitForSelector(l.row, { timeout: t.pageTimeoutMs });
@@ -145,12 +175,23 @@ export function createUrlAdapter(config: ProviderConfig): ProviderAdapter {
         if (!ref || seen.has(ref)) continue;
         seen.add(ref);
         const n = Number(r.number);
-        out.push({ label: r.label, number: Number.isFinite(n) && n > 0 ? n : null, callSign: null, ref });
+        out.push({ label: refFromText(r.label, l.label.pattern) ?? r.label, number: Number.isFinite(n) && n > 0 ? n : null, callSign: null, ref });
       }
       return out;
     },
   };
 }
+
+/** Runs in the page: scroll an element to the bottom, one screenful at a time (lazy guides load as you go). */
+const SCROLL_ALL = `async (l) => {
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const box = document.querySelector(l.scrollContainer) || document.scrollingElement;
+  for (let i = 0; i < l.maxScrolls; i++) {
+    if (box.scrollTop + box.clientHeight >= box.scrollHeight - 2) break;
+    box.scrollTop += Math.max(100, box.clientHeight);
+    await sleep(l.settleMs);
+  }
+}`;
 
 /** Runs in the page: scroll through the guide and read every row (label, number, raw id text). */
 const READ_ROWS = `async (l) => {

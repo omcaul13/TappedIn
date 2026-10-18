@@ -24,3 +24,24 @@ describe('Comcast TV-APP adapter', () => {
     expect(xoc.isWarm({ url: () => 'https://www.xfinity.com/stream/live/x/1/ESPND' } as never)).toBe(false);
   });
 });
+
+describe('Comcast channel map', () => {
+  it('reads entitled channels with network name, call sign, number and HD', async () => {
+    const { parseChannelMap } = await import('../../src/providers/comcast/adapter');
+    const json = {
+      _embedded: {
+        channels: [
+          { callSign: 'ESPND', 'branchOf/company/callSign': 'ESPN', number: 849, isHD: true, entitled: true },
+          { callSign: 'ESPN', 'branchOf/company/callSign': 'ESPN', number: 30, isHD: false, entitled: true },
+          { callSign: 'BTNHD', 'branchOf/company/callSign': 'BTN', number: 977, isHD: true, entitled: false },
+          { callSign: 'WCVBD', 'branchOf/company/callSign': 'ABC', number: 805, isHD: true },
+        ],
+      },
+    };
+    expect(parseChannelMap(json)).toEqual([
+      { label: 'ESPN HD', number: 849, callSign: 'ESPND', ref: null },
+      { label: 'ESPN', number: 30, callSign: 'ESPN', ref: null },
+      { label: 'ABC HD', number: 805, callSign: 'WCVBD', ref: null },
+    ]);
+  });
+});

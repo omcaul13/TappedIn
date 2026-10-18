@@ -34,6 +34,11 @@ export const ComcastTuningSchema = z.object({
   findRowHitSettleMs: z.number().int().min(0).default(120),
   findRowEmptyWaitMs: z.number().int().min(0).default(250),
   scanSettleMs: z.number().int().min(0).default(250),
+  /** The channel map the app downloads with the guide (read passively for a lineup scan). */
+  channelMapResponse: z.string().default('xtvapi\\.cloudtv\\.comcast\\.net/channelmap'),
+  channelMapTimeoutMs: z.number().int().positive().default(20000),
+  /** Some channels open on a "Watch Now" play button instead of playing (Cox per PrismCast); null: never press it. */
+  watchNowButton: z.object({ selector: z.string(), text: z.string(), waitMs: z.number().int().min(0).default(5000) }).nullable().default(null),
   /** Live URLs end with the station's call sign (lets every tune verify where it landed). */
   callSignInUrl: z.boolean().default(true),
 });
