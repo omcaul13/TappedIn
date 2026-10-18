@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Page } from 'playwright-core';
+import { compileRegex, type ProviderConfig } from '../providers/types';
 
 // Stream health: probe every frame of a tile window, then classify what the viewer is seeing.
 // Text-based error detection only counts when the video is NOT progressing, because pages often
@@ -65,11 +66,12 @@ export interface Health {
   frames: number;
 }
 
-export async function probePage(page: Page): Promise<FrameProbe[]> {
+export async function probePage(page: Page, patterns: string[] = DEFAULT_RULES.probePatterns): Promise<FrameProbe[]> {
   const out: FrameProbe[] = [];
+  const js = `(${PROBE_JS})(${JSON.stringify(patterns)})`;
   for (const frame of page.frames()) {
     try {
-      out.push((await frame.evaluate(PROBE_JS)) as FrameProbe);
+      out.push((await frame.evaluate(js)) as FrameProbe);
     } catch {
       // Frame navigated or detached mid-probe; skip it this round.
     }
@@ -77,11 +79,44 @@ export async function probePage(page: Page): Promise<FrameProbe[]> {
   return out;
 }
 
-const LOGIN_URL = /(login|signin|sign-in|oauth|sso|idp|saml|shibboleth|microsoftonline|okta|duosecurity|auth\.)/i;
-const LIMIT = /(maximum number of|too many|limit|already (watching|streaming))/i;
-const UNAVAILABLE = /(not available|only available|outside|not authorized|not entitled)/i;
-const LOGIN_TEXT = /(sign in|log in|session)/i;
-const IDLE_PROMPT = /still (watching|there)/i;
+/** How a provider's pages say what went wrong (config/providers/<id>.json `errors`). */
+export interface ErrorRules {
+  /** Page-text lines matching these are reported by the in-page probe (case-insensitive sources). */
+  probePatterns: string[];
+  loginUrl: RegExp;
+  limit: RegExp;
+  unavailable: RegExp;
+  loginText: RegExp;
+  idlePrompt: RegExp;
+}
+
+/** Xfinity's rules, used when no provider is given (scripts, Chrome tiles). Kept equal to config/providers/xfinity-on-campus.json by a test. */
+export const DEFAULT_RULES: ErrorRules = {
+  probePatterns: [
+    'maximum number of', 'too many (devices|streams)', 'stream(ing)? limit', 'already (watching|streaming)',
+    'not available in your (area|location)', 'only available (on|when connected to)', 'outside (of )?(your )?(home|campus)',
+    'sign in', 'log in', 'session (has )?expired', 'something went wrong', 'error code', 'unable to play',
+    'playback error', 'not authorized', 'not entitled', 'try again later',
+    'still (watching|there)',
+  ],
+  loginUrl: /(login|signin|sign-in|oauth|sso|idp|saml|shibboleth|microsoftonline|okta|duosecurity|auth\.)/i,
+  limit: /(maximum number of|too many|limit|already (watching|streaming))/i,
+  unavailable: /(not available|only available|outside|not authorized|not entitled)/i,
+  loginText: /(sign in|log in|session)/i,
+  idlePrompt: /still (watching|there)/i,
+};
+
+export function errorRules(cfg: ProviderConfig): ErrorRules {
+  const e = cfg.errors;
+  return {
+    probePatterns: e.probePatterns.map((p) => compileRegex(p).source),
+    loginUrl: compileRegex(e.loginUrl),
+    limit: compileRegex(e.limit),
+    unavailable: compileRegex(e.unavailable),
+    loginText: compileRegex(e.loginText),
+    idlePrompt: compileRegex(e.idlePrompt),
+  };
+}
 
 export interface HealthTimeouts {
   /** Before the first PLAYING after a tune. */
@@ -96,7 +131,10 @@ export class HealthTracker {
   private played = false;
   private readonly timeouts: HealthTimeouts;
 
-  constructor(timeouts: HealthTimeouts | number = 12) {
+  constructor(
+    timeouts: HealthTimeouts | number = 12,
+    private readonly rules: ErrorRules = DEFAULT_RULES,
+  ) {
     this.timeouts = typeof timeouts === 'number' ? { startupSeconds: timeouts, stallSeconds: timeouts } : timeouts;
   }
 
@@ -130,7 +168,7 @@ export class HealthTracker {
       return { state: 'PLAYING', detail: `+${advanced.toFixed(1)}s`, video, frames: frames.length };
     }
 
-    if (top && LOGIN_URL.test(safeHost(top.url) + new URL(top.url, 'http://x').pathname)) {
+    if (top && this.rules.loginUrl.test(safeHost(top.url) + new URL(top.url, 'http://x').pathname)) {
       return { state: 'LOGIN_REQUIRED', detail: `redirected to ${top.url.slice(0, 80)}`, video, frames: frames.length };
     }
     const lines = frames.flatMap((f) => f.errorLines);
@@ -139,10 +177,10 @@ export class HealthTracker {
       const drm = /drm|key|license|cdm|widevine/i.test(video.error.message);
       return { state: drm ? 'DRM_ERROR' : 'MEDIA_ERROR', detail: `video error ${video.error.code}: ${video.error.message}`, video, frames: frames.length };
     }
-    if (lines.some((l) => IDLE_PROMPT.test(l))) return { state: 'IDLE_PROMPT', detail: joined, video, frames: frames.length };
-    if (lines.some((l) => LIMIT.test(l))) return { state: 'STREAM_LIMIT', detail: joined, video, frames: frames.length };
-    if (lines.some((l) => UNAVAILABLE.test(l))) return { state: 'CHANNEL_UNAVAILABLE', detail: joined, video, frames: frames.length };
-    if (!video && lines.some((l) => LOGIN_TEXT.test(l))) return { state: 'LOGIN_REQUIRED', detail: joined, video, frames: frames.length };
+    if (lines.some((l) => this.rules.idlePrompt.test(l))) return { state: 'IDLE_PROMPT', detail: joined, video, frames: frames.length };
+    if (lines.some((l) => this.rules.limit.test(l))) return { state: 'STREAM_LIMIT', detail: joined, video, frames: frames.length };
+    if (lines.some((l) => this.rules.unavailable.test(l))) return { state: 'CHANNEL_UNAVAILABLE', detail: joined, video, frames: frames.length };
+    if (!video && lines.some((l) => this.rules.loginText.test(l))) return { state: 'LOGIN_REQUIRED', detail: joined, video, frames: frames.length };
 
     const stalledFor = (now - this.lastProgressAt) / 1000;
     if (stalledFor >= (this.played ? this.timeouts.stallSeconds : this.timeouts.startupSeconds)) {
