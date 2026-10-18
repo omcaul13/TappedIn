@@ -7,7 +7,7 @@ import { gridBounds, markerUrl, openWindow, setWindowBounds, workArea } from './
 import { ERROR_STATES, type StreamState } from './health';
 import { adviseOnStream, allocateVideo } from './policy';
 import { channelRef } from '../providers/lineup';
-import type { ChannelRef, ProviderAdapter } from '../providers/types';
+import type { ChannelRef, ProviderAdapter, TuneTools } from '../providers/types';
 import { ScreenWindow, type BridgeMessage, type OverlayState, type Popup } from './screen';
 import type { SwitchTiming } from './timing';
 import { Tuner } from './tuner';
@@ -97,6 +97,11 @@ export class WindowController {
 
   get streamLimit(): number {
     return this.limit;
+  }
+
+  /** The tuner's page-load tools (first-run setup reads the guide with them). */
+  get tools(): TuneTools {
+    return this.tuner.tools;
   }
 
   setConfig(cfg: Config): void {

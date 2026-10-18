@@ -88,10 +88,17 @@ export interface FeedItem {
   text: string;
 }
 
+import type { ProviderSummary } from '../providers/types';
+import type { SetupView } from '../setup/runner';
+
 export interface AppState {
   now: number;
   mode: 'live' | 'dry-run' | 'replay';
   shell: 'electron' | 'chrome';
+  /** First-run setup in progress (the UI shows it instead of the screens), else null. */
+  setup: SetupView | null;
+  /** Every service RedZone has an adapter for (the picker lists them). */
+  providers: ProviderSummary[];
   /** The TV service the screens play. */
   provider: { id: string; name: string; shortName: string; status: 'stable' | 'experimental' | 'unsupported' };
   /** The service's sign-in progress (one-window app). */
