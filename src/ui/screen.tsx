@@ -272,11 +272,12 @@ function GameMenu({ st, sc, games, onClose, run }: { st: AppState; sc: ScreenDTO
         <div class="sportgrid">
           {sports.map((x) => {
             const today = [...games.values()].filter((g) => g.sport === x.id && watchableToday(g)).length;
+            const none = x.games > 0 ? 'No more games today' : 'No games today';
             return (
-              <button class={`sport${x.id === sport ? ' current' : ''}`} disabled={today === 0} title={today === 0 ? 'No games today' : x.name} onClick={() => choose(x)}>
+              <button class={`sport${x.id === sport ? ' current' : ''}`} disabled={today === 0} title={today === 0 ? none : x.name} onClick={() => choose(x)}>
                 <SportIcon family={x.family} />
                 <span class="nm">{x.name}</span>
-                <span class="ct">{today === 0 ? 'No games today' : `${today} game${today === 1 ? '' : 's'}${x.live ? ` · ${x.live} live` : ''}`}</span>
+                <span class="ct">{today === 0 ? none : `${today} game${today === 1 ? '' : 's'}${x.live ? ` · ${x.live} live` : ''}`}</span>
               </button>
             );
           })}
