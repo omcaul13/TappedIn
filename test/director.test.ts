@@ -318,3 +318,26 @@ describe('director', () => {
     expect(w.screen(1).mode).toBe('HOME');
   });
 });
+
+describe('director: missing data after the final', () => {
+  it('a game-over pop-up stays up when the finished game goes stale (UNKNOWN), and a halftime reel keeps playing', () => {
+    const w = world();
+    w.act({ type: 'setHome', screen: 1, gameId: 'h1' }, T0);
+    w.set('h1', 'FINAL', T0 + sec(30));
+    w.step(T0 + sec(60)); // pop-up after the linger
+    expect(w.screen(1).mode).toBe('GAME_OVER');
+    w.set('h1', 'UNKNOWN', T0 + sec(90)); // ESPN went quiet for a minute
+    const r = w.step(T0 + sec(95));
+    expect(w.screen(1).mode).toBe('GAME_OVER');
+    expect(r.commands).toEqual([]);
+
+    const w2 = world();
+    w2.act({ type: 'setHome', screen: 1, gameId: 'h1' }, T0);
+    w2.set('h1', 'HALFTIME', T0 + sec(30));
+    w2.step(T0 + sec(60));
+    expect(w2.showing(1)).toBe('halftime');
+    w2.set('h1', 'UNKNOWN', T0 + sec(90));
+    w2.step(T0 + sec(95));
+    expect(w2.showing(1)).toBe('halftime');
+  });
+});

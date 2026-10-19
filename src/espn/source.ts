@@ -37,6 +37,13 @@ export class LiveSource {
   private liveSports = new Set<SportId>();
   /** Which sport each game belongs to, for its play-by-play URL. */
   private sportOfGame = new Map<string, SportId>();
+  /** Sports whose scoreboard has been fetched (or failed) at least once since start. */
+  private polled = new Set<SportId>();
+
+  /** Every followed sport's scoreboard has come in once: the slate is complete enough to pick homes from. */
+  firstRoundDone(): boolean {
+    return enabledSports(this.cfg).every((s) => this.polled.has(s));
+  }
   private timers: NodeJS.Timeout[] = [];
 
   constructor(
@@ -104,12 +111,16 @@ export class LiveSource {
         const live = snaps.some((g) => g.phase === 'LIVE' || g.phase === 'HALFTIME' || g.phase === 'DELAYED');
         if (live) this.liveSports.add(sport);
         else this.liveSports.delete(sport);
-        // Live: often. Games today but none live: the idle rate. No games today at all: rarely.
-        base = live ? this.cfg.espn.scoreboardLiveSeconds : snaps.some((g) => g.phase === 'PRE') ? this.cfg.espn.scoreboardIdleSeconds : this.cfg.espn.scoreboardEmptySeconds;
+        // Live, or a game of this sport on a screen (a home waiting for kickoff must not go stale): often.
+        // Games today but none live: the idle rate. No games today at all: rarely.
+        const onScreen = new Set(this.opts.onScreen?.() ?? []);
+        const watched = snaps.some((g) => onScreen.has(g.id));
+        base = live || watched ? this.cfg.espn.scoreboardLiveSeconds : snaps.some((g) => g.phase === 'PRE') ? this.cfg.espn.scoreboardIdleSeconds : this.cfg.espn.scoreboardEmptySeconds;
         this.record({ t: res.fetchedAt, kind: 'scoreboard', url: res.url, status: res.status, body: res.body, sport }, 'scoreboard');
       } catch (err) {
         this.sink.error?.(`${sportOf(sport).short} scoreboard`, err);
       }
+      this.polled.add(sport);
       await this.sleep(base * 1000 + this.jitter());
     }
   }

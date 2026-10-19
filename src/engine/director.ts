@@ -360,7 +360,8 @@ export function directorStep(prev: DirectorState, views: Map<string, GameView>, 
     }
 
     // --- Home game in play (or not started / unknown) ----------------------------------------
-    if (hs === 'UNKNOWN' && sc.mode === 'FILL_IN') continue; // don't bounce on missing data
+    // Missing data is not "back in play": don't bounce a fill-in, a game-over pop-up or a halftime reel.
+    if (hs === 'UNKNOWN' && (sc.mode === 'FILL_IN' || sc.mode === 'GAME_OVER' || sc.mode === 'HALFTIME_REEL')) continue;
     if (!onHome || sc.mode !== 'HOME') {
       const firstTune = sc.showing.kind === 'none';
       // On a substitute, stay at least minSubstituteSeconds so the screen never flips straight back.

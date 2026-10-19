@@ -901,7 +901,10 @@ export class App {
     const now = this.clock.now();
     this.handle(this.engine.tick(now));
     this.highlights.noteGames(this.snapshots(), now);
-    if (!this.homesSet && this.engine.store.all().length) {
+    // Live: wait for every followed sport's first scoreboard (they arrive a few seconds apart), so the
+    // startup pick sees the whole slate, not just the first sports polled.
+    const slateReady = !this.source || this.source.firstRoundDone();
+    if (!this.homesSet && this.engine.store.all().length && slateReady) {
       this.homesSet = true;
       const homes = this.opts.homes?.length ? this.opts.homes : this.opts.autoHomes ? autoHomes(this.engine.views(), now, this.screenCount, this.screenSports()) : [];
       homes.slice(0, this.screenCount).forEach((gameId, i) => this.handle(this.engine.act({ type: 'setHome', screen: i + 1, gameId }, now)));
