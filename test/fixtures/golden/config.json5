@@ -1,0 +1,215 @@
+// RedZone Director: the one editable config file.
+// JSON5: comments and trailing commas are fine. Anything you leave out uses the default in src/config.ts.
+// director / switching / breakDetector / audio / espn values hot-reload while the app is running: edit,
+// save, and the next tick uses them (the log prints "config reloaded"). Settings you change in the app's
+// settings drawer are saved in .state/settings.json and win over this file until you press "Reset".
+{
+  // The one-window app (npm start): castLabs Electron with Widevine.
+  electron: {
+    // Electron's own data, including your Xfinity On Campus sign-in.
+    userDataDir: "%LOCALAPPDATA%\\RedZone\\electron",
+    // Local debugging port the app drives the Xfinity views through (localhost only).
+    debugPort: 9335,
+    // On this laptop (Intel Arc + NVIDIA) Windows' DirectComposition video path left some tiles black.
+    disableDirectComposition: true,
+    // Hidden extra video views. A substitute loads in one while the screen keeps showing its game,
+    // and the screen's own game keeps playing (muted, hidden) so going back is instant. Each can be an
+    // extra stream: 6 at once worked on Xfinity On Campus on 10/17/2026, but most services allow only
+    // a few. Left out, the service's default is used (0). Your own value can also live in
+    // .state/settings.json ("standbyViews"), which wins over this file.
+    // standbyViews: 2,
+  },
+
+  // The original Chrome tiles (npm run start:chrome).
+  chrome: {
+    // Installed Google Chrome (NOT Playwright's Chromium) so Widevine works.
+    executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    // Dedicated profile (kept outside the project so moving the project doesn't log you out).
+    // %VARS% are expanded; a relative path is relative to the project folder. You log in to Xfinity here once.
+    profileDir: "%LOCALAPPDATA%\\RedZone\\chrome-profile",
+    // Remote debugging port the app attaches to (localhost only).
+    debugPort: 9333,
+    // Where `npm run login` sends you first.
+    xfinityStartUrl: "https://www.xfinityoncampus.com/",
+  },
+
+  espn: {
+    // site.api.espn.com path segment for college football.
+    sport: "football/college-football",
+    // 80 = all FBS games (includes FBS-vs-FCS).
+    groups: "80",
+    requestTimeoutMs: 8000,
+    // Polling cadence (seconds). Jitter is +/- this many seconds.
+    scoreboardLiveSeconds: 12,
+    scoreboardIdleSeconds: 60,
+    summarySeconds: 15,
+    // Play-by-play for the games on screen (homes and what screens show) comes this often: breaks and
+    // restarts are spotted sooner.
+    hotSummarySeconds: 6,
+    // Play-by-play is only fetched for this many "interesting" games (home, on screen, top candidates).
+    maxSummaryGames: 8,
+    jitterSeconds: 2,
+    // A game with no fresh data for this long is UNKNOWN and never auto-picked.
+    staleDataSeconds: 60,
+  },
+
+  director: {
+    // Minimum seconds between automatic switches on one screen (your manual commands ignore this).
+    dwellSeconds: 20,
+    // While filling in for a break, jump to a red-zone game if the fill-in isn't in the red zone.
+    upgradeFillInToRedZone: true,
+    // When nothing else is in play, fill a break with a game that's already on another screen (true),
+    // or stay on the home game's commercial (false). On 10/10 (simulated) ~20% of switches were duplicates.
+    allowDuplicates: true,
+    // Game-over pop-up: if you don't pick, adopt the best live game as the new home after this long.
+    gameOverAutoPickSeconds: 120,
+    // Stay on a just-finished game this long after you've seen the final play.
+    finalLingerSeconds: 20,
+    // Leave the halftime reel after this long even if ESPN still says halftime.
+    halftimeMaxSeconds: 1500,
+    tickSeconds: 2,
+  },
+
+  // When does a screen leave its home game? Every decision is logged with the forecast behind it;
+  // see README "Switch sensitivity".
+  switching: {
+    // "forecast": predicts how long the stoppage after the latest play will last, from 76 recorded games
+    // (config/break-model.json, rebuilt by `npm run build-break-model`). "classic": the original
+    // weighted signals in breakDetector below (kept for before/after comparison).
+    breakModel: "forecast",
+    // low = only clearly long breaks (ends of quarters, kickoffs after scores, injuries, TV timeouts once
+    // the quiet makes them obvious). medium = also likely ones. high = chase most stoppages.
+    sensitivity: "low",
+    // What each level means. Switch when P(at least minBreakSeconds of break left for you) >= confidence.
+    // A substitute that goes to break is swapped for a third game only if your game still has
+    // replaceIfHomeRemainingSeconds of break predicted; otherwise the screen stays put until your game resumes.
+    presets: {
+      low:    { minBreakSeconds: 60, confidence: 0.75, replaceIfHomeRemainingSeconds: 120, upgradeToRedZone: false },
+      medium: { minBreakSeconds: 60, confidence: 0.70, replaceIfHomeRemainingSeconds: 90,  upgradeToRedZone: false },
+      high:   { minBreakSeconds: 45, confidence: 0.65, replaceIfHomeRemainingSeconds: 60,  upgradeToRedZone: true },
+    },
+    // Go back home only when your game shows a NEW play (never on clock movement), and not before this long.
+    minSubstituteSeconds: 30,
+    // Don't pick a substitute that is probably in a stoppage itself (its own forecast at or above this).
+    candidateMaxBreakRisk: 0.5,
+    // Data safety net: no new play on your game for this long = go back anyway.
+    maxBreakSeconds: 600,
+  },
+
+  // Classic break heuristic (breakModel: "classic"). streamDelaySeconds, dataDelaySeconds and
+  // lingerSeconds are also used by the forecast model.
+  breakDetector: {
+    // How far the Xfinity picture runs behind a play's real time (ESPN wallclock).
+    // Measured ~30 s on 10/17/2026 (AUB@UGA, 4th-quarter snap at 18:56:19 shown at ~18:56:49).
+    // Break signals take effect only once you could have seen the play, so you don't miss a TD.
+    streamDelaySeconds: 30,
+    // For scoreboard-only events with no wallclock: estimated delay from play to ESPN data.
+    dataDelaySeconds: 25,
+    // Extra seconds to stay on a score (celebration/replay) before cutting away.
+    lingerSeconds: 5,
+    // Break score (0-1) to call BREAK? and to call LIVE again.
+    enterThreshold: 0.6,
+    exitThreshold: 0.3,
+    // Assume play resumed after this long even if no new play has arrived.
+    maxBreakSeconds: 200,
+    // Each signal: weight (0-1) and how long it stays active after the event.
+    // Signals combine as 1 - (1-w1)(1-w2)...; any new snap clears them.
+    signals: {
+      timeout:           { weight: 0.6, windowSeconds: 150 },
+      score:             { weight: 0.7, windowSeconds: 150 },  // TD / FG / safety (covers the PAT + break)
+      kickoffAfterScore: { weight: 0.4, windowSeconds: 120 },  // the 2nd break after a kickoff
+      endOfPeriod:       { weight: 0.8, windowSeconds: 150 },  // end of 1st / 3rd quarter
+      twoMinuteWarning:  { weight: 0.5, windowSeconds: 150 },
+      review:            { weight: 0.6, windowSeconds: 120 },  // replay review / challenge
+      injury:            { weight: 0.4, windowSeconds: 120 },
+      possessionChange:  { weight: 0.2, windowSeconds: 90 },   // punt / turnover
+    },
+    // No new play for `afterSeconds` adds `perStep` every `stepSeconds`, up to `max`.
+    stale: { afterSeconds: 75, stepSeconds: 15, perStep: 0.15, max: 0.9 },
+  },
+
+  windows: {
+    // Chrome --app windows (no tab strip / address bar): more of each 768x456 tile is video.
+    appMode: true,
+    // Small state badge on each tile (LIVE / BREAK? / HALFTIME / FINAL / ERROR).
+    badge: true,
+    // A freshly tuned stream gets this long to start before it's an error.
+    startupTimeoutSeconds: 25,
+    // After playing, this long with no progress = stalled (one automatic retry).
+    stallSeconds: 12,
+    // Switch channels via a remembered URL (in-page ~2 s, page load ~9 s) before using the guide (~10-15 s).
+    fastPath: true,
+    fastPathTimeoutSeconds: 12,
+    // Xfinity streams to run at once. If Xfinity reports a limit, the app lowers this by itself and
+    // shows live data tiles on the screens without video. 5 streams worked on 10/17/2026.
+    maxConcurrentStreams: 4,
+    // A failed screen retries its channel this often.
+    errorRetrySeconds: 60,
+  },
+
+  // Halftime highlights reel (shown on a screen while its home game is at halftime).
+  // Order: your home game's 1st-half plays, recent big plays from other live games (closest games first),
+  // then one package per finished game. A scores board shows every few clips, and alone if there's nothing.
+  highlights: {
+    // ESPN's own clips (direct MP4s; most games have ~5-12 by the end).
+    espnClips: true,
+    // Official YouTube packages for finished games. Needs YT_API_KEY=... in a .env file in the project
+    // folder (Google Cloud console -> YouTube Data API v3). Without a key this is simply skipped.
+    youtube: true,
+    // Only accept videos from channels whose name contains one of these.
+    youtubeChannels: ["ESPN College Football", "ESPN", "SEC Network", "ACC Digital Network", "ACC Network", "Big Ten Network",
+                      "FOX College Football", "FOX Sports", "CBS Sports", "NBC Sports", "Big 12 Conference", "Mountain West", "The CW"],
+    // Each search costs 100 of the default 10,000 daily quota units.
+    maxYoutubeSearchesPerDay: 40,
+    youtubeMinMinutesAfterFinal: 20,
+    cardEveryClips: 4,
+    cardSeconds: 8,
+    maxClipsPerLiveGame: 3,
+    recentMinutes: 120,
+    includeHomeGame: true,
+    maxGamesPerRefresh: 14,
+  },
+
+  server: {
+    // Local pages: data tiles, halftime screen, control panel (Phase 3). http://localhost:<port>
+    port: 7480,
+  },
+
+  audio: {
+    // "manual": sound stays on the screen you pick. "auto": sound follows the most exciting screen.
+    mode: "manual",
+    autoDwellSeconds: 30,
+    // In auto mode, clicking a tile pins sound there this long.
+    manualPinSeconds: 120,
+  },
+
+  // Network name (as ESPN reports it) -> channel in YOUR Xfinity On Campus lineup.
+  // Xfinity's live URLs contain a per-program id that changes with every show, so we store the
+  // channel NUMBER and tune by clicking that row in the Xfinity guide (like you would).
+  // number: null means "not in my lineup" and those games are never picked.
+  // `aliases` are the exact strings ESPN uses in broadcasts[].names / geoBroadcasts media.shortName.
+  // Numbers below are the HD channels from the Northeastern (Boston) lineup, read from the guide on 10/17/2026.
+  channels: {
+    "ESPN":               { number: 849,  callSign: "ESPND", aliases: ["ESPN"] },
+    "ESPN2":              { number: 850,  callSign: "ES2HD", aliases: ["ESPN2"] },
+    "ESPNU":              { number: 900,  callSign: "ESPNU", aliases: ["ESPNU"] },
+    "ABC":                { number: 805,  callSign: "WCVBD", aliases: ["ABC"] },
+    "CBS":                { number: 804,  callSign: "WBZHD", aliases: ["CBS"] },
+    "NBC":                { number: 810,  callSign: "WBTS",  aliases: ["NBC"] },
+    "FOX":                { number: 806,  callSign: "WFXTD", aliases: ["FOX", "Fox"] },
+    "FS1":                { number: 925,  callSign: "FS1HD", aliases: ["FS1"] },
+    "FS2":                { number: 923,  callSign: "FS2",   aliases: ["FS2"] },
+    "SEC Network":        { number: 928,  callSign: "SECND", aliases: ["SEC Network", "SECN"] },
+    "ACC Network":        { number: 1325, callSign: "ACCHD", aliases: ["ACC Network", "ACCN"] },
+    "Big Ten Network":    { number: null, aliases: ["Big Ten Network", "BTN"] }, // not in this lineup
+    "CBS Sports Network": { number: 856,  callSign: "CBSSD", aliases: ["CBS Sports Network", "CBSSN"] },
+    "The CW":             { number: 808,  callSign: "WLVID", aliases: ["The CW", "CW"] },
+    "TNT":                { number: 833,  callSign: "TNTHD", aliases: ["TNT"] },
+    "truTV":              { number: 902,  callSign: "TRTVD", aliases: ["truTV", "TruTV"] },
+    "USA Network":        { number: 835,  callSign: "USAHD", aliases: ["USA Network", "USA Net", "USA"] },
+  },
+
+  // Streaming-only services that are never in an Xfinity cable lineup.
+  // Games only on these are shown as "not available" and never picked.
+  unavailable: ["ESPN+", "SECN+", "ACCNX", "Peacock", "MW+", "Disney+", "Big Ten+", "Paramount+", "Max", "Prime Video", "Netflix", "YouTube"],
+}

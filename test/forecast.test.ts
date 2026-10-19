@@ -1,3 +1,4 @@
+import { cfb } from '../src/sports/cfb';
 import { describe, expect, it } from 'vitest';
 import { directorSettings } from '../src/config';
 import { addGap, categorize, emptyModel, forecastBreak, loadBreakModel, survival, type BreakModel } from '../src/engine/forecast';
@@ -90,7 +91,7 @@ describe('stoppage categories', () => {
 
 /** One game fed like the live app: each check is a poll that sees the plays ESPN has published by then. */
 function harness(o: Partial<ForecastDetectorOptions> & { model: BreakModel }) {
-  const opts: ForecastDetectorOptions = { staleDataSeconds: 60, ...timing, lingerSeconds: 5, minBreakSeconds: 60, confidence: 0.75, maxBreakSeconds: 600, ...o };
+  const opts: ForecastDetectorOptions = { staleDataSeconds: 60, ...timing, lingerSeconds: 5, minBreakSeconds: 60, confidence: 0.75, maxBreakSeconds: 600, breaks: cfb.breaks, ...o };
   const store = new GameStore({ dataDelaySeconds: timing.dataDelaySeconds });
   let base: GameSnapshot = snap({ id: 'x', situation: null });
   let mem: DetectorMemory | undefined;

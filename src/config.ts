@@ -2,6 +2,9 @@ import { mkdirSync, readFileSync, watch, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import JSON5 from 'json5';
 import { z } from 'zod';
+import type { SportId } from './engine/types';
+import { SPORT_IDS, sportOf } from './sports';
+import type { SportPreset } from './sports/types';
 
 // One editable file: config/redzone.config.json5. Every knob has a default here, so the file only
 // needs what you want to change. Thresholds hot-reload while the app runs (see watchConfig).
@@ -33,6 +36,30 @@ const preset = (minBreakSeconds: number, confidence: number, replaceIfHomeRemain
       upgradeToRedZone: z.boolean().default(upgradeToRedZone),
     })
     .prefault({});
+
+/** A per-sport tweak of one sensitivity level; anything left out keeps the sport's own default. */
+const PresetOverride = z
+  .object({
+    minBreakSeconds: z.number().min(0),
+    confidence: z.number().min(0).max(1),
+    replaceIfHomeRemainingSeconds: z.number().min(0),
+    upgradeToHot: z.boolean(),
+    excludeCategories: z.array(z.string()),
+  })
+  .partial();
+
+const SensitivitySchema = z.enum(['low', 'medium', 'high']);
+
+const SportOverride = z
+  .object({
+    /** This sport's own sensitivity (leave out to follow the global one). */
+    sensitivity: SensitivitySchema.optional(),
+    presets: z.object({ low: PresetOverride, medium: PresetOverride, high: PresetOverride }).partial().optional(),
+    /** Stream and data delays if this sport's feed runs differently. */
+    streamDelaySeconds: z.number().min(0).optional(),
+    dataDelaySeconds: z.number().min(0).optional(),
+  })
+  .strict();
 
 export const ChannelSchema = z.object({
   number: z.number().int().positive().nullable(),
@@ -81,6 +108,8 @@ export const ConfigSchema = z.object({
       requestTimeoutMs: z.number().int().positive().default(8000),
       scoreboardLiveSeconds: z.number().positive().default(12),
       scoreboardIdleSeconds: z.number().positive().default(60),
+      /** A sport with no games today is checked this rarely. */
+      scoreboardEmptySeconds: z.number().positive().default(900),
       summarySeconds: z.number().positive().default(15),
       /** Play-by-play for the games on screen (homes and substitutes) comes this often. */
       hotSummarySeconds: z.number().positive().default(6),
@@ -166,8 +195,24 @@ export const ConfigSchema = z.object({
       candidateMaxBreakRisk: z.number().min(0).max(1).default(0.5),
       /** Data safety net: if your game shows no new play for this long, go back anyway. */
       maxBreakSeconds: z.number().positive().default(600),
-      /** Break model built by `npm run build-break-model`. */
-      modelFile: z.string().default('config/break-model.json'),
+      /** College football's break model, built by `npm run build-break-model` (other sports: config/break-models/<sport>.json). */
+      modelFile: z.string().default('config/break-models/cfb.json'),
+    })
+    .prefault({}),
+
+  /** Which sports to follow, and per-sport switching tweaks (src/sports/ holds each sport's defaults). */
+  sports: z
+    .object({
+      /** Sports polled, listed in the picker and used as fill-ins. */
+      enabled: z
+        .array(z.string().refine((id) => (SPORT_IDS as string[]).includes(id), { message: `unknown sport (known: ${SPORT_IDS.join(', ')})` }))
+        .default(() => [...SPORT_IDS]),
+      /** Your TV market: its teams' regional NFL games count as the ones your CBS/FOX show. */
+      market: z.string().default('Boston'),
+      /** Pick a game in a multi-game CBS/FOX NFL window only when your station is known to air it. */
+      nflRegionalCheck: z.boolean().default(true),
+      /** Per sport: { nhl: { sensitivity: 'medium', presets: { low: { confidence: 0.8 } } } }. College football also follows `switching.presets`. */
+      overrides: z.record(z.string(), SportOverride).default({}),
     })
     .prefault({}),
 
@@ -237,6 +282,9 @@ export const ConfigSchema = z.object({
     })
     .prefault({}),
 
+  /** Simulation only (`npm run sim -- --full-lineup`): pretend every game is watchable, each on its own channel, to judge a sport's detector on a full slate. */
+  simulation: z.object({ fullLineup: z.boolean().default(false) }).prefault({}),
+
   channels: z.record(z.string(), ChannelSchema).default({}),
   unavailable: z.array(z.string()).default([]),
 });
@@ -255,22 +303,55 @@ export interface DirectorSettings extends DirectorConfig {
   minSubstituteSeconds: number;
   replaceIfHomeRemainingSeconds: number;
   candidateMaxBreakRisk?: number;
+  perSport?: Partial<Record<SportId, { replaceIfHomeRemainingSeconds: number; upgradeFillInToRedZone: boolean; halftimeMaxSeconds?: number }>>;
+}
+
+/** The sensitivity a sport runs at: its own override, else the global one. */
+export function sportSensitivity(cfg: Config, sport: SportId): Sensitivity {
+  return cfg.sports.overrides[sport]?.sensitivity ?? cfg.switching.sensitivity;
+}
+
+/**
+ * A sport's switching numbers at its sensitivity: the sport's defaults (college football: the
+ * `switching.presets` in the config file), with any `sports.overrides.<sport>.presets` on top.
+ */
+export function sportPreset(cfg: Config, sport: SportId, sensitivity = sportSensitivity(cfg, sport)): SportPreset {
+  const base: SportPreset =
+    sport === 'cfb'
+      ? (({ upgradeToRedZone, ...p }) => ({ ...p, upgradeToHot: upgradeToRedZone, excludeCategories: [] }))(cfg.switching.presets[sensitivity])
+      : { ...sportOf(sport).presets[sensitivity] };
+  const o = cfg.sports.overrides[sport]?.presets?.[sensitivity];
+  return o ? { ...base, ...Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) } : base;
+}
+
+/** Sports the app follows, as typed ids. */
+export function enabledSports(cfg: Config): SportId[] {
+  return cfg.sports.enabled.filter((id): id is SportId => (SPORT_IDS as string[]).includes(id));
 }
 
 /**
  * What the director should actually use. "classic" reproduces the original behaviour exactly
  * (no minimum time on a substitute, always replace, upgrades per director config) so before/after
- * comparisons are fair; "forecast" applies the sensitivity preset.
+ * comparisons are fair; "forecast" applies the sensitivity preset. The classic model is college
+ * football's only: other sports always use their forecast presets.
  */
 export function directorSettings(cfg: Config): DirectorSettings {
-  if (cfg.switching.breakModel === 'classic') return { ...cfg.director, minSubstituteSeconds: 0, replaceIfHomeRemainingSeconds: 0 };
-  const p = cfg.switching.presets[cfg.switching.sensitivity];
+  const classic = cfg.switching.breakModel === 'classic';
+  const perSport: DirectorSettings['perSport'] = {};
+  for (const id of SPORT_IDS) {
+    if (id === 'cfb') continue; // college football uses the top-level values below
+    const p = sportPreset(cfg, id);
+    perSport[id] = { replaceIfHomeRemainingSeconds: p.replaceIfHomeRemainingSeconds, upgradeFillInToRedZone: p.upgradeToHot, halftimeMaxSeconds: sportOf(id).halftimeMaxSeconds };
+  }
+  if (classic) return { ...cfg.director, minSubstituteSeconds: 0, replaceIfHomeRemainingSeconds: 0, perSport };
+  const p = sportPreset(cfg, 'cfb');
   return {
     ...cfg.director,
-    upgradeFillInToRedZone: p.upgradeToRedZone,
+    upgradeFillInToRedZone: p.upgradeToHot,
     minSubstituteSeconds: cfg.switching.minSubstituteSeconds,
     replaceIfHomeRemainingSeconds: p.replaceIfHomeRemainingSeconds,
     candidateMaxBreakRisk: cfg.switching.candidateMaxBreakRisk,
+    perSport,
   };
 }
 
@@ -319,6 +400,11 @@ export const SETTINGS_FILE = path.join(PROJECT_ROOT, '.state', 'settings.json');
 const OverridesSchema = z
   .object({
     sensitivity: z.enum(['low', 'medium', 'high']).optional(),
+    /** Per-sport sensitivity from the settings drawer ("Same as global" = absent). */
+    sportSensitivity: z.record(z.string(), SensitivitySchema).optional(),
+    /** Each screen's sport, remembered across starts. */
+    screenSports: z.array(z.string()).max(4).optional(),
+    enabledSports: z.array(z.string()).optional(),
     dwellSeconds: z.number().min(5).max(120).optional(),
     minSubstituteSeconds: z.number().min(0).max(300).optional(),
     scoreboardLiveSeconds: z.number().min(5).max(60).optional(),
@@ -354,6 +440,11 @@ export function saveOverrides(o: SettingsOverrides, file = SETTINGS_FILE): void 
 export function withOverrides(cfg: Config, o: SettingsOverrides): Config {
   const c = structuredClone(cfg);
   if (o.sensitivity) c.switching.sensitivity = o.sensitivity;
+  for (const [id, sens] of Object.entries(o.sportSensitivity ?? {})) {
+    if (!(SPORT_IDS as string[]).includes(id)) continue;
+    c.sports.overrides[id] = { ...c.sports.overrides[id], sensitivity: sens };
+  }
+  if (o.enabledSports) c.sports.enabled = o.enabledSports.filter((id) => (SPORT_IDS as string[]).includes(id));
   if (o.dwellSeconds !== undefined) c.director.dwellSeconds = o.dwellSeconds;
   if (o.minSubstituteSeconds !== undefined) c.switching.minSubstituteSeconds = o.minSubstituteSeconds;
   if (o.scoreboardLiveSeconds !== undefined) c.espn.scoreboardLiveSeconds = o.scoreboardLiveSeconds;

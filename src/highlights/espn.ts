@@ -17,7 +17,7 @@ export interface EspnClip {
   kind: ClipKind;
 }
 
-const PLAY = /\b(touchdowns?|td|pick-?six|intercept(s|ion|ed)?|picks? off|int\b|fumbles?|scoops?|sacks?|field goal|fg|catch(es)?|grabs?|hauls? in|runs?|rush(es)?|scrambles?|throws?|tosses|finds|connects|scores?|returns?|blocks?|blocked|safety|go-ahead|game-winning|walk-off|hail mary|one-handed|breaks? (free|loose)|takes? it|house|end zone|conversion|2-point|stop|stuffed|denied)\b/i;
+const PLAY = /\b(touchdowns?|td|pick-?six|intercept(s|ion|ed)?|picks? off|int\b|fumbles?|scoops?|sacks?|field goal|fg|catch(es)?|grabs?|hauls? in|runs?|rush(es)?|scrambles?|throws?|tosses|finds|connects|scores?|returns?|blocks?|blocked|safety|go-ahead|game-winning|walk-off|hail mary|one-handed|breaks? (free|loose)|takes? it|house|end zone|conversion|2-point|stop|stuffed|denied|dunks?|slams?|threes?|3-pointer|three-pointer|buzzer|alley-oop|layups?|steals?|goals?|saves?|snipes?|one-timer|power-play|shorthanded|hat trick|dekes?|breakaway|homers?|homered|home run|grand slam|double play|strikes out|strikeout|robs|robbed|rbi|header|free kick|volley|equalizer)\b/i;
 const PACKAGE = /\b(highlights?|recap|top plays|best plays)\b/i;
 const TALK = /\b(press conference|presser|interview|says|said|reacts?|discuss(es)?|explains?|estimates?|talks?|breaks? down|analysis|preview|what's next|update|on (his|the|their)|weighs in|believes|addresses|postgame)\b/i;
 

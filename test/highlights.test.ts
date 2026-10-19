@@ -108,3 +108,17 @@ describe('YouTube', () => {
     expect(calls).toBe(1);
   });
 });
+
+describe('reel with several sports', () => {
+  const clip = (gameId: string): EspnClip => ({ id: gameId, gameId, headline: `${gameId} goal`, durationSec: 20, mp4: `https://x/${gameId}.mp4`, thumbnail: null, publishedAt: T0 - 60_000, kind: 'play' });
+  it("plays the home game's sport first, then other sports (closest first within each)", () => {
+    const games = [
+      snap({ id: 'home', sport: 'nhl', phase: 'HALFTIME' }),
+      snap({ id: 'cfbClose', sport: 'cfb', phase: 'LIVE', home: { id: 'h', abbr: 'H', name: 'H', score: 21 }, away: { id: 'a', abbr: 'A', name: 'A', score: 21 } }),
+      snap({ id: 'nhlWide', sport: 'nhl', phase: 'LIVE', home: { id: 'h', abbr: 'H', name: 'H', score: 5 }, away: { id: 'a', abbr: 'A', name: 'A', score: 0 } }),
+    ];
+    const clips = new Map(games.slice(1).map((g) => [g.id, [clip(g.id)]]));
+    const reel = buildReel({ homeGameId: 'home', games, clips, youtube: new Map(), now: T0, opts: { ...opts, cardEveryClips: 100 } });
+    expect(reel.map((i) => (i.kind === 'card' ? 'CARD' : i.gameId))).toEqual(['nhlWide', 'cfbClose']);
+  });
+});

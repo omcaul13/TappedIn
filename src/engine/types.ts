@@ -3,6 +3,10 @@
 
 export type Phase = 'PRE' | 'LIVE' | 'HALFTIME' | 'FINAL' | 'DELAYED' | 'POSTPONED' | 'CANCELED' | 'UNKNOWN';
 
+/** One sport at one level (src/sports/): NFL and college football are different sports here. */
+export type SportId = 'cfb' | 'nfl' | 'mcbb' | 'nba' | 'nhl' | 'mlb' | 'wcbb' | 'wnba' | 'mls' | 'epl' | 'ucl' | 'laliga';
+export type SportFamily = 'football' | 'basketball' | 'hockey' | 'baseball' | 'soccer';
+
 export interface TeamSnap {
   id: string;
   abbr: string;
@@ -30,8 +34,42 @@ export interface Situation {
   lastPlay: { id: string; typeText: string; text: string; scoreValue: number } | null;
 }
 
+/** The scoreboard's "last play", which every sport's live situation carries. */
+export interface ScoreboardLastPlay {
+  id: string;
+  typeText: string;
+  text: string;
+  scoreValue: number;
+}
+
+/** Live situation for sports other than football (football keeps its own `situation`). */
+export type LiveDetail =
+  | { family: 'basketball'; lastPlay: ScoreboardLastPlay | null; possessionTeamId: string | null; homeBonus: boolean | null; awayBonus: boolean | null }
+  | {
+      family: 'hockey';
+      lastPlay: ScoreboardLastPlay | null;
+      /** 'even' | 'pp' (power play) | 'en' (an empty net); team with the advantage. */
+      strength: 'even' | 'pp' | 'en' | null;
+      advantageTeamId: string | null;
+    }
+  | {
+      family: 'baseball';
+      lastPlay: ScoreboardLastPlay | null;
+      half: 'top' | 'bottom' | 'middle' | 'end' | null;
+      outs: number | null;
+      balls: number | null;
+      strikes: number | null;
+      onFirst: boolean;
+      onSecond: boolean;
+      onThird: boolean;
+      homeHits: number | null;
+      awayHits: number | null;
+    }
+  | { family: 'soccer'; lastPlay: ScoreboardLastPlay | null; addedTime: boolean };
+
 export interface GameSnapshot {
   id: string;
+  sport: SportId;
   shortName: string;
   name: string;
   startTime: string | null;
@@ -46,8 +84,10 @@ export interface GameSnapshot {
   home: TeamSnap;
   away: TeamSnap;
   networks: string[];
-  /** Only set while LIVE; ESPN keeps stale situations around during halftime/final. */
+  /** Football only, and only while LIVE; ESPN keeps stale situations around during halftime/final. */
   situation: Situation | null;
+  /** Other sports' live situation (only while LIVE). */
+  live?: LiveDetail | null;
   observedAt: number;
 }
 
@@ -72,6 +112,8 @@ export interface PlaySnap {
   teamId: string | null;
   endYardsToEndzone: number | null;
   endTeamId: string | null;
+  /** Hockey: "Even Strength", "Power Play", "Shorthanded" (for the play's team). */
+  strength?: string | null;
 }
 
 export type BreakState = 'PRE' | 'LIVE' | 'BREAK' | 'HALFTIME' | 'FINAL' | 'UNKNOWN';

@@ -3,7 +3,9 @@
 //   npm run sim -- --day 20261017 --from 19:30 --to 22:00 --homes 401856700,401856701,401856702,401856703
 //   npm run sim -- --day 20261010 --synth                 # rebuilt from final play-by-play (npm run fetch-day first)
 //   npm run sim -- --day 20261017 --compare               # before (classic) vs forecast Low/Medium/High, same homes
-//   flags: --model classic|forecast  --sensitivity low|medium|high  --games  --quiet  --log <file.jsonl>
+//   npm run sim -- --day 20261018 --synth --by-sport          # per home sport: switches, time away, false switches, tiers
+//   npm run sim -- --day 20261010 --synth --sports cfb        # only these sports (others in the recording are ignored)
+//   flags: --model classic|forecast  --sensitivity low|medium|high  --screen-sports nhl,nfl,cfb,nba  --games  --quiet  --log <file.jsonl>
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { parseFlags } from '../src/cli';
@@ -13,6 +15,7 @@ import { recordingDir } from '../src/espn/source';
 import { clock, formatEntry, type LogEntry } from '../src/log';
 import { etTime, runSim, type SimOptions } from '../src/sim';
 import { computeMetrics, loadFinalPlays, type SimMetrics } from '../src/simMetrics';
+import { isSportId, sportOf } from '../src/sports';
 
 const { flags } = parseFlags(process.argv.slice(2));
 const date = typeof flags.day === 'string' ? flags.day : espnDateKey();
@@ -26,6 +29,9 @@ const variant = (model: 'classic' | 'forecast', sensitivity?: 'low' | 'medium' |
   if (sensitivity) c.switching.sensitivity = sensitivity;
   return c;
 };
+if (flags['no-regional']) base.sports.nflRegionalCheck = false;
+if (flags['full-lineup']) base.simulation.fullLineup = true;
+if (typeof flags.sports === 'string') base.sports.enabled = flags.sports.split(',').filter(isSportId);
 const cfg = variant(
   flags.model === 'classic' ? 'classic' : flags.model === 'forecast' ? 'forecast' : base.switching.breakModel,
   flags.sensitivity === 'low' || flags.sensitivity === 'medium' || flags.sensitivity === 'high' ? flags.sensitivity : undefined,
@@ -38,6 +44,7 @@ const simOpts: SimOptions = {
   fromMs: typeof flags.from === 'string' ? etTime(date, flags.from) : undefined,
   toMs: typeof flags.to === 'string' ? etTime(date, flags.to) + (flags.to < '06:00' ? 86_400_000 : 0) : undefined,
   homes: typeof flags.homes === 'string' ? flags.homes.split(',') : undefined,
+  screenSports: typeof flags['screen-sports'] === 'string' ? flags['screen-sports'].split(',').map((x) => (isSportId(x) ? x : null)) : undefined,
   captureTimeline: true,
   onEntry: (e: LogEntry) => {
     if (quiet) return;
@@ -105,4 +112,31 @@ for (const h of res.homes) {
 }
 console.log('decisions:', Object.entries(res.ruleCounts).map(([k, v]) => `${k} ${v}`).join(', ') || 'none');
 console.log(res.violations.length ? `INVARIANT VIOLATIONS (${res.violations.length}):\n  ${res.violations.slice(0, 20).join('\n  ')}` : 'invariants: all held');
+
+if (flags['by-sport']) {
+  // Per home sport: how often its screens switched, how long they stayed away, and how many switches
+  // look false (the home game resumed within 45 s of the viewer leaving it).
+  const finals = loadFinalPlays(recordingDir(PROJECT_ROOT, date));
+  const sports = [...new Set(res.homes.map((h) => h.sport))];
+  const rows = [computeMetrics('all', res, finals, cfg), ...sports.map((s) => computeMetrics(sportOf(s).short, res, finals, cfg, 90, 45, s))];
+  const n = (x: number | null) => (x === null ? 'n/a' : String(x));
+  console.log('\n' + ['sport'.padEnd(6), 'scr-hrs', 'switches', '/scr-hr', 'fills', 'same/screen/other', 'avg away', 'false (<45s)', 'long breaks caught'].join('  '));
+  for (const r of rows) {
+    const pct = r.shortFills !== null && r.fills ? ` (${Math.round((100 * r.shortFills) / r.fills)}%)` : '';
+    console.log(
+      [
+        r.label.padEnd(6),
+        r.screenHours.toFixed(1).padStart(7),
+        String(r.autoSwitches).padStart(8),
+        r.switchesPerScreenHour.toFixed(1).padStart(7),
+        String(r.fills).padStart(5),
+        `${r.fillsByTier[1]}/${r.fillsByTier[2]}/${r.fillsByTier[3]}`.padStart(17),
+        `${Math.round(r.avgAwaySec)}s`.padStart(8),
+        `${n(r.shortFills)}${pct}`.padStart(12),
+        `${n(r.longBreaksCaught)} of ${n(r.longBreaks)}`.padStart(18),
+      ].join('  '),
+    );
+  }
+  writeFileSync(path.join(PROJECT_ROOT, 'logs', `by-sport-${date}${flags.synth ? '-synth' : ''}.json`), JSON.stringify(rows, null, 2));
+}
 console.log(`log: ${logFile}`);

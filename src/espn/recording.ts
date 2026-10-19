@@ -2,6 +2,7 @@ import { appendFileSync, createReadStream, existsSync, mkdirSync, readFileSync }
 import path from 'node:path';
 import { createInterface } from 'node:readline';
 import { createGunzip, gunzipSync, gzipSync } from 'node:zlib';
+import type { SportId } from '../engine/types';
 
 // Recordings are NDJSON where every line is its own gzip member, so the file can be appended to
 // safely while recording and still be read with a single gunzip (multi-member gzip).
@@ -14,6 +15,8 @@ export interface RecordLine {
   status?: number;
   body?: unknown;
   error?: string;
+  /** Which sport's endpoint the response came from. Recordings made before multi-sport have none: college football. */
+  sport?: SportId;
 }
 
 export function appendRecord(file: string, rec: RecordLine): number {
@@ -71,13 +74,15 @@ export function readRecords(file: string): RecordLine[] {
     .map((l) => JSON.parse(l) as RecordLine);
 }
 
-// Summary keys worth keeping for replay, tuning and halftime highlights. The rest (news, odds,
-// standings, betting) is large and unused.
-const SUMMARY_KEEP = ['header', 'drives', 'scoringPlays', 'videos', 'winprobability', 'leaders', 'broadcasts', 'format', 'wallclockAvailable', 'gameInfo'];
+// Summary keys worth keeping for replay, tuning and halftime highlights (football: drives; most other
+// sports: plays; soccer: keyEvents/commentary; baseball: situation + boxscore for hits). The rest (news,
+// odds, standings, betting) is large and unused.
+const SUMMARY_KEEP = ['header', 'drives', 'plays', 'keyEvents', 'commentary', 'situation', 'scoringPlays', 'videos', 'winprobability', 'leaders', 'broadcasts', 'format', 'wallclockAvailable', 'gameInfo'];
 
-export function trimSummary(body: unknown): unknown {
+export function trimSummary(body: unknown, sport?: SportId): unknown {
   if (!body || typeof body !== 'object') return body;
   const out: Record<string, unknown> = {};
-  for (const k of SUMMARY_KEEP) if (k in (body as object)) out[k] = (body as Record<string, unknown>)[k];
+  const keep = sport === 'mlb' ? [...SUMMARY_KEEP, 'boxscore'] : SUMMARY_KEEP;
+  for (const k of keep) if (k in (body as object)) out[k] = (body as Record<string, unknown>)[k];
   return out;
 }

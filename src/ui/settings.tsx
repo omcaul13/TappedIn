@@ -6,10 +6,50 @@ import { post, type AppState } from './util';
 // rates, duplicates, plus the recent decisions and the keyboard shortcuts.
 
 const SENS = [
-  { id: 'low', name: 'Low', text: 'Only clear long breaks: ends of quarters, kickoffs after scores, injuries, and TV timeouts once the quiet makes them obvious. Fewest switches.' },
-  { id: 'medium', name: 'Medium', text: 'Also likely breaks: team timeouts and possession changes a little sooner.' },
-  { id: 'high', name: 'High', text: 'Chase most stoppages, and jump to red-zone games during a break. Most switches.' },
+  { id: 'low', name: 'Low', text: 'Only clear long breaks: ends of quarters and periods, TV timeouts, kickoffs after scores; other stoppages once the quiet makes them obvious. Baseball stays put between innings. Fewest switches.' },
+  { id: 'medium', name: 'Medium', text: 'Also likely breaks a little sooner: team timeouts, possession changes, and baseball between innings.' },
+  { id: 'high', name: 'High', text: 'Chase most stoppages, and move a fill-in to a same-sport game at a hot moment (red zone, power play, clutch time). Most switches.' },
 ] as const;
+
+/** Each sport: its own sensitivity ("Same as global" by default) and whether to follow it at all. */
+function PerSport({ st, set }: { st: AppState; set(body: Record<string, unknown>): void }) {
+  const levels = Object.fromEntries(st.sports.filter((x) => x.sensitivity).map((x) => [x.id, x.sensitivity]));
+  const enabled = st.sports.filter((x) => x.enabled).map((x) => x.id);
+  return (
+    <div class="persport">
+      {st.sports.map((x) => (
+        <>
+          <span title={x.name}>
+            {x.name}
+            {x.games ? <small style={{ color: 'var(--faint)' }}> · {x.games} today</small> : null}
+          </span>
+          <select
+            value={x.sensitivity ?? ''}
+            disabled={!x.enabled}
+            onChange={(e) => {
+              const v = (e.target as HTMLSelectElement).value;
+              const next = { ...levels };
+              if (v) next[x.id] = v as 'low';
+              else delete next[x.id];
+              set({ sportSensitivity: next });
+            }}
+          >
+            <option value="">Same as global</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+          <button
+            class={`switch${x.enabled ? ' on' : ''}`}
+            title={x.enabled ? 'Following: polled, in the game list, used as a fill-in' : 'Not followed'}
+            aria-label={`follow ${x.name}`}
+            onClick={() => set({ enabledSports: x.enabled ? enabled.filter((id) => id !== x.id) : [...enabled, x.id] })}
+          />
+        </>
+      ))}
+    </div>
+  );
+}
 
 function Slider({ label, value, min, max, step = 1, unit = 's', hint, onCommit }: { label: string; value: number; min: number; max: number; step?: number; unit?: string; hint?: string; onCommit(v: number): void }) {
   const [v, setV] = useState(value);
@@ -62,7 +102,13 @@ export function Settings({ st, onClose, onError }: { st: AppState; onClose(): vo
             </button>
           ))}
         </div>
-        {s.breakModel === 'classic' && <div class="note" style={{ marginTop: '6px' }}>The config file uses the classic break detector, which ignores sensitivity.</div>}
+        {s.breakModel === 'classic' && <div class="note" style={{ marginTop: '6px' }}>The config file uses the classic break detector for college football, which ignores sensitivity.</div>}
+
+        <details style={{ marginTop: '8px' }}>
+          <summary class="note" style={{ cursor: 'pointer' }}>Advanced: per sport</summary>
+          <div class="note" style={{ margin: '6px 0' }}>Each sport switches by its own measured breaks; the level picks how sure it must be. Turn a sport off to stop following it.</div>
+          <PerSport st={st} set={set} />
+        </details>
 
         <h5>Sound</h5>
         <div class="seg">

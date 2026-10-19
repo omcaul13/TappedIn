@@ -67,11 +67,13 @@ export function tilePage(screen: number): string {
     const fill=sc.mode==='GAME_OVER'?'game over':sc.mode==='LOCKED'?'locked':sc.showingGameId!==sc.homeGameId&&homeG?'filling in for '+homeG.shortName:'';
     let ball='';if(s&&s.yardsToEndzone!=null&&s.possessionTeamId){const homeAttacksRight=s.possessionTeamId===g.home.id;const x=homeAttacksRight?100-s.yardsToEndzone:s.yardsToEndzone;ball='<div class="ball" style="left:'+x+'%"></div>';}
     const rzSide=s&&s.possessionTeamId===g.home.id?'right:0':'left:0';
+    const fb=g.family==='football';const L=g.live;let sit='';
+    if(!fb){const parts=[];if(g.hot)parts.push(g.hot.toUpperCase());if(L&&L.family==='baseball'&&(L.half==='top'||L.half==='bottom')){const b=[L.onFirst?'1st':'',L.onSecond?'2nd':'',L.onThird?'3rd':''].filter(Boolean);parts.push((b.length?'on '+b.join(', '):'bases empty')+(L.outs!=null?' \\u00b7 '+L.outs+' out':'')+(L.balls!=null&&L.strikes!=null?' \\u00b7 '+L.balls+'-'+L.strikes:''));}sit=parts.join(' \\u00b7 ');}
     root.className='';root.style.display='contents';
     root.innerHTML='<div class="top"><span><span class="chip" style="background:'+(TONE[a.state]||'var(--fin)')+'">'+stateLabel(a.state)+'</span> &nbsp;'+esc(g.channel?g.channel.name+' '+g.channel.number:g.networks.join('/'))+(sc.audio?' &#128266;':'')+'</span><span>'+esc([fill,why,st.mode!=='live'?st.mode.toUpperCase():''].filter(Boolean).join(' \\u00b7 '))+'</span></div>'+
-      '<div class="teams'+(s&&s.isRedZone?' redzone':'')+'">'+[g.away,g.home].map((t)=>'<div class="team"><span class="abbr'+(s&&s.possessionTeamId===t.id?' pos':'')+'">'+esc(t.abbr)+'</span><span class="name">'+esc(t.name)+'</span><span class="score">'+t.score+'</span></div>').join('')+'</div>'+
-      '<div class="mid"><span>'+esc(g.detail)+'</span><span style="color:'+(s&&s.isRedZone?'var(--rz)':'inherit')+'">'+esc(s&&s.downDistanceText?s.downDistanceText+(s.isRedZone?' \\u00b7 RED ZONE':''):'')+'</span></div>'+
-      '<div class="field">'+(s?'<div class="rz" style="'+rzSide+'"></div>':'')+ball+'</div>'+
+      '<div class="teams'+((s&&s.isRedZone)||(!fb&&g.hot)?' redzone':'')+'">'+[g.away,g.home].map((t)=>'<div class="team"><span class="abbr'+(s&&s.possessionTeamId===t.id?' pos':'')+'">'+esc(t.abbr)+'</span><span class="name">'+esc(t.name)+'</span><span class="score">'+t.score+'</span></div>').join('')+'</div>'+
+      '<div class="mid"><span>'+esc((fb?'':g.sportShort+' \\u00b7 ')+g.detail)+'</span><span style="color:'+((s&&s.isRedZone)||(!fb&&g.hot)?'var(--rz)':'inherit')+'">'+esc(fb?(s&&s.downDistanceText?s.downDistanceText+(s.isRedZone?' \\u00b7 RED ZONE':''):''):sit)+'</span></div>'+
+      (fb?'<div class="field">'+(s?'<div class="rz" style="'+rzSide+'"></div>':'')+ball+'</div>':'')+
       '<div class="last">'+esc(s&&s.lastPlay?s.lastPlay:'')+'</div>';
   }catch(e){}}
   tick();setInterval(tick,1000);
@@ -105,7 +107,7 @@ export function halftimePage(screen: number, cardSeconds = 8): string {
   .cap{position:absolute;left:0;right:0;bottom:0;padding:22px 14px 10px;background:linear-gradient(#0000,#000d);z-index:5;pointer-events:none}
   .cap small{display:block;color:#fbbf24;font-weight:700;font-size:12px;letter-spacing:.03em}.cap b{font-size:15px}
   </style></head><body>
-  <div class="top"><span><span class="tag">HALFTIME</span> <span id="home"></span></span><span id="pos" class="dim"></span></div>
+  <div class="top"><span><span class="tag" id="ht">HALFTIME</span> <span id="home"></span></span><span id="pos" class="dim"></span></div>
   <video id="v" playsinline preload="auto"></video><div id="yt"></div><div id="card"><div class="grid" id="grid"></div></div>
   <div class="cap"><small id="cg"></small><b id="ct"></b></div>
   <script>${CLIENT_JS}
@@ -115,7 +117,7 @@ export function halftimePage(screen: number, cardSeconds = 8): string {
   const played=new Set(JSON.parse(sessionStorage.getItem('rz-played-'+N)||'[]'));
   const remember=(id)=>{played.add(id);sessionStorage.setItem('rz-played-'+N,JSON.stringify([...played].slice(-300)));};
   async function loadReel(){try{const r=await (await fetch('/api/reel/'+N)).json();const fresh=r.items.filter((i)=>i.kind==='card'||!played.has(i.id));
-    items=fresh.some((i)=>i.kind!=='card')?fresh:r.items;}catch(e){items=[{kind:'card',id:'card-x',title:'Scores around the country'}];}}
+    items=fresh.some((i)=>i.kind!=='card')?fresh:r.items;}catch(e){items=[{kind:'card',id:'card-x',title:'Scores'}];}}
   function hideAll(){clearTimeout(timer);v.pause();v.removeAttribute('src');v.load();v.style.display='none';$('yt').style.display='none';$('card').style.display='none';if(yt&&ytReady)try{yt.stopVideo();}catch(e){}}
   async function next(){idx++;if(idx>=items.length){await loadReel();idx=0;}play(items[idx]);}
   function caption(game,title){$('cg').textContent=game||'';$('ct').textContent=title||'';const n=items.filter((i)=>i.kind!=='card').length;
@@ -138,6 +140,7 @@ export function halftimePage(screen: number, cardSeconds = 8): string {
   setInterval(()=>{const it=items[idx];if(it&&it.kind==='youtube'&&ytReady)try{if(yt.getPlayerState()===1)lastMove=Date.now();}catch(e){}
     if(it&&it.kind!=='card'&&Date.now()-lastMove>15000)next();},3000);
   async function poll(){try{st=await (await fetch('/api/state')).json();const sc=st.screens.find((s)=>s.id===N);const home=st.games.find((g)=>g.id===sc?.homeGameId);
+    $('ht').textContent=home&&home.family==='hockey'?'INTERMISSION':'HALFTIME';
     $('home').textContent=home?home.away.abbr+' '+home.away.score+' - '+home.home.score+' '+home.home.abbr:'';if(sc&&sc.audio!==audio){audio=sc.audio;applySound();}}catch(e){}}
   poll().then(async()=>{await loadReel();next();});setInterval(poll,3000);
   </script></body></html>`;

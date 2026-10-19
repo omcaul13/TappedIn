@@ -13,7 +13,7 @@ const rows: DiscoveredChannel[] = [
 describe('channel mapping', () => {
   it('lineupFromScan lists found and missing networks', () => {
     const r = lineupFromScan(rows);
-    expect(r.found).toEqual(['ESPN', 'Big Ten Network']);
+    expect(r.found).toEqual(['ESPN', 'Big Ten Network', 'Sportsnet']);
     expect(r.missing).toContain('FS1');
     expect(r.lineup.ESPN.number).toBe(849);
   });

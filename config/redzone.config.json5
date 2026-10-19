@@ -73,14 +73,15 @@
   // When does a screen leave its home game? Every decision is logged with the forecast behind it;
   // see README "Switch sensitivity".
   switching: {
-    // "forecast": predicts how long the stoppage after the latest play will last, from 76 recorded games
-    // (config/break-model.json, rebuilt by `npm run build-break-model`). "classic": the original
-    // weighted signals in breakDetector below (kept for before/after comparison).
+    // "forecast": predicts how long the stoppage after the latest play will last, from recorded games
+    // (config/break-models/<sport>.json, rebuilt by `npm run build-break-model`). "classic": the original
+    // weighted signals in breakDetector below, college football only (kept for before/after comparison).
     breakModel: "forecast",
     // low = only clearly long breaks (ends of quarters, kickoffs after scores, injuries, TV timeouts once
     // the quiet makes them obvious). medium = also likely ones. high = chase most stoppages.
     sensitivity: "low",
-    // What each level means. Switch when P(at least minBreakSeconds of break left for you) >= confidence.
+    // What each level means FOR COLLEGE FOOTBALL (other sports: `sports.overrides` below).
+    // Switch when P(at least minBreakSeconds of break left for you) >= confidence.
     // A substitute that goes to break is swapped for a third game only if your game still has
     // replaceIfHomeRemainingSeconds of break predicted; otherwise the screen stays put until your game resumes.
     presets: {
@@ -94,6 +95,25 @@
     candidateMaxBreakRisk: 0.5,
     // Data safety net: no new play on your game for this long = go back anyway.
     maxBreakSeconds: 600,
+  },
+
+  // Sports: which ones to follow and per-sport tweaks. Each sport's defaults (its stoppage rules and
+  // Low/Medium/High numbers) live in src/sports/; see README "Supported sports".
+  sports: {
+    // Polled from ESPN, listed in the game menu, and used as fill-ins (the settings drawer can turn
+    // sports off too). Ids: cfb, nfl, mcbb (men's college basketball), nba, nhl, mlb, wcbb, wnba,
+    // mls, epl (Premier League), ucl (Champions League), laliga.
+    enabled: ["cfb", "nfl", "mcbb", "nba", "nhl", "mlb", "wcbb", "wnba", "mls", "epl", "ucl", "laliga"],
+    // Your TV market: in a Sunday CBS/FOX window with several NFL games, only your market's team's game
+    // (or the one the TV guide names) is picked automatically; your local station shows just one.
+    market: "Boston",
+    nflRegionalCheck: true,
+    // Per sport: its own sensitivity, and tweaks to one level's numbers. Leave a sport out to use its
+    // defaults and the global `switching.sensitivity`. For example:
+    //   nhl: { sensitivity: "medium" },
+    //   mlb: { presets: { low: { excludeCategories: [] } } },  // also switch between innings at Low
+    //   nba: { presets: { low: { confidence: 0.85 } } },
+    overrides: {},
   },
 
   // Classic break heuristic (breakModel: "classic"). streamDelaySeconds, dataDelaySeconds and
@@ -183,7 +203,7 @@
     manualPinSeconds: 120,
   },
 
-  // Network name (as ESPN reports it) -> channel in YOUR Xfinity On Campus lineup.
+  // Network name (as ESPN reports it) -> channel in YOUR Xfinity On Campus lineup (every sport).
   // Xfinity's live URLs contain a per-program id that changes with every show, so we store the
   // channel NUMBER and tune by clicking that row in the Xfinity guide (like you would).
   // number: null means "not in my lineup" and those games are never picked.
@@ -207,9 +227,26 @@
     "TNT":                { number: 833,  callSign: "TNTHD", aliases: ["TNT"] },
     "truTV":              { number: 902,  callSign: "TRTVD", aliases: ["truTV", "TruTV"] },
     "USA Network":        { number: 835,  callSign: "USAHD", aliases: ["USA Network", "USA Net", "USA"] },
+    // Other sports (same lineup, read from the 10/17 guide scan). Regional networks for other
+    // markets are matched by a channel scan (Settings -> TV service -> Re-scan channels).
+    "NFL Network":        { number: 853,  callSign: "NFLHD", aliases: ["NFL Net", "NFL Network", "NFLN"] },
+    "NBA TV":             { number: 913,  callSign: "NBAHD", aliases: ["NBA TV", "NBATV"] },
+    "NHL Network":        { number: 822,  callSign: "NHLHD", aliases: ["NHL Net", "NHL Network", "NHLN"] },
+    "MLB Network":        { number: 914,  callSign: "MLBHD", aliases: ["MLB Net", "MLB Network", "MLBN"] },
+    "TBS":                { number: 831,  callSign: "TBSHD", aliases: ["TBS"] },
+    "ION":                { number: 803,  callSign: "IONHD", aliases: ["ION"] },
+    "Telemundo":          { number: 815,  callSign: "WNEUD", aliases: ["Telemundo"] },
+    "Universo":           { number: 1232, callSign: "UNVSH", aliases: ["Universo"] },
+    "Univision":          { number: 816,  callSign: "WUNID", aliases: ["Univision"] },
+    "TUDN":               { number: 710,  callSign: "TUDN",  aliases: ["TUDN"] },
+    "Fox Deportes":       { number: 1230, callSign: "FXDED", aliases: ["Fox Deportes", "FOX Deportes"] },
+    "NESN":               { number: 851,  callSign: "NESND", aliases: ["NESN"] },
+    "NESN+":              { number: 894,  callSign: "NESN+", aliases: ["NESN+", "NESNplus"] },
+    "NBC Sports Boston":  { number: 852,  callSign: "NBSBH", aliases: ["NBC Sports Boston", "NBCS Boston", "NBCSB", "NBCS-BOS", "NBC Sports BOS"] },
   },
 
   // Streaming-only services that are never in an Xfinity cable lineup.
   // Games only on these are shown as "not available" and never picked.
-  unavailable: ["ESPN+", "SECN+", "ACCNX", "Peacock", "MW+", "Disney+", "Big Ten+", "Paramount+", "Max", "Prime Video", "Netflix", "YouTube"],
+  unavailable: ["ESPN+", "SECN+", "ACCNX", "Peacock", "MW+", "Disney+", "Big Ten+", "Paramount+", "Max", "HBO Max", "Prime Video", "Prime Video (Local)", "Netflix", "YouTube",
+                "Apple TV", "MLS Season Pass", "MLB.TV", "NBA League Pass", "NHL Power Play", "WNBA League Pass", "NFL+", "Victory+", "Fubo"],
 }

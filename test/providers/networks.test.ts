@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CFB_NETWORKS, matchLineup, normalizeGuideName } from '../../src/providers/networks';
+import { CFB_NETWORKS, matchLineup, NETWORKS, normalizeGuideName } from '../../src/providers/networks';
 import type { DiscoveredChannel } from '../../src/providers/types';
 
 const row = (label: string, number: number | null = null, extra: Partial<DiscoveredChannel> = {}): DiscoveredChannel => ({ label, number, callSign: null, ref: null, ...extra });
@@ -34,7 +34,7 @@ describe('network matching', () => {
   it('missing networks are null', () => {
     const m = matchLineup([row('ESPN', 849)]);
     expect(m['ACC Network'].number).toBeNull();
-    expect(Object.keys(m).length).toBe(CFB_NETWORKS.length);
+    expect(Object.keys(m).length).toBe(NETWORKS.length);
   });
 
   it('does not mistake news or business channels for the broadcast network', () => {

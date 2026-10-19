@@ -1,10 +1,10 @@
 # RedZone Director
 
-A "RedZone" for college football, on the TV service you already have. One app window shows up to four channels in a grid. A director watches ESPN's live game data and changes each screen's channel:
+A "RedZone" for college football, the NFL, college and pro basketball, the NHL, MLB and soccer, on the TV service you already have. One app window shows up to four channels in a grid, each screen on its own sport. A director watches ESPN's live game data and changes each screen's channel:
 
-- **Long commercial break on a screen's game:** the screen fills in with the best live game, red-zone games first.
+- **Long commercial break on a screen's game:** the screen fills in with the best live game: the same sport first (red zone, power play, clutch time…), then a sport another screen is watching, then any sport.
 - **Play resumes:** the screen goes back to its game.
-- **Halftime:** the screen plays a highlights reel.
+- **Halftime (or a hockey intermission):** the screen plays a highlights reel, same sport first.
 - **Game ends:** a game picker appears in that screen.
 
 RedZone plays your service's own web player in castLabs' Widevine-licensed Electron and changes channels the way you would: by its channel addresses or by clicking its guide.
@@ -22,8 +22,49 @@ RedZone isn't affiliated with or endorsed by any TV service, school, league or n
 | v2.3 | **Switch less:** break forecast from 76 recorded games, Low/Medium/High sensitivity, hysteresis | ✅ done (replayed 10/10 and 10/17) |
 | v3.0 | **Other TV services:** provider adapters with per-service config files | ✅ Xfinity re-verified live 10/18 through the adapter; full app check on a game day pending |
 | v3.1 | **Setup for everyone:** one-click installer, first-run setup, TV service settings, diagnostics | ✅ setup run live on Xfinity On Campus 10/18 (sign-in, scan 17 networks, playback, 4 streams); installer checked in check-only mode |
+| v4.0 | **Multi-sport:** sport modules (NFL, men's and women's college basketball, NBA, WNBA, NHL, MLB, MLS, Premier League, Champions League, La Liga), sport picker, 3-tier fill-ins | ✅ built and tested on recorded and rebuilt days (10/18); college football unchanged (identical decisions on its recorded days); not yet watched live with streams |
 
-## Supported TV services
+## Supported sports
+
+Each sport is a module in `src/sports/` with its own ESPN feed, break detector (built from that sport's measured stoppages) and excitement scorer. The numbers below are measured on recorded or rebuilt days (`npm run sim -- --by-sport`, Low sensitivity, every game watchable except college football's 10/10 row): switches per screen-hour, "false" switches (the home game resumed within 45 s), and long breaks (90 s+) the screen spent elsewhere.
+
+| Sport | Status | Switches at Low for… | Never on its own | Halftime / reel | Hot moments | Measured |
+|---|---|---|---|---|---|---|
+| **College football** | ✅ unchanged | ends of quarters, kickoffs after scores, injuries; timeouts and possession changes after quiet | incompletions, out of bounds, penalties | halftime | red zone | 15.5/h, 14% false, 80% caught (10/10, Boston lineup) |
+| **NFL** | ✅ | ends of quarters, **two-minute warning** (96% ≥ 90 s), scores (the NFL takes the commercial after the score), injuries; timeouts after quiet | incompletions, penalties | halftime | red zone, two-minute drill in a one-score game, OT | 14.5/h, 12% false, 66% caught (10/11) |
+| **Men's college basketball** | ✅ | **official TV timeouts** (under 16/12/8/4, 96% ≥ 90 s); short and team timeouts after quiet | fouls, free throws, baskets | halftime | crunch time (≤ 6 pts, last 4:00), OT | 13.7/h, 2% false, 78% caught (2/21, 148 games) |
+| **NBA** | ✅ | full timeouts (incl. the mandatory TV ones, 97% ≥ 90 s), ends of quarters | fouls, baskets | halftime | clutch time (≤ 5 pts, last 5:00), OT | 10.8–13.3/h, 2–10% false, 74–78% caught (3/11, 3/12) |
+| **NHL** | ✅ | **TV timeouts** (every one ≥ 90 s), end of regulation; penalties and goals after quiet | icing, offside, goalie freezes | 1st/2nd intermissions | power play, one-goal game in the last 2:30, OT/shootout | 10.8/h, 6–11% false, 68–74% caught (10/13, 10/17) |
+| **MLB** | ✅ | (Low: nothing; your call) Medium/High: **between innings** (median 147 s, never < 90 s) | pitches, new batters | — (rain delay = delay) | no-hitter through 6+, extra innings, bases loaded, runners in scoring position late | Medium: 13.1/h, 2% false, 75% caught (8/15) |
+| **Women's college basketball** | ✅ | official TV timeouts (under 5:00 of each quarter), ends of quarters | fouls, baskets | halftime | crunch time, OT | 11.8/h, 3% false, 71% caught (2/22) |
+| **WNBA** | ✅ (14 recorded games: thin data) | official and full timeouts, ends of quarters | fouls, baskets | halftime | clutch time, OT | tested on recorded games only |
+| **Soccer:** MLS, Premier League, Champions League, La Liga | ✅ | nothing during play (no commercials while the ball is in play); weather delays only. Soccer games are good fill-ins for other sports | everything during play | halftime, the break before extra time | level or one-goal game from 75', stoppage time, extra time, shootout | never switched during play on 10/17 (EPL, La Liga) and 9/8 (UCL) games; MLS games filled other sports' breaks at tier 3 |
+
+What ESPN's data can and can't tell (and how the app copes):
+- **TV timeouts are explicit** in college basketball (`OfficialTVTimeOut`), the WNBA (`Official Timeout`) and the NHL (a `Stoppage` play "TV Timeout"). Football's aren't, so football still reads them from the quiet after a play.
+- **Pulled goalies aren't marked** in NHL data (only "Empty Net" goals), so the late hot moment is "a one-goal game in the last 2:30", when teams pull the goalie.
+- **NFL Sunday afternoons:** ESPN labels every CBS/FOX game "national", but your local station airs one of the 3–4 in each window. In a multi-game window only your market's team (`sports.market`, default Boston) is picked automatically; the others show **REGIONAL** in the game list and can still be picked by hand. (Reading the TV guide's program title to confirm the others is wired in, `Engine.setProgramTitles`, but no service adapter reads titles yet.)
+- **Soccer:** most MLS games stream on Apple TV and many Premier League and Champions League games on Peacock or Paramount+; only the ones on cable networks (USA, NBC, CBS, FOX/FS1, ESPN, Telemundo/Universo, Univision/TUDN) are offered.
+- **Most NBA (and many NHL/MLB) games air only on regional sports networks.** Games on networks your lineup doesn't carry are greyed out with the reason ("not in lineup: NBC Sports Philadelphia", "no network listed").
+
+## Choosing sports
+
+- **Each screen's game list starts with a sport:** a grid of sports with today's game count ("12 games · 4 live"); sports with no games today are greyed. Pick one, then a game. Below that sport's games, the other sports follow, grouped.
+- **Use for all screens:** tick it before picking a sport and every screen switches to its own game of that sport (the best ones nobody else is showing, like the startup pick). Locked screens keep their game. Change any screen afterward.
+- **Each screen's header** shows the sport (glyph + "NHL") next to the score and state badge. A screen remembers its sport for the next start.
+- **The "why" line** on a fill-in names the tier: `Showing UTAH 7–0 COLO · Same sport: red zone, 2:10 - 4th · ND @ BYU: timeout · ~1:49 left`, or `Other screen's sport (CFB): …`, or `Other sport (NBA): clutch time, 4th 1:30`.
+- **Game over:** the pop-up lists the same sport first, then the other sports, grouped.
+
+### How a screen picks a fill-in
+
+When a screen's home game goes to a long break (by that sport's own detector), the replacement is, strictly in this order:
+1. **Same sport:** another live, in-play game of the same sport, by that sport's order (football: red zone, then closest, then later; others: hot moment, then the 0–100 excitement score).
+2. **A sport another screen is watching**, by the normalized excitement score.
+3. **Any other sport** the app follows, by the normalized excitement score.
+4. **Nothing in play:** stay on the home game (or, with `director.allowDuplicates`, a game another screen shows, flagged, as the last resort).
+
+The usual rules still hold: no game on two screens unless it's the only option, the dwell time, locked screens never switch, back home when the home game shows a new play, halftime/intermission reels. The normalized score is `100 × closeness × (0.35 + 0.65 × lateness) + a hot-moment bonus (+ overtime)`, with closeness scaled per sport (football 17 points, basketball 15, hockey 3 goals, baseball 5 runs), so a one-goal third period ranks near a one-score fourth quarter. Every decision logs its tier (invariant 6 checks that no fill-in skipped a better tier).
+
 
 | Service | Status | Changes channels by | Documented streams |
 |---|---|---|---|
@@ -160,7 +201,9 @@ When the overlay hides, a small tag stays only if something is worth knowing (`�
 
 ## Switch sensitivity: only long breaks
 
-There's no "commercial" flag in any data feed, so the app forecasts how long the stoppage after the latest play will last, from **real stoppages in 76 recorded games** (10/10 and 10/17/2026, `config/break-model.json`, rebuilt by `npm run build-break-model`).
+The top bar's Low / Med / High applies to every sport, each with its own numbers (Settings → Switching → **Advanced: per sport** sets a sport's own level or turns a sport off). This section is college football's; other sports' rules are in [Supported sports](#supported-sports).
+
+There's no "commercial" flag in football's data feed, so the app forecasts how long the stoppage after the latest play will last, from **real stoppages in 76 recorded games** (10/10 and 10/17/2026, `config/break-models/cfb.json`; `npm run build-break-model -- --sport cfb` rebuilds it). Other sports' models are built the same way from their own recorded games (`config/break-models/<sport>.json`).
 
 **What the data says:** gap from a play to the next live-ball play.
 
@@ -252,7 +295,7 @@ The two standby views mean up to 6 streams at once. 6 played fine on 10/17. If X
 
 ## The config file
 
-Everything you might tune lives in **`config/redzone.config.json5`**: the lineup, switching sensitivity and presets, polling rates, dwell time, standby views and audio. Every value is commented. Anything you leave out falls back to the default in `src/config.ts`. Most sections hot-reload.
+Everything you might tune lives in **`config/redzone.config.json5`**: the lineup, switching sensitivity and presets, the sports to follow and per-sport tweaks (`sports`), polling rates, dwell time, standby views and audio. Every value is commented. Anything you leave out falls back to the default in `src/config.ts`. Most sections hot-reload.
 
 ### Channels
 
@@ -287,11 +330,12 @@ Every screen is checked every 2 s: is the video advancing, is it on the right ch
 | `npm run provider-check -- <service> [--scan [--save]] [--tune ESPN,FS1] [--views N]` | Try one service's adapter without the engine: sign in, read the guide, tune channels (screenshots when something doesn't play) |
 | `npm run doctor` | Checks the install and says how to fix what's wrong |
 | `npm run sim -- --day 20261017 [--from 19:30 --to 22:00] [--compare] [--sensitivity low\|medium\|high] [--model classic]` | Replays a recorded day through the real engine. `--compare` prints before/after switching metrics |
-| `npm run fetch-day -- 20261010` then `npm run sim -- --day 20261010 --synth` | Rebuilds **any past Saturday** from final play-by-play and simulates it |
-| `npm run build-break-model` | Rebuilds the break forecast from every recorded game |
+| `npm run fetch-day -- 20261010` then `npm run sim -- --day 20261010 --synth` | Rebuilds **any past day** from final play-by-play and simulates it. `--sports nhl,nba` (or `all`) fetches other sports; mixed days work |
+| `npm run sim -- --day 20261017 --synth --by-sport [--screen-sports nhl,cfb,cfb,cfb] [--full-lineup] [--no-regional]` | Per home sport: switches, time away, suspected false switches, long breaks caught, fills by tier. `--full-lineup` treats every game as watchable (to judge a sport's detector on a full slate) |
+| `npm run build-break-model [-- --sport nhl]` | Rebuilds each sport's break forecast from every recorded game (college football's only when named) |
 | `npm run switch-stats -- [--since 22:52]` | Switch timing per stage and path |
 | `npm run analyze-log` | Detector vs your labels, switching stats |
-| `npm run record` | Records a game day's ESPN data to `recordings/<date>/` (about 30 MB/hour) |
+| `npm run record [-- --sports all\|cfb,nhl]` | Records a game day's ESPN data for every followed sport to `recordings/<date>/` (each record names its sport) |
 | `npm run espn:probe` | Today's slate, networks, and whether you can watch each game |
 | `npm run sign-electron` | castLabs EVS signing (see Install) |
 | `npx electron electron/spike.cjs --views 4 --overlay --hide-ui --ua-chrome` + `npx tsx scripts/spike-electron.ts ESPN ESPN2 ABC FOX` | The Electron feasibility spike |
@@ -305,7 +349,7 @@ The old control panel still works at <http://localhost:7480/panel>.
 config/redzone.config.json5   the one editable file
 config/providers/<id>.json    one per TV service: URLs, selectors, timings, error text, sign-in rules
 config/schools.json           school → campus TV service, for setup's search
-config/break-model.json       stoppage-length model (npm run build-break-model)
+config/break-models/<sport>.json  stoppage-length model per sport (npm run build-break-model)
 electron/main.cjs             app window: frameless window, video views + standby views, UI layer, sign-in;
                               configure/logout/sign-in check requests from the app
 electron/layout.cjs           where each screen sits for 1-4 screens (the UI mirrors it)
@@ -318,8 +362,10 @@ src/ui/                       the window's UI (Preact, bundled on the fly by esb
 src/providers/                TV service adapters (comcast: guide clicks; url: an address per channel), registry,
                               lineup and network matching
 src/setup/                    first-run setup steps, setup state, diagnostics, export, channel mapping
+src/sports/                   one module per sport (cfb, nfl, leagues.ts: mcbb/nba/wcbb/wnba, hockey, baseball) on
+                              family code (football, basketball); markets (NFL regional windows); synth/ per family
 src/engine/                   gameStore, forecast + forecastDetector (switch less), breakDetector (classic),
-                              ranker, director, audio, engine, invariants
+                              ranker (3 tiers), director, audio, engine, invariants
 src/espn/                     client, normalize (incl. team colors/logos), source (two-tier live poller + replay),
                               recording, synth
 src/highlights/               halftime reel sources
@@ -332,6 +378,21 @@ test/                         vitest: forecast, break detector, director (incl. 
 .state/                       setup state, scanned lineups, your adapter fixes (providers/), remembered channel URLs,
                               settings changed in the app, YouTube cache
 ```
+
+## Adding a sport
+
+1. **Get data.** `npm run fetch-day -- <date> --sports <id>` for a few past days (add the league to `fetch-day`'s list by registering the module first, step 2), and `npm run record` on a live day.
+2. **Write the module** in `src/sports/` (copy the closest family: `basketball.ts` + `leagues.ts` for a clock sport, `hockey.ts`, `baseball.ts`, `football.ts`). It implements `SportModule` (`src/sports/types.ts`):
+   - `espn`: the league path (`basketball/nba`).
+   - Parsing: `phaseOf` (which period end is halftime/intermission), `situationOf`, `summaryPlays`, `classifyPlay`; optional `inferFirstSeen`/`inferChange` (what a scoreboard change implies) and `liveFromPlays`.
+   - `breaks`: stoppage `categories` and `categorize` (what kind of stoppage a play starts), `resumes` (play kinds that end a break), `ignore` (bookkeeping plays), `modelFile`.
+   - `presets`: Low/Medium/High numbers (`excludeCategories` keeps a stoppage from ever switching at a level).
+   - Excitement: `excitement` (0–100 score, hot moment, why) and `compare` (same-sport order); `progressSeconds`.
+   - `synth` (to replay past days) and `highlights` (YouTube search words and channels).
+   List it in `src/sports/index.ts` and add its id to `SportId` (`src/engine/types.ts`).
+3. **Build its model:** `npm run build-break-model -- --sport <id>` prints each category's P(≥ 60/90/120 s).
+4. **Networks:** add the league's networks (ESPN's names, guide names, call signs) to `NETWORKS` in `src/providers/networks.ts`; the next start adds them to your lineup from the saved scan.
+5. **Test it:** a fixture of a few recorded games in `test/fixtures/sports/<id>/` and a `test/sports/<id>.test.ts` like the others (`breakStarts` replays a game through the real engine); then `npm run sim -- --day <date> --synth --by-sport --full-lineup --screen-sports <id>,<id>,<id>,<id>` and tune the presets.
 
 ## Findings worth knowing (10/17/2026)
 

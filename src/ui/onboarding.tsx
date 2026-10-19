@@ -236,15 +236,15 @@ function Signin({ s, run }: { s: SetupView; run(p: Promise<{ ok: boolean; messag
   );
 }
 
-const NETWORK_ORDER = ['ESPN', 'ESPN2', 'ESPNU', 'ESPNews', 'ABC', 'CBS', 'NBC', 'FOX', 'FS1', 'FS2', 'SEC Network', 'ACC Network', 'Big Ten Network', 'CBS Sports Network', 'The CW', 'TNT', 'truTV', 'USA Network'];
-
-function NetworkGrid({ found }: { found: string[] }) {
+/** The networks found (✓) and the national ones the lineup lacks (✗), in catalog order. */
+function NetworkGrid({ found, missing }: { found: string[]; missing: string[] }) {
   return (
     <div class="nets">
-      {NETWORK_ORDER.map((n) => (
-        <span class={found.includes(n) ? 'yes' : 'no'}>
-          {found.includes(n) ? '✓' : '✗'} {n}
-        </span>
+      {found.map((n) => (
+        <span class="yes">✓ {n}</span>
+      ))}
+      {missing.map((n) => (
+        <span class="no">✗ {n}</span>
       ))}
     </div>
   );
@@ -253,14 +253,14 @@ function NetworkGrid({ found }: { found: string[] }) {
 function Channels({ s, run }: { s: SetupView; run(p: Promise<{ ok: boolean; message?: string }>): void }) {
   return (
     <>
-      <h2>Your college football channels</h2>
+      <h2>Your sports channels</h2>
       {s.busy && <Busy text={s.busy} />}
       {s.scan && (
         <>
           <p class="lede">
-            Found {s.scan.found.length} of the {NETWORK_ORDER.length} networks that carry college football. Games on the missing ones are greyed out and never picked.
+            Found {s.scan.found.length} sports networks. Games on networks you don't get are greyed out and never picked.
           </p>
-          <NetworkGrid found={s.scan.found} />
+          <NetworkGrid found={s.scan.found} missing={s.scan.missing} />
         </>
       )}
       {s.error && (
@@ -293,7 +293,7 @@ function Playback({ s, run }: { s: SetupView; run(p: Promise<{ ok: boolean; mess
       <h2>Playback test</h2>
       {s.scan && (
         <p class="lede small">
-          {s.scan.found.length} college football networks found: {s.scan.found.slice(0, 6).join(', ')}
+          {s.scan.found.length} sports networks found: {s.scan.found.slice(0, 6).join(', ')}
           {s.scan.found.length > 6 ? '…' : ''}
         </p>
       )}

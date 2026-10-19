@@ -5,8 +5,8 @@ import type { YouTubeClip } from './youtube';
 
 // Builds the halftime reel. Pure, so the ordering is unit-tested.
 //   1. your home game's first-half plays, in order
-//   2. recent big plays from other live games: closest games first, a few per game, round-robin
-//   3. one package per finished game, closest finishes first: YouTube official package, else ESPN's
+//   2. recent big plays from other live games: same sport first, then closest games, a few per game, round-robin
+//   3. one package per finished game, same sport first, then closest finishes: YouTube official package, else ESPN's
 //      package, else its two latest plays
 // with a scores-board card every `cardEveryClips` clips (or only cards when there are no clips).
 
@@ -45,7 +45,8 @@ export function buildReel(input: ReelInput): ReelItem[] {
 
   // 2. Other live games, round-robin by closeness.
   const recentAfter = input.now - opts.recentMinutes * 60_000;
-  const live = input.games.filter((g) => g.id !== home?.id && (g.phase === 'LIVE' || g.phase === 'HALFTIME')).sort((a, b) => margin(a) - margin(b));
+  const sameFirst = (a: GameSnapshot, b: GameSnapshot) => Number(!!home && a.sport !== home.sport) - Number(!!home && b.sport !== home.sport) || margin(a) - margin(b);
+  const live = input.games.filter((g) => g.id !== home?.id && (g.phase === 'LIVE' || g.phase === 'HALFTIME')).sort(sameFirst);
   const queues = live.map((g) => ({
     g,
     q: clipsOf(g.id)
@@ -58,7 +59,7 @@ export function buildReel(input: ReelInput): ReelItem[] {
   }
 
   // 3. Finished games.
-  const finals = input.games.filter((g) => g.id !== home?.id && g.phase === 'FINAL').sort((a, b) => margin(a) - margin(b));
+  const finals = input.games.filter((g) => g.id !== home?.id && g.phase === 'FINAL').sort(sameFirst);
   for (const g of finals) {
     const yt = opts.youtube ? input.youtube.get(g.id) : undefined;
     if (yt) {
@@ -71,10 +72,10 @@ export function buildReel(input: ReelInput): ReelItem[] {
     for (const c of picks) clips.push({ ...espnItem(c, g), game: `Final: ${label(g)}` } as ReelItem);
   }
 
-  if (!clips.length) return [{ kind: 'card', id: 'card-0', title: 'Scores around the country' }];
+  if (!clips.length) return [{ kind: 'card', id: 'card-0', title: 'Scores' }];
   const out: ReelItem[] = [];
   clips.forEach((c, i) => {
-    if (i > 0 && i % opts.cardEveryClips === 0) out.push({ kind: 'card', id: `card-${i}`, title: 'Scores around the country' });
+    if (i > 0 && i % opts.cardEveryClips === 0) out.push({ kind: 'card', id: `card-${i}`, title: 'Scores' });
     out.push(c);
   });
   return out;

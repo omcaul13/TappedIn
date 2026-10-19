@@ -1,7 +1,10 @@
 import path from 'node:path';
 import { resolveChannel } from '../channels';
-import { directorSettings, PROJECT_ROOT, type Config } from '../config';
-import { normalizeScoreboard, normalizeSummaryPlays } from '../espn/normalize';
+import { directorSettings, PROJECT_ROOT, sportPreset, type Config } from '../config';
+import { normalizeScoreboard } from '../espn/normalize';
+import { sportOf } from '../sports';
+import { marketTeams } from '../sports/markets';
+import { regionalStatus } from '../sports/nfl';
 import { audioStep, createAudio, setAudioFocus, setAudioMode, type AudioDecision, type AudioState } from './audio';
 import { assess, type DetectorMemory } from './breakDetector';
 import { applyAction, createDirector, directorStep, type Command, type Decision, type DirectorState, type UserAction } from './director';
@@ -9,7 +12,7 @@ import { loadBreakModel } from './forecast';
 import { assessForecast, type ForecastDetectorOptions } from './forecastDetector';
 import { GameStore, type GameState } from './gameStore';
 import { rankCandidates, type GameView } from './ranker';
-import type { Assessment, BreakState, GameSnapshot, PlaySnap } from './types';
+import type { Assessment, BreakState, GameSnapshot, PlaySnap, SportId } from './types';
 
 // Wires the pieces together. Deterministic given its inputs and the `now` you pass in, so the live
 // app, replay/simulation and tests all drive the exact same logic.
@@ -35,6 +38,8 @@ export interface TickResult {
 
 const empty = (): TickResult => ({ commands: [], decisions: [], assessments: [], audio: [] });
 
+type Detect = (g: GameState, mem: DetectorMemory | undefined, now: number) => { assessment: Assessment; memory: DetectorMemory };
+
 export class Engine {
   readonly store: GameStore;
   director: DirectorState;
@@ -42,6 +47,7 @@ export class Engine {
   private memory = new Map<string, DetectorMemory>();
   private assessments = new Map<string, Assessment>();
   private channelCache = new Map<string, GameView['channel']>();
+  private programTitles: ReadonlyMap<string, string> = new Map();
 
   constructor(
     private cfg: Config,
@@ -69,18 +75,22 @@ export class Engine {
     this.store.setOptions({ dataDelaySeconds: cfg.breakDetector.dataDelaySeconds });
   }
 
-  ingestScoreboard(body: unknown, now: number): GameSnapshot[] {
-    const snaps = normalizeScoreboard(body, now);
+  /** Sports you don't follow are ignored (live polling skips them; replays and sims may still contain them). */
+  ingestScoreboard(body: unknown, now: number, sport: SportId = 'cfb'): GameSnapshot[] {
+    if (!this.cfg.sports.enabled.includes(sport)) return [];
+    const snaps = normalizeScoreboard(body, now, sport);
     this.store.ingestSnapshots(snaps, now);
     return snaps;
   }
 
   ingestSnapshots(snaps: GameSnapshot[], now: number): void {
-    this.store.ingestSnapshots(snaps, now);
+    this.store.ingestSnapshots(snaps.filter((g) => this.cfg.sports.enabled.includes(g.sport)), now);
   }
 
   ingestSummary(gameId: string, body: unknown, now: number): void {
-    this.store.ingestPlays(gameId, normalizeSummaryPlays(body), now);
+    const g = this.store.get(gameId);
+    if (!g) return;
+    this.store.ingestPlays(gameId, sportOf(g.snap.sport).summaryPlays(body), now);
   }
 
   ingestPlays(gameId: string, plays: PlaySnap[], now: number): void {
@@ -88,6 +98,11 @@ export class Engine {
   }
 
   channelFor(g: GameSnapshot): GameView['channel'] {
+    if (this.cfg.simulation.fullLineup) return this.channelFor0(g) ?? { name: `SIM ${g.shortName}`, number: 900_000 + (Number(g.id.replace(/\D/g, '').slice(-5)) || 0) };
+    return this.channelFor0(g);
+  }
+
+  private channelFor0(g: GameSnapshot): GameView['channel'] {
     const key = g.networks.join('|');
     if (!this.channelCache.has(key)) {
       const a = resolveChannel(this.cfg, g.networks);
@@ -104,29 +119,51 @@ export class Engine {
     const out = new Map<string, GameView>();
     for (const g of this.store.all()) {
       const a = this.assessments.get(g.id);
-      if (a) out.set(g.id, { game: g.snap, assessment: a, channel: this.channelFor(g.snap) });
+      // Hockey's power play comes from play-by-play, not the scoreboard.
+      const game = g.playsLive && g.snap.phase === 'LIVE' && !g.snap.live ? { ...g.snap, live: g.playsLive } : g.snap;
+      if (a) out.set(g.id, { game, assessment: a, channel: this.channelFor(g.snap) });
+    }
+    // NFL Sunday windows: several games on CBS/FOX at once, and your station shows one.
+    const nfl = [...out.values()].flatMap((v) => (v.game.sport === 'nfl' && v.channel ? [{ game: v.game, channel: v.channel.name }] : []));
+    if (nfl.length > 1 && this.cfg.sports.nflRegionalCheck) {
+      for (const [id, regional] of regionalStatus(nfl, marketTeams(this.cfg.sports.market, 'nfl'), this.programTitles)) {
+        const v = out.get(id)!;
+        v.channel = { ...v.channel!, regional };
+      }
     }
     return out;
   }
 
-  /** The detector the config asks for: forecast model (with the sensitivity preset) or classic. */
-  private detector(): (g: GameState, mem: DetectorMemory | undefined, now: number) => { assessment: Assessment; memory: DetectorMemory } {
+  /** What the TV guide says is on a channel now (lineup key → program title), when the service's adapter can read it. */
+  setProgramTitles(titles: ReadonlyMap<string, string>): void {
+    this.programTitles = titles;
+  }
+
+  /**
+   * The detector for one sport: its break forecast with its sensitivity preset, or (college football
+   * with `switching.breakModel: "classic"`) the original weighted signals.
+   */
+  private detector(sport: SportId): Detect {
     const bd = this.cfg.breakDetector;
     const sw = this.cfg.switching;
-    if (sw.breakModel === 'classic') {
+    if (sport === 'cfb' && sw.breakModel === 'classic') {
       const det = { ...bd, staleDataSeconds: this.cfg.espn.staleDataSeconds };
       return (g, mem, now) => assess(g, mem, now, det);
     }
-    const p = sw.presets[sw.sensitivity];
+    const mod = sportOf(sport);
+    const p = sportPreset(this.cfg, sport);
+    const o = this.cfg.sports.overrides[sport];
     const opts: ForecastDetectorOptions = {
-      model: loadBreakModel(path.resolve(PROJECT_ROOT, sw.modelFile)),
+      model: loadBreakModel(path.resolve(PROJECT_ROOT, sport === 'cfb' ? sw.modelFile : mod.breaks.modelFile)),
       staleDataSeconds: this.cfg.espn.staleDataSeconds,
-      streamDelaySeconds: bd.streamDelaySeconds,
-      dataDelaySeconds: bd.dataDelaySeconds,
+      streamDelaySeconds: o?.streamDelaySeconds ?? bd.streamDelaySeconds,
+      dataDelaySeconds: o?.dataDelaySeconds ?? bd.dataDelaySeconds,
       lingerSeconds: bd.lingerSeconds,
       minBreakSeconds: p.minBreakSeconds,
       confidence: p.confidence,
       maxBreakSeconds: sw.maxBreakSeconds,
+      breaks: mod.breaks,
+      excludeCategories: p.excludeCategories,
     };
     return (g, mem, now) => assessForecast(g, mem, now, opts);
   }
@@ -135,10 +172,12 @@ export class Engine {
   tick(now: number): TickResult {
     const res = empty();
     const relevant = this.relevantGameIds();
-    const detect = this.detector();
+    const detectors = new Map<SportId, Detect>();
     for (const g of this.store.all()) {
       const prev = this.assessments.get(g.id);
-      const { assessment, memory } = detect(g, this.memory.get(g.id), now);
+      const sport = g.snap.sport;
+      if (!detectors.has(sport)) detectors.set(sport, this.detector(sport));
+      const { assessment, memory } = detectors.get(sport)!(g, this.memory.get(g.id), now);
       this.memory.set(g.id, memory);
       this.assessments.set(g.id, assessment);
       if (!prev || prev.state !== assessment.state) {

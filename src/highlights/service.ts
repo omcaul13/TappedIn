@@ -1,6 +1,7 @@
 import type { Config } from '../config';
 import type { GameSnapshot } from '../engine/types';
 import { EspnClient } from '../espn/client';
+import { sportOf } from '../sports';
 import { parseEspnVideos, type EspnClip } from './espn';
 import { buildReel, type ReelItem } from './reel';
 import type { YouTubeClient, YouTubeClip } from './youtube';
@@ -71,8 +72,11 @@ export class HighlightService {
     const h = this.cfg.highlights;
     const margin = (g: GameSnapshot) => Math.abs(g.home.score - g.away.score);
     const home = games.filter((g) => g.id === homeGameId);
-    const live = games.filter((g) => g.id !== homeGameId && (g.phase === 'LIVE' || g.phase === 'HALFTIME')).sort((a, b) => margin(a) - margin(b));
-    const finals = games.filter((g) => g.id !== homeGameId && g.phase === 'FINAL').sort((a, b) => margin(a) - margin(b));
+    // Same sport as the home game first (its reel is mostly that sport), then the others.
+    const homeSport = home[0]?.sport;
+    const order = (a: GameSnapshot, b: GameSnapshot) => Number(a.sport !== homeSport) - Number(b.sport !== homeSport) || margin(a) - margin(b);
+    const live = games.filter((g) => g.id !== homeGameId && (g.phase === 'LIVE' || g.phase === 'HALFTIME')).sort(order);
+    const finals = games.filter((g) => g.id !== homeGameId && g.phase === 'FINAL').sort(order);
     let fetched = 0;
     if (h.espnClips) {
       for (const g of [...home, ...live, ...finals].slice(0, h.maxGamesPerRefresh)) {
@@ -80,7 +84,7 @@ export class HighlightService {
         const ttl = g.phase === 'FINAL' ? FINAL_TTL : LIVE_TTL;
         if (have && Date.now() - have.fetchedAt < ttl) continue;
         try {
-          const res = await this.client.summary(g.id);
+          const res = await this.client.summary(g.id, sportOf(g.sport).espn);
           this.ingestSummary(g.id, res.body, Date.parse(res.fetchedAt));
           fetched++;
         } catch {
@@ -95,7 +99,7 @@ export class HighlightService {
         if (this.youtubeClips.has(g.id)) continue;
         const names = (team: GameSnapshot['home'], full: string) => [team.name, team.abbr, full, full.split(' ').slice(0, -1).join(' ')].filter(Boolean);
         const [awayFull = '', homeFull = ''] = g.name.split(' at ');
-        const clip = await this.youtube.findHighlights({ id: g.id, name: g.name, awayNames: names(g.away, awayFull), homeNames: names(g.home, homeFull), finalSeenAt: this.finalSeen.get(g.id) ?? now }, Date.now());
+        const clip = await this.youtube.findHighlights({ id: g.id, league: sportOf(g.sport).highlights?.query, name: g.name, awayNames: names(g.away, awayFull), homeNames: names(g.home, homeFull), finalSeenAt: this.finalSeen.get(g.id) ?? now }, Date.now());
         if (clip) {
           this.youtubeClips.set(g.id, clip);
           found++;
