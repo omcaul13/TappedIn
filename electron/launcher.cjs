@@ -24,7 +24,8 @@ if (mac) {
 }
 fs.mkdirSync(logDir, { recursive: true });
 const out = fs.openSync(logFile, 'w');
-const args = [path.join(root, 'node_modules', 'tsx', 'dist', 'cli.mjs'), path.join(root, 'scripts', 'start.ts'), ...process.argv.slice(2)];
+// `electron launcher.cjs <args>` puts the script at argv[1]; the Mac app (packaged, no script) has its arguments from argv[1].
+const args = [path.join(root, 'node_modules', 'tsx', 'dist', 'cli.mjs'), path.join(root, 'scripts', 'start.ts'), ...process.argv.slice(mac && !process.defaultApp ? 1 : 2)];
 const env = mac ? { ...process.env, TAPPEDIN_DATA_DIR: dataDir, TAPPEDIN_ELECTRON: process.execPath } : process.env;
 const child = spawn(node, args, { cwd: root, env, stdio: ['ignore', out, out], windowsHide: true });
 
