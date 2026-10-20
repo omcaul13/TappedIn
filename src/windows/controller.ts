@@ -429,12 +429,14 @@ export class WindowController {
     spare.id = screen;
     this.tuneGeneration.set(screen, gen);
     this.switching.set(screen, { gameId: want.gameId, channelName: want.channelName, since: commandedAt, background: true });
+    // The kick loop waits for this, so no other tune can bump the generation meanwhile: a newer command shows as a changed want.
+    const key = this.keyOf(screen, want);
     try {
       const out = await spare.tuneChannel(this.refOf(want));
       timing.path = `standby ${out.path}`;
       timing.navCommittedAt = Date.now();
       await spare.setMuted(true);
-      const r = await spare.watchStart(null, this.cfg.windows.startupTimeoutSeconds * 1000, () => this.tuneGeneration.get(screen) === gen);
+      const r = await spare.watchStart(null, this.cfg.windows.startupTimeoutSeconds * 1000, () => this.tuneGeneration.get(screen) === gen && this.keyOf(screen, this.wants.get(screen)) === key);
       if (r.outcome !== 'playing') {
         this.events.switchTiming({ ...timing, ...r });
         throw new Error(r.outcome === 'superseded' ? 'superseded' : 'the standby view did not start playing');
@@ -447,6 +449,11 @@ export class WindowController {
       this.events.switchTiming({ ...timing, firstFrameAt: r.firstFrameAt, playingAt: at, outcome: 'playing' });
       return true;
     } catch (err) {
+      if (!String(err).includes('superseded')) {
+        // The standby view's stream may be one too many: a limit message there turns standby off (README).
+        const h = await spare.checkHealth().catch(() => null);
+        if (h?.state === 'STREAM_LIMIT') this.disableStandby(h.detail);
+      }
       this.releaseView(spare);
       if (this.switching.get(screen)?.background) this.switching.delete(screen);
       if (String(err).includes('superseded')) return true; // the newest command takes over (kick loop)
