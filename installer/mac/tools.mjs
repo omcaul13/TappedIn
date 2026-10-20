@@ -4,7 +4,7 @@
 // "-" signs ad hoc (Mode A: no Apple account); a Developer ID identity also turns on the hardened runtime (Mode B).
 import { openSync, readSync, closeSync } from 'node:fs';
 import { makeUniversalApp } from '@electron/universal';
-import { signAsync } from '@electron/osx-sign';
+import { sign } from '@electron/osx-sign';
 
 const MACHO = new Set([0xfeedface, 0xfeedfacf, 0xcefaedfe, 0xcffaedfe, 0xcafebabe, 0xbebafeca]);
 
@@ -29,7 +29,7 @@ if (cmd === 'universal' && args.length === 3) {
 } else if (cmd === 'sign' && args.length === 3) {
   const [app, identity, entitlements] = args;
   const developerId = identity !== '-';
-  await signAsync({
+  await sign({
     app,
     identity,
     platform: 'darwin',
