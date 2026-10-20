@@ -66,7 +66,7 @@ export function checkSignature(f: SignatureFacts): CheckResult {
     case 'stale':
       return { ok: false, title: 'The Widevine signature is older than electron.exe (Electron was reinstalled or updated)', fix };
     case 'no-electron':
-      return { ok: false, title: 'No electron.exe to check the signature of', fix: `${SETUP}, or run npm ci.` };
+      return { ok: false, title: 'Electron binary not downloaded (no electron.exe)', fix: `${SETUP}, or run node node_modules\\electron\\install.js.` };
   }
 }
 

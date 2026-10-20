@@ -154,6 +154,11 @@ function Invoke-NpmCi {
     if ($code -ne 0) {
         Stop-WithFix "npm ci failed (exit code $code)." 'Close TappedIn if it is open (its files are in use), check your internet connection, and run this again.'
     }
+    # castLabs Electron downloads electron.exe on first use, not during npm ci (same step as build-installer.ps1).
+    $code = Invoke-Interactive 'node' @('node_modules\electron\install.js')
+    if ($code -ne 0 -or -not (Test-Path -LiteralPath $ElectronExe)) {
+        Stop-WithFix "Downloading castLabs Electron failed (exit code $code)." 'Check your internet connection and run this again.'
+    }
     return (Restore-ElectronSignature)
 }
 
