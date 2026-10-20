@@ -122,6 +122,34 @@ npm test
 
 </details>
 
+## Install (Mac)
+
+One app for Apple Silicon and Intel Macs, macOS 13 Ventura or later (the minimum of the castLabs Electron it is built on; the build reads it from Electron itself).
+
+1. Download **`TappedIn.dmg`** from the website or the [Releases](../../releases) page.
+2. Open it and drag **TappedIn** into **Applications**.
+3. Open TappedIn from Applications. The first start opens **setup**, the same as on Windows.
+
+<!-- unsigned-mac:start: delete this block once releases are Developer ID signed and notarized (docs/mac-signing.md, Mode B) -->
+**The first time you open it**, macOS blocks it, because this version isn't signed with an Apple Developer ID yet. You do this once:
+
+1. Open TappedIn. macOS says it can't verify that "TappedIn" is free of malware. Click **Done** (not Move to Trash).
+2. Open **System Settings → Privacy & Security** and scroll down to **Security**. It says *"TappedIn" was blocked to protect your Mac.* Click **Open Anyway**.
+3. Enter your Mac password (or use Touch ID), then click **Open** in the next dialog.
+
+On macOS 14 Sonoma or earlier you can instead Control-click TappedIn in Applications, choose **Open**, then **Open** again. From then on it opens normally. If macOS ever says TappedIn "is damaged", download it again; please report it if that keeps happening.
+
+These steps go away once TappedIn is signed and notarized by Apple.
+<!-- unsigned-mac:end -->
+
+**Updating:** when a new version is out, TappedIn says so and links to it. Download it and drag it into Applications again, replacing the old copy; your settings and sign-ins are kept. (Signed versions will update by themselves.)
+
+**Where things are:** settings, sign-ins, logs and recordings live in `~/Library/Application Support/TappedIn`, not in the app. Change settings in the app (**⌘,**). The bundled `config/tappedin.config.json5` is read-only inside the app. To uninstall, drag TappedIn to the Trash; delete that folder too to remove your settings.
+
+**Keys on a Mac:** the same single-key shortcuts as on Windows, plus **⌘,** for settings, **⌃⌘F** (or **F**) for full screen in its own Space, **⌘Q** to quit.
+
+**Building the Mac app** (maintainers, on a Mac): `bash installer/mac/build-mac.sh`. Add `--unsigned` for a test build where video won't play. Pushing a `v*` tag also builds it in GitHub Actions (`release-mac.yml`) and attaches `TappedIn.dmg` to the same release as the Windows installer. The signing modes, every secret and how to get it are in [docs/mac-signing.md](docs/mac-signing.md); the manual checklist is [docs/mac-testing.md](docs/mac-testing.md).
+
 ## First-run setup
 
 `npm start` (or the TappedIn shortcut) opens setup the first time, and again whenever you switch services:
