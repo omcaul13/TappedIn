@@ -1,6 +1,6 @@
 # RedZone Director
 
-A "RedZone" for college football, the NFL, college and pro basketball, the NHL, MLB and soccer, on the TV service you already have. One app window shows up to four channels in a grid, each screen on its own sport. A director watches ESPN's live game data and changes each screen's channel:
+A "RedZone" for college football, the NFL, college and pro basketball, the NHL, MLB, soccer and tennis, on the TV service you already have. One app window shows up to four channels in a grid, each screen on its own sport. A director watches ESPN's live game data and changes each screen's channel:
 
 - **Long commercial break on a screen's game:** the screen fills in with the best live game: the same sport first (red zone, power play, clutch time…), then a sport another screen is watching, then any sport.
 - **Play resumes:** the screen goes back to its game.
@@ -22,6 +22,7 @@ RedZone isn't affiliated with or endorsed by any TV service, school, league or n
 | v2.3 | **Switch less:** break forecast from 76 recorded games, Low/Medium/High sensitivity, hysteresis | ✅ done (replayed 10/10 and 10/17) |
 | v3.0 | **Other TV services:** provider adapters with per-service config files | ✅ Xfinity re-verified live 10/18 through the adapter; full app check on a game day pending |
 | v3.1 | **Setup for everyone:** one-click installer, first-run setup, TV service settings, diagnostics | ✅ setup run live on Xfinity On Campus 10/18 (sign-in, scan 17 networks, playback, 4 streams); installer checked in check-only mode |
+| v4.1 | **Tennis** (ATP, WTA), **per-screen fullscreen**, the **big ticker** (the CFB ticker, built in, every sport) and the **mini ticker** | ✅ built and tested on recorded data and replays (10/19); not yet watched live with streams |
 | v4.0 | **Multi-sport:** sport modules (NFL, men's and women's college basketball, NBA, WNBA, NHL, MLB, MLS, Premier League, Champions League, La Liga), sport picker, 3-tier fill-ins | ✅ built and tested on recorded and rebuilt days (10/18); college football unchanged (identical decisions on its recorded days); not yet watched live with streams |
 
 ## Supported sports
@@ -38,6 +39,7 @@ Each sport is a module in `src/sports/` with its own ESPN feed, break detector (
 | **MLB** | ✅ | (Low: nothing; your call) Medium/High: **between innings** (median 147 s, never < 90 s) | pitches, new batters | — (rain delay = delay) | no-hitter through 6+, extra innings, bases loaded, runners in scoring position late | Medium: 13.1/h, 2% false, 75% caught (8/15) |
 | **Women's college basketball** | ✅ | official TV timeouts (under 5:00 of each quarter), ends of quarters | fouls, baskets | halftime | crunch time, OT | 11.8/h, 3% false, 71% caught (2/22) |
 | **WNBA** | ✅ (14 recorded games: thin data) | official and full timeouts, ends of quarters | fouls, baskets | halftime | clutch time, OT | tested on recorded games only |
+| **Tennis:** ATP, WTA (singles) | ✅ (rules-based model: ESPN has no tennis play-by-play) | (Low: set breaks, 120 s) Medium/High: also **changeovers** (90 s) caught with 60 s / 45 s left; suspensions and rain delays at every level | points, the change of ends after game 1, tiebreak end changes, a changeover while another match is live on the same channel | — (no reel; the game-over pop-up at the end) | match point, set point, break point (when ESPN has points), tiebreak, deciding set, an upset brewing | rules-based model; tested on scripted and recorded matches (10/19) |
 | **Soccer:** MLS, Premier League, Champions League, La Liga | ✅ | nothing during play (no commercials while the ball is in play); weather delays only. Soccer games are good fill-ins for other sports | everything during play | halftime, the break before extra time | level or one-goal game from 75', stoppage time, extra time, shootout | never switched during play on 10/17 (EPL, La Liga) and 9/8 (UCL) games; MLS games filled other sports' breaks at tier 3 |
 
 What ESPN's data can and can't tell (and how the app copes):
@@ -45,6 +47,7 @@ What ESPN's data can and can't tell (and how the app copes):
 - **Pulled goalies aren't marked** in NHL data (only "Empty Net" goals), so the late hot moment is "a one-goal game in the last 2:30", when teams pull the goalie.
 - **NFL Sunday afternoons:** ESPN labels every CBS/FOX game "national", but your local station airs one of the 3–4 in each window. In a multi-game window only your market's team (`sports.market`, default Boston) is picked automatically; the others show **REGIONAL** in the game list and can still be picked by hand. (Reading the TV guide's program title to confirm the others is wired in, `Engine.setProgramTitles`, but no service adapter reads titles yet.)
 - **Soccer:** most MLS games stream on Apple TV and many Premier League and Champions League games on Peacock or Paramount+; only the ones on cable networks (USA, NBC, CBS, FOX/FS1, ESPN, Telemundo/Universo, Univision/TUDN) are offered.
+- **Tennis:** ESPN's tennis scoreboard lists tournaments (Grand Slams flagged), rounds, courts, seeds and games per set, but there is **no play-by-play** (no summary at all), so breaks are read from games and sets ending between polls, and a break ends on a timer (the rule times: 90 s changeover, 120 s set break) instead of on "play resumed". **Medical timeouts aren't in the data.** TV networks are listed only at the Grand Slams (ESPN, ESPN2…); tour-level matches are assumed to be on Tennis Channel (`sports.tennis.assumedNetwork`), shown as **COURTS VARY** and never picked automatically. A channel shows one court at a time: of several live matches on one channel, the **feature match** (a listed broadcast, then the main show court, then the best seeds) is the one the app counts on; the others are COURTS VARY, and their changeovers don't switch (the producer usually cuts to another court). World rankings come from ESPN's rankings, once a day. Every poll returns the whole draw (1.8 MB at a Slam), so only today's singles are kept and recorded.
 - **Most NBA (and many NHL/MLB) games air only on regional sports networks.** Games on networks your lineup doesn't carry are greyed out with the reason ("not in lineup: NBC Sports Philadelphia", "no network listed").
 
 ## Choosing sports
@@ -177,11 +180,11 @@ Other options: `--homes id1,id2,id3,id4`, `--no-auto` (start with no home games)
 
 ### The window
 
-**Top bar:** live game count, the clock, **switch sensitivity** (Low / Med / High), **sound** (Manual / Auto), settings, full screen, and the window buttons. A chip appears while signing in to Xfinity.
+**Top bar** (kept minimal): live game count, the clock with the **mini ticker** next to it, and three buttons: the big ticker, settings, full screen. A chip appears while signing in to Xfinity, and REPLAY / DRY RUN in those modes. Switch sensitivity and sound are in Settings.
 
 **Each screen** has an overlay that appears when you move the mouse over it and hides after 3 seconds without movement (it also flashes for a few seconds when the screen changes):
-- **Game list** (click the game at top left): today's games with logos, score or kickoff, and network. Games you can't watch (not in your lineup, ESPN+, Peacock…) are greyed out. Search by team or network. Picking a game makes it this screen's game.
-- **State badge:** `LIVE`, `BREAK`, `HALFTIME`, `FINAL`, `SHOWING OTHER GAME`, `STARTS 8:00 PM`, or `STREAM PROBLEM`.
+- **Game list** (click the game at top left, marked with its sport's icon): today's games with logos, score or kickoff, and network. Games you can't watch (not in your lineup, ESPN+, Peacock…) are greyed out. Search by team or network. Picking a game makes it this screen's game.
+- **State badge**, only when something's unusual (a plain live game shows none): `BREAK`, `HALFTIME`, `FINAL`, `SHOWING OTHER GAME`, `STARTS 8:00 PM`, or `STREAM PROBLEM`.
 - While on another game: a line saying why (for example `Showing UTAH 7–0 COLO · ND @ BYU: timeout · ~1:49 left (78%)`) and **Back to my game**.
 - **Lock:** no automatic switching on this screen.
 - **Sound:** sound from this screen only (the others mute). Click again to mute everything.
@@ -195,13 +198,24 @@ When the overlay hides, a small tag stays only if something is worth knowing (`�
 - **Halftime:** the highlights reel (ESPN clips, optional YouTube packages, scores board).
 - **Live data tile** when a stream limit or a dry run means no video.
 
-**Settings drawer** (gear, or **S**): switch sensitivity, sound mode, dwell time, minimum time on a substitute, ESPN polling for on-screen games and for likely substitutes, duplicates, YouTube status, recent switches, and keys. Changes apply at once and are saved in `.state/settings.json`, which wins over the config file until **Reset to the config file**.
+**Per-screen fullscreen:** the ⤢ button in a screen's header, a double-click on the screen, or **1–4** makes that screen fill the window. Its overlay, switching card, game-over pop-up and halftime reel all work as usual, and it keeps switching on its own. The other screens keep playing behind it, muted and hidden, and keep switching and tracking their games, so going back is instant. Sound follows the fullscreen screen and goes back to what it was when you leave. The top bar shows a **lock** toggle and **Screen 2 · Exit**; **Esc**, **0**, the same button or a double-click go back to the grid. Nothing reloads: the window only resizes and re-stacks the video views (the log says `layout: … none reloaded`). **F11** (or **F**) is the whole-monitor full screen, and works together with it.
 
-**Keys:** **1–4** sound from that screen · **M** mute all · **L** lock/unlock the screen under the mouse · **H** that screen back to its game · **S** settings · **F11** full screen · **Esc** close menus.
+**Tickers** (one data model for both, fed by the app's own ESPN data: no extra polling of their own):
+- **Big ticker** (**T**, the ticker button, or Settings → Tickers): the CFB ticker from `launch-ticker.ps1`, built in: the same navy bar, gold rule, logos, ranks, possession football (red in the red zone), gold flash on a score and UPSET on finals; it scrolls when the games don't fit and pauses on hover (**Space** pauses, **←/→** set the speed). It sits across the very top and covers the top bar; the clock, live count and status move into its label block, and the ticker, settings and full screen buttons (and Exit/lock in per-screen fullscreen) into its right column under the window buttons. The screens move down below it (resized, not reloaded). Now every sport, grouped by sport: quarters, periods, innings, minutes, sets; down & distance and the red zone, power plays, bonus, the count and runners on base (RISP), tennis set scores, points, the server and break/set/match point. Click a game to put it on a screen.
+- **Mini ticker** next to the clock: one game at a time on one line (`NHL · BOS 2–1 TOR · 3rd 4:12 · PP BOS`), sliding to the next every 5 s (Settings → Tickers). A score or a new hot moment (touchdown, goal, red zone, match point…) in a game it covers makes it jump there for a few seconds. It's on by default and hides while the big ticker is on, so there's never two at once; it stays in the top bar in per-screen fullscreen.
+- **What they show:** the games on your screens, every game of the sports you follow, or every sport (sports you don't follow are then polled at the idle rate, for the ticker only). The mini ticker can follow the big one's choice or have its own; college football can be limited to top-25 games. All of it is saved in `.state/settings.json`.
+
+**Settings** (gear, or **S**) has two pages:
+- **Basic:** switching (Low / Medium / High), sound (you pick, or it follows the action), the sports you follow, the two tickers and what they show, and your TV service (**Manage ›** opens its page: channels, streams, re-scan, diagnostics).
+- **Advanced** (the link at the bottom, for the picky): each sport's own level, dwell time, time on a substitute, a game on two screens, ESPN polling rates, ticker fine-tuning (the mini ticker's own choice, CFB top 25 only, rotation time, big ticker height and speed), YouTube status, recent switches, the keys, and **Reset to the config file**.
+
+Changes apply at once and are saved in `.state/settings.json`, which wins over the config file until that reset.
+
+**Keys:** **1–4** fullscreen that screen · **0** or **Esc** back to the grid (Esc closes an open menu first) · **Shift+1–4** sound from that screen · **M** mute all · **L** lock/unlock the screen under the mouse (or the fullscreen one) · **H** that screen back to its game · **T** big ticker · **S** settings · **F** / **F11** full screen.
 
 ## Switch sensitivity: only long breaks
 
-The top bar's Low / Med / High applies to every sport, each with its own numbers (Settings → Switching → **Advanced: per sport** sets a sport's own level or turns a sport off). This section is college football's; other sports' rules are in [Supported sports](#supported-sports).
+Settings → Switching (Low / Medium / High) applies to every sport, each with its own numbers (Settings → Advanced → **Per sport** sets a sport's own level; Settings → Sports turns a sport off). This section is college football's; other sports' rules are in [Supported sports](#supported-sports).
 
 There's no "commercial" flag in football's data feed, so the app forecasts how long the stoppage after the latest play will last, from **real stoppages in 76 recorded games** (10/10 and 10/17/2026, `config/break-models/cfb.json`; `npm run build-break-model -- --sport cfb` rebuilds it). Other sports' models are built the same way from their own recorded games (`config/break-models/<sport>.json`).
 
@@ -333,9 +347,10 @@ Every screen is checked every 2 s: is the video advancing, is it on the right ch
 | `npm run fetch-day -- 20261010` then `npm run sim -- --day 20261010 --synth` | Rebuilds **any past day** from final play-by-play and simulates it. `--sports nhl,nba` (or `all`) fetches other sports; mixed days work |
 | `npm run sim -- --day 20261017 --synth --by-sport [--screen-sports nhl,cfb,cfb,cfb] [--full-lineup] [--no-regional]` | Per home sport: switches, time away, suspected false switches, long breaks caught, fills by tier. `--full-lineup` treats every game as watchable (to judge a sport's detector on a full slate) |
 | `npm run build-break-model [-- --sport nhl]` | Rebuilds each sport's break forecast from every recorded game (college football's only when named) |
+| `npm run build-tennis-model` | Writes tennis's rules-based break models (`config/break-models/{atp,wta}.json`) |
 | `npm run switch-stats -- [--since 22:52]` | Switch timing per stage and path |
 | `npm run analyze-log` | Detector vs your labels, switching stats |
-| `npm run record [-- --sports all\|cfb,nhl]` | Records a game day's ESPN data for every followed sport to `recordings/<date>/` (each record names its sport) |
+| `npm run record [-- --sports all\|cfb,nhl]` | Records a game day's ESPN data for every followed sport to `recordings/<date>/` (each record names its sport). Tennis (`--sports atp,wta`) can only be recorded live: ESPN keeps no tennis play-by-play for `fetch-day` |
 | `npm run espn:probe` | Today's slate, networks, and whether you can watch each game |
 | `npm run sign-electron` | castLabs EVS signing (see Install) |
 | `npx electron electron/spike.cjs --views 4 --overlay --hide-ui --ua-chrome` + `npx tsx scripts/spike-electron.ts ESPN ESPN2 ABC FOX` | The Electron feasibility spike |
@@ -389,6 +404,7 @@ test/                         vitest: forecast, break detector, director (incl. 
    - `presets`: Low/Medium/High numbers (`excludeCategories` keeps a stoppage from ever switching at a level).
    - Excitement: `excitement` (0–100 score, hot moment, why) and `compare` (same-sport order); `progressSeconds`.
    - `synth` (to replay past days) and `highlights` (YouTube search words and channels).
+   - Optional, for a sport ESPN shapes differently (tennis uses all of them): `scoreboardEvents` (games nested some other way), `snapshotExtra` (fields of its own on every snapshot), `trimScoreboard` (what to record), `noSummary` (no play-by-play to poll), and in `breaks`, `timedResume` (a break ends when its forecast runs out) and `sharedChannelExclude` (categories that don't count while another live game is on the same channel).
    List it in `src/sports/index.ts` and add its id to `SportId` (`src/engine/types.ts`).
 3. **Build its model:** `npm run build-break-model -- --sport <id>` prints each category's P(≥ 60/90/120 s).
 4. **Networks:** add the league's networks (ESPN's names, guide names, call signs) to `NETWORKS` in `src/providers/networks.ts`; the next start adds them to your lineup from the saved scan.

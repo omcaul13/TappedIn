@@ -47,6 +47,11 @@ export class EspnClient {
     return `${BASE}/${l.path}/scoreboard?dates=${date}${l.groups ? `&groups=${l.groups}` : ''}&limit=300`;
   }
 
+  /** World rankings (tennis). */
+  rankingsUrl(league?: League): string {
+    return `${BASE}/${this.league(league).path}/rankings`;
+  }
+
   summaryUrl(eventId: string, league?: League): string {
     return `${BASE}/${this.league(league).path}/summary?event=${eventId}`;
   }

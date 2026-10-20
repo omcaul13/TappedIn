@@ -14,13 +14,13 @@
 //   [--signin=defer] [--no-dcomp]
 // (always --name=value: Electron exits at once on some space-separated values like "--screens 4")
 // Talks to the app over the Node IPC channel: sends ready / signin / closed / reply, accepts handoff /
-// present / quit, and requests { id, type } answered with { type: 'reply', id, ok, data | error }:
+// present / layout (per-screen fullscreen, top bar height) / quit, and requests { id, type } answered with { type: 'reply', id, ok, data | error }:
 // configure (switch service, screens, spares in place), logout, signin-check, reveal, paths.
 const fs = require('node:fs');
 const path = require('node:path');
 const { app, BrowserWindow, Menu, WebContentsView, components, ipcMain, session, shell } = require('electron');
 const { compile, rules } = require('./signin-rules.cjs');
-const { cellRects } = require('./layout.cjs');
+const { screenRect } = require('./layout.cjs');
 
 const args = process.argv.slice(2);
 const value = (name, d) => {
@@ -52,6 +52,10 @@ function loadProvider(file) {
   HIDE_JS = buildHideJs();
 }
 const TOP_BAR = 36; // keep in sync with --top in src/ui/style.css
+/** Height above the video grid: the top bar, or the big ticker when it covers the top bar (layout message). */
+let TOP = TOP_BAR;
+/** Per-screen fullscreen: the screen that fills the window (0: the grid). */
+let FOCUS = 0;
 const GAP = 2;
 const BG = '#05070a';
 
@@ -263,7 +267,30 @@ function closeSigninWindows() {
 
 function cellBounds(screen) {
   const [w, h] = win.getContentSize();
-  return cellRects(SCREENS, w, h, TOP_BAR, GAP)[screen - 1];
+  return screenRect(SCREENS, screen, w, h, TOP, GAP, FOCUS);
+}
+
+/** The view on top in each screen (the one you see), by screen number. */
+const topView = new Map();
+
+/** Keep the fullscreen screen above every other screen's views (and the UI above it). */
+function raiseFocus() {
+  const v = FOCUS ? views.get(topView.get(FOCUS)) : null;
+  if (!v || !win) return;
+  win.contentView.addChildView(v.view);
+  win.contentView.addChildView(ui);
+}
+
+/**
+ * Per-screen fullscreen and the height above the grid. Only bounds and stacking change: no view is
+ * reloaded or rebuilt, so every stream keeps playing (the others stay their size, covered).
+ */
+function setLayout(msg) {
+  FOCUS = Number(msg.focus) >= 1 && Number(msg.focus) <= SCREENS ? Number(msg.focus) : 0;
+  TOP = Math.max(0, Math.min(400, Math.round(Number(msg.top) || TOP_BAR)));
+  layout();
+  raiseFocus();
+  send({ type: 'log', text: `layout: ${FOCUS ? `screen ${FOCUS} fullscreen` : 'grid'}, grid starts ${TOP}px down (views resized, none reloaded)` });
 }
 
 function layout() {
@@ -281,9 +308,12 @@ function present(screen, name) {
   const v = views.get(name);
   if (!v || !win) return;
   v.cell = screen;
+  topView.set(screen, name);
   v.view.setBounds(cellBounds(screen));
   win.contentView.addChildView(v.view); // re-adding moves it to the top…
   win.contentView.addChildView(ui); // …and the UI goes back above it
+  // A background screen switching channels must not come up over the fullscreen one.
+  if (FOCUS && screen !== FOCUS) raiseFocus();
 }
 
 const markerTitle = (kind, n) => `RZ-${kind}-${n}${GEN ? `-g${GEN}` : ''}`; // same rule as src/shell.ts
@@ -306,6 +336,12 @@ function createViews() {
     v.webContents.on('did-finish-load', hide);
     v.webContents.on('did-navigate-in-page', hide);
     v.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+    // Every page load, counted per view (no URL: they can carry tokens). Fullscreen and ticker changes
+    // must never cause one; channel changes do.
+    let loads = 0;
+    v.webContents.on('did-start-navigation', (details) => {
+      if (details && details.isMainFrame && !details.isSameDocument) send({ type: 'log', text: `view ${name}: page load #${++loads}` });
+    });
     v.webContents.loadURL(marker(label));
     win.contentView.addChildView(v, 0); // below everything, the screen views go on top of spares
     views.set(name, { view: v, cell, label });
@@ -314,6 +350,7 @@ function createViews() {
   for (let i = 0; i < SCREENS; i++) make(`S${i + 1}`, markerTitle('SCREEN', i + 1), i + 1);
   for (let i = 0; i < SCREENS; i++) present(i + 1, `S${i + 1}`);
   layout();
+  raiseFocus();
 }
 
 /** Switch service, screen count or standby views in place: the window stays, the video views are rebuilt. */
@@ -324,6 +361,8 @@ async function configure(msg) {
   loadProvider(String(msg.provider));
   SCREENS = clampScreens(msg.screens);
   SPARES = clampSpares(msg.spares);
+  if (FOCUS > SCREENS) FOCUS = 0;
+  topView.clear();
   applyUserAgent();
   destroyViews();
   createViews();
@@ -433,6 +472,7 @@ process.on('message', (msg) => {
   }
   if (msg.type === 'handoff') void handoff();
   else if (msg.type === 'present') present(Number(msg.screen), String(msg.view));
+  else if (msg.type === 'layout') setLayout(msg);
   else if (msg.type === 'quit') app.quit();
 });
 process.on('disconnect', () => app.quit()); // the app went away

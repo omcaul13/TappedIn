@@ -25,6 +25,10 @@ const files = recordingFiles(recordingDir(PROJECT_ROOT, date));
 const have = new Set(existsSync(files.finals) ? readRecords(files.finals).map((r) => `${r.sport ?? 'cfb'}:${r.eventId}`) : []);
 
 for (const sport of sports) {
+  if (sportOf(sport).noSummary) {
+    console.log(`${date} ${sportOf(sport).short}: no play-by-play on ESPN; record it live instead (npm run record -- --sports ${sport})`);
+    continue;
+  }
   const league = sportOf(sport).espn;
   const sb = await client.scoreboard(date, league);
   const games = normalizeScoreboard(sb.body, Date.now(), sport).filter((g) => g.phase === 'FINAL');

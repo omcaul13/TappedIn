@@ -48,6 +48,8 @@ export interface Shell {
   handoff(): void;
   /** Show view `view` (S1..S4, X1..) in a screen's cell, on top. */
   present(screen: number, view: string): void;
+  /** Per-screen fullscreen (`focus`, 0 = the grid) and the height above the grid (top bar or big ticker). Resizes views only. */
+  setLayout(o: { focus: number; top: number }): void;
   /** Switch service, screen count or standby views in place: the window stays, its video views are rebuilt. */
   configure(o: ShellOptions): Promise<ShellLayout>;
   /** Forget the service's sign-in: clears this service's cookies and storage (its partition only). */
@@ -223,6 +225,7 @@ export async function startShell(cfg: Config, uiUrl: string, events: ShellEvents
     },
     handoff: () => child.connected && child.send({ type: 'handoff' }),
     present: (screen, view) => child.connected && child.send({ type: 'present', screen, view }),
+    setLayout: (o) => child.connected && child.send({ type: 'layout', focus: o.focus, top: o.top }),
     configure: async (o) => {
       const file = writeShellProvider(o.provider);
       layout = await router.request<ShellLayout>('configure', { provider: file, screens: clampScreens(o.screens), spares: clampSpares(o.spares), signin: o.signin }, 30_000);

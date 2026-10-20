@@ -5,7 +5,8 @@ import { normalizeScoreboard } from '../espn/normalize';
 import { sportOf } from '../sports';
 import { marketTeams } from '../sports/markets';
 import { regionalStatus } from '../sports/nfl';
-import { audioStep, createAudio, setAudioFocus, setAudioMode, type AudioDecision, type AudioState } from './audio';
+import { tennisChannelStatus } from '../sports/tennis';
+import { audioStep, createAudio, holdAudio, releaseAudio, setAudioFocus, setAudioMode, type AudioDecision, type AudioState } from './audio';
 import { assess, type DetectorMemory } from './breakDetector';
 import { applyAction, createDirector, directorStep, type Command, type Decision, type DirectorState, type UserAction } from './director';
 import { loadBreakModel } from './forecast';
@@ -48,6 +49,8 @@ export class Engine {
   private assessments = new Map<string, Assessment>();
   private channelCache = new Map<string, GameView['channel']>();
   private programTitles: ReadonlyMap<string, string> = new Map();
+  /** Tennis courts, as of the last tick: which matches a channel is known to show, and which share one. */
+  private tennis: ReturnType<typeof tennisChannelStatus> = { status: new Map(), shared: new Set() };
 
   constructor(
     private cfg: Config,
@@ -103,9 +106,10 @@ export class Engine {
   }
 
   private channelFor0(g: GameSnapshot): GameView['channel'] {
-    const key = g.networks.join('|');
+    const networks = channelNetworks(this.cfg, g);
+    const key = networks.join('|');
     if (!this.channelCache.has(key)) {
-      const a = resolveChannel(this.cfg, g.networks);
+      const a = resolveChannel(this.cfg, networks);
       this.channelCache.set(key, a.available ? { name: a.channel, number: a.number } : null);
     }
     return this.channelCache.get(key)!;
@@ -130,6 +134,11 @@ export class Engine {
         const v = out.get(id)!;
         v.channel = { ...v.channel!, regional };
       }
+    }
+    // Tennis: a channel shows one court at a time, and tour events list no network at all.
+    for (const [id, regional] of this.tennis.status) {
+      const v = out.get(id);
+      if (v?.channel) v.channel = { ...v.channel, regional };
     }
     return out;
   }
@@ -165,13 +174,17 @@ export class Engine {
       breaks: mod.breaks,
       excludeCategories: p.excludeCategories,
     };
-    return (g, mem, now) => assessForecast(g, mem, now, opts);
+    const shared = mod.breaks.sharedChannelExclude;
+    const sharedOpts: ForecastDetectorOptions | null = shared ? { ...opts, excludeCategories: [...(opts.excludeCategories ?? []), ...shared] } : null;
+    return (g, mem, now) => assessForecast(g, mem, now, sharedOpts && this.tennis.shared.has(g.id) ? sharedOpts : opts);
   }
 
   /** Run the detector for every game, then the director and audio. Call every tickSeconds. */
   tick(now: number): TickResult {
     const res = empty();
     const relevant = this.relevantGameIds();
+    const snaps = this.store.all().map((g) => g.snap);
+    this.tennis = snaps.some((g) => g.tennis) ? tennisChannelStatus(snaps.map((g) => ({ game: g, channel: this.channelFor(g)?.name ?? null })), this.programTitles) : { status: new Map(), shared: new Set() };
     const detectors = new Map<SportId, Detect>();
     for (const g of this.store.all()) {
       const prev = this.assessments.get(g.id);
@@ -214,6 +227,13 @@ export class Engine {
     this.audio = setAudioMode(this.audio, mode);
   }
 
+  /** Per-screen fullscreen on (screen) or off (0): sound follows it, then goes back. */
+  holdAudio(screen: number, now: number): AudioDecision | null {
+    const r = screen > 0 ? holdAudio(this.audio, screen, now) : releaseAudio(this.audio, now);
+    this.audio = r.state;
+    return r.decision;
+  }
+
   /** Home games and games on screen. */
   relevantGameIds(): Set<string> {
     const ids = new Set<string>();
@@ -234,4 +254,9 @@ export class Engine {
     for (const v of views.values()) if (out.length < limit && v.channel && v.game.phase === 'LIVE' && !out.includes(v.game.id)) out.push(v.game.id);
     return out.slice(0, limit);
   }
+}
+
+/** The networks a game's channel is looked up by: tennis matches with none listed get the assumed one. */
+export function channelNetworks(cfg: Config, g: GameSnapshot): string[] {
+  return g.tennis && !g.networks.length && cfg.sports.tennis.assumedNetwork ? [cfg.sports.tennis.assumedNetwork] : g.networks;
 }

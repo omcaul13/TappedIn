@@ -87,6 +87,13 @@ img { display: block; }
 .grid.n3 > :nth-child(2) { grid-area: b; }
 .grid.n3 > :nth-child(3) { grid-area: c; }
 .cell { position: relative; overflow: hidden; }
+/* Per-screen fullscreen: the focused screen fills the grid area (electron/layout.cjs screenRect); the
+   others stay mounted and running, just hidden, so going back is instant. */
+.grid.focus { display: block; }
+.grid.focus > .cell { position: absolute; inset: 0; }
+.grid.focus > .cell.behind { visibility: hidden; pointer-events: none; }
+.fsbar { display: inline-flex; align-items: center; gap: 6px; }
+.fsbar .btn { height: 24px; }
 .cell.idle-cursor { cursor: none; }
 .cell::after { content: ''; position: absolute; inset: 0; pointer-events: none; border: 2px solid transparent; transition: border-color 0.3s, box-shadow 0.3s; }
 .cell.sound::after { border-color: rgba(34, 197, 94, 0.0); }
@@ -396,3 +403,42 @@ img { display: block; }
 .row .regpill { color: #fde68a; background: rgba(245, 158, 11, 0.22); border-radius: 4px; padding: 0 5px; font-weight: 700; font-size: 10px; }
 .persport { display: grid; grid-template-columns: 1fr auto auto; gap: 6px 10px; align-items: center; font-size: 12.5px; }
 .persport select { background: rgba(15, 23, 42, 0.8); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 3px 6px; font: inherit; }
+.row .info .tline { color: var(--faint); font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+
+/* ---- mini ticker (next to the clock): one game at a time, sliding in ------------------------------ */
+.mini-ticker {
+  flex: 0 1 460px; min-width: 0; height: 24px; overflow: hidden; position: relative; cursor: pointer; -webkit-app-region: no-drag;
+  border: 1px solid transparent; border-radius: 7px;
+  font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-size: 15px; font-weight: 600; letter-spacing: 0.02em; color: var(--text);
+}
+.mini-ticker:hover { border-color: var(--line); }
+.mini-ticker.alert { border-color: rgba(255, 199, 44, 0.7); box-shadow: 0 0 10px rgba(255, 199, 44, 0.25); }
+.mini-ticker .mt-line { position: absolute; inset: 0; display: flex; align-items: center; gap: 6px; padding: 0 8px; white-space: nowrap; animation: mt-in 0.45s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.mini-ticker .mt-line svg { flex: none; width: 13px; height: 13px; color: var(--dim); }
+.mini-ticker .mt-text { overflow: hidden; text-overflow: ellipsis; }
+.mini-ticker.alert .mt-text { color: #ffd560; }
+@keyframes mt-in { from { transform: translateY(70%); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (max-width: 1100px) { .mini-ticker { display: none; } }
+@media (prefers-reduced-motion: reduce) { .mini-ticker .mt-line { animation: none; } }
+
+/* ---- settings: basic and advanced pages -------------------------------------------------------- */
+.drawer-head { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+.drawer-head h3 { margin: 0; }
+.drawer-head .grow { flex: 1; }
+.drawer-head .iconbtn { font-size: 18px; line-height: 1; }
+.seg.wide { display: flex; width: 100%; height: 28px; }
+.seg.wide button { flex: 1; }
+.sportchips { display: flex; flex-wrap: wrap; gap: 6px; }
+.sportchips button {
+  display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 9px; border-radius: 999px;
+  border: 1px solid var(--line); background: transparent; color: var(--faint); font-size: 12px; font-weight: 600;
+}
+.sportchips button svg { width: 13px; height: 13px; }
+.sportchips button.on { color: var(--text); border-color: rgba(225, 29, 42, 0.6); background: rgba(225, 29, 42, 0.14); }
+.row-link {
+  display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 10px 12px; border-radius: 10px;
+  border: 1px solid var(--line); background: rgba(15, 23, 42, 0.5); text-align: left; font-weight: 600;
+}
+.row-link:hover { border-color: var(--line-strong); }
+.row-link .go { color: var(--dim); font-weight: 500; }
+.row-link.adv { margin-top: 22px; background: transparent; color: var(--dim); }

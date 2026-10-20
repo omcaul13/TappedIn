@@ -1,6 +1,6 @@
 import { statusOutcome, type DetectorMemory } from './breakDetector';
 import type { BreakSpec } from '../sports/types';
-import { forecastBreak, type BreakModel } from './forecast';
+import { forecastBreak, survival, type BreakModel } from './forecast';
 import type { GameState, LastPlay } from './gameStore';
 import type { Assessment, BreakState, Signal } from './types';
 
@@ -76,6 +76,14 @@ export function assessForecast(g: GameState, mem: DetectorMemory | undefined, no
       }
       if (o.breaks.resumes.has(lp.kind)) return finish('LIVE', 0, [], [`play resumed: ${lp.typeText}${lp.text ? `: ${lp.text.slice(0, 70)}` : ''}`]);
     }
+    if (o.breaks.timedResume) {
+      // No "play resumed" signal (tennis): go back once the break has more likely than not ended on the
+      // viewer's screen. The trigger time is known only to a poll interval, hence the 10 s head start.
+      const f = fc(t.category, t.at);
+      if (survival(o.model, t.category, f.viewerElapsedSec + 10) <= 0.5) {
+        return finish('LIVE', 0, [], [`${f.label} over on your screen (${Math.max(0, f.viewerElapsedSec)}s); back for play`], undefined, { suppressUntilAfter: lp?.at ?? t.at });
+      }
+    }
     if (now - (mem.breakStartedAt ?? now) > o.maxBreakSeconds * 1000) {
       return finish('LIVE', 0, [], [`no new play for ${o.maxBreakSeconds}s; assuming play resumed (data safety net)`], undefined, { suppressUntilAfter: lp?.at ?? now });
     }
@@ -87,7 +95,7 @@ export function assessForecast(g: GameState, mem: DetectorMemory | undefined, no
   if (!lp) return finish('LIVE', 0, [], ['in play']);
   const cat = o.breaks.categorize(lp, lp.prevKind ? { kind: lp.prevKind } : null);
   if (!cat || o.excludeCategories?.includes(cat)) return finish('LIVE', 0, [], ['in play']);
-  if (mem?.suppressUntilAfter != null && lp.at <= mem.suppressUntilAfter) return finish('LIVE', 0, [], ['in play (waiting for a new play after the safety net)']);
+  if (mem?.suppressUntilAfter != null && lp.at <= mem.suppressUntilAfter) return finish('LIVE', 0, [], [o.breaks.timedResume ? 'in play (waiting for the next game)' : 'in play (waiting for a new play after the safety net)']);
   const f = fc(cat, lp.at);
   const signal: Signal = { name: cat, weight: f.confidence, detail: describe(f) };
   const linger = o.breaks.linger.has(cat) ? o.lingerSeconds : 0;

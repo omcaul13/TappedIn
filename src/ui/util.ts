@@ -25,6 +25,7 @@ export const teamColor = (t: TeamDTO | undefined, fallback = '334155') => `#${t?
 export function gameClock(g: GameDTO): string {
   if (g.phase === 'PRE') return kickoff(g.startTime);
   if (g.phase === 'HALFTIME') return g.family === 'hockey' ? 'Intermission' : 'Halftime';
+  if (g.family === 'tennis') return tennisClock(g);
   if (g.phase === 'FINAL') return /OT|SO/.test(g.detail) ? `Final/${/SO/.test(g.detail) ? 'SO' : 'OT'}` : /\/\d+/.test(g.detail) ? g.detail : 'Final';
   if (g.family === 'baseball') {
     const b = g.live?.family === 'baseball' ? g.live : null;
@@ -86,3 +87,40 @@ export const scoreLine = (g: GameDTO) => `${g.away.abbr} ${g.away.score}–${g.h
 
 /** Games still to watch today (not over). */
 export const watchableToday = (g: GameDTO) => g.phase !== 'FINAL' && g.phase !== 'CANCELED' && g.phase !== 'POSTPONED';
+
+/** Tennis: "Set 2 · 4–3" (games, away first like the score line), "Suspended", "Final", "6-3 ret.". */
+export function tennisClock(g: GameDTO): string {
+  const t = g.tennis;
+  if (g.phase === 'DELAYED') return /rain/i.test(g.detail) ? 'Rain delay' : 'Suspended';
+  if (g.phase === 'FINAL') return /ret\.|W\/O/.test(g.detail) ? g.detail : 'Final';
+  const cur = t?.sets.find((s) => !s.done);
+  if (!t || !cur) return g.detail;
+  const n = t.sets.indexOf(cur) + 1;
+  return `Set ${n} · ${cur.away}–${cur.home}${cur.home === 6 && cur.away === 6 ? ' TB' : ''}`;
+}
+
+/** "R16", "QF", "SF", "F", "Q1": a tennis round, short. */
+export function shortRound(round: string | null): string {
+  if (!round) return '';
+  const r = round.toLowerCase();
+  if (r.startsWith('qualifying')) return `Q${/(\d)/.exec(r)?.[1] ?? ''}`;
+  if (r.includes('quarter')) return 'QF';
+  if (r.includes('semi')) return 'SF';
+  if (/^(the )?final$/.test(r)) return 'F';
+  const m = /round (?:of )?(\d+)/.exec(r);
+  return m ? `R${m[1]}` : round;
+}
+
+/** "Japan Open · R1 · Center": what a tennis match is, for lists. */
+export function tennisLine(g: GameDTO): string {
+  const t = g.tennis;
+  return t ? [t.tournament, shortRound(t.round), t.court].filter(Boolean).join(' · ') : '';
+}
+
+/** A channel showing one of several courts (tennis), or one of several regional games (NFL). */
+export function sharedPill(g: GameDTO): { text: string; title: string } | null {
+  if (g.channel?.regional !== 'unconfirmed') return null;
+  return g.family === 'tennis'
+    ? { text: 'COURTS VARY', title: g.tennis?.networkListed ? 'Other matches are live on this channel; it may show another court' : `ESPN lists no channel for this match; ${g.channel.name} is a guess and may show another court` }
+    : { text: 'REGIONAL', title: "Several NFL games share this channel's window; your local station shows one of them" };
+}

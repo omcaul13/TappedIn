@@ -28,6 +28,14 @@ export const FullscreenIcon = ({ on }: { on: boolean }) => (
   </svg>
 );
 
+/** The tickers: a strip of scores. */
+export const TickerIcon = () => (
+  <svg viewBox="0 0 24 24" {...P}>
+    <rect x="2.5" y="6" width="19" height="12" rx="2" />
+    <path d="M7 10v4M11 10v4M15 10h3M15 14h3" />
+  </svg>
+);
+
 export const BackIcon = () => (
   <svg viewBox="0 0 24 24" {...P}>
     <path d="M9 14 4 9l5-5" />
@@ -60,6 +68,12 @@ export const SportIcon = ({ family }: { family: string }) => (
       <>
         <circle cx="12" cy="12" r="9" />
         <path d="M7.5 4.5c2 2.2 2 12.8 0 15M16.5 4.5c-2 2.2-2 12.8 0 15" />
+      </>
+    )}
+    {family === 'tennis' && (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M5.6 5.6a9 9 0 0 1 0 12.8M18.4 5.6a9 9 0 0 0 0 12.8" />
       </>
     )}
     {family === 'soccer' && (

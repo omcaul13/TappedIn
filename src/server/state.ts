@@ -1,4 +1,4 @@
-import type { Assessment, GameSnapshot, LiveDetail, SportFamily, SportId } from '../engine/types';
+import type { Assessment, GameSnapshot, LiveDetail, SportFamily, SportId, TennisInfo } from '../engine/types';
 import { sportOf } from '../sports';
 
 // What the app window's UI and the local pages (data tiles, halftime, picker, control panel) see. Plain JSON.
@@ -11,6 +11,8 @@ export interface TeamDTO {
   color?: string | null;
   altColor?: string | null;
   logo?: string | null;
+  rank?: number | null;
+  record?: string | null;
 }
 
 export interface GameDTO {
@@ -40,6 +42,8 @@ export interface GameDTO {
   } | null;
   /** Other sports' live situation (power play, bases, count) for tiles. */
   live: LiveDetail | null;
+  /** Tennis: sets, server, points, tournament. */
+  tennis: TennisInfo | null;
   /** The sport's hot moment right now ("red zone", "power play", "clutch time"), or null. */
   hot: string | null;
   /** 0–100, comparable across sports. */
@@ -105,6 +109,8 @@ export interface SettingsDTO {
   gameOverAutoPickSeconds: number;
   enterThreshold: number;
   youtube: boolean;
+  /** The tickers: on/off, what they show, mini ticker interval, big ticker height and speed. */
+  ticker: import('../config').TickerConfig;
   /** Settings changed in the app (they win over the config file until reset). */
   overridden: string[];
 }
@@ -171,6 +177,10 @@ export interface AppState {
   sports: SportDTO[];
   /** focus 0 = all muted. */
   audio: { mode: 'manual' | 'auto'; focus: number };
+  /** Per-screen fullscreen: the screen filling the window (0: the grid). */
+  view: { fullscreen: number };
+  /** Games of sports you don't follow, for a ticker set to "all sports" (empty otherwise). */
+  tickerExtra: GameDTO[];
   feed: FeedItem[];
   labels: number;
   settings: SettingsDTO;
@@ -198,6 +208,7 @@ export function gameDTO(g: GameSnapshot, a: Assessment | undefined, channel: Gam
     unavailable: channel ? null : unavailable,
     situation: s ? { possessionTeamId: s.possessionTeamId, downDistanceText: s.downDistanceText, yardsToEndzone: s.yardsToEndzone, isRedZone: s.isRedZone, lastPlay: s.lastPlay?.text ?? null } : null,
     live: g.live ?? null,
+    tennis: g.tennis ?? null,
     hot: g.phase === 'LIVE' ? (x.hot?.label ?? null) : null,
     excitement: x.score,
     assessment: a ? { state: a.state, score: a.score, reasons: a.reasons, since: a.since, forecast: a.forecast } : null,

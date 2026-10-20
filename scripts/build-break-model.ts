@@ -31,6 +31,10 @@ const MIN_PLAYS: Partial<Record<string, number>> = { football: 50, basketball: 1
 const records = files.flatMap((f) => readRecords(f));
 for (const mod of SPORTS) {
   if (only ? mod.id !== only : mod.id === 'cfb') continue; // CFB's model is frozen unless asked for by name
+  if (mod.noSummary) {
+    console.log(`${mod.short}: no play-by-play on ESPN; its model is rules-based (npm run build-tennis-model)`);
+    continue;
+  }
   const sport = mod.id as SportId;
   const model = emptyModel(5, mod.breaks.categories);
   const seen = new Set<string>();

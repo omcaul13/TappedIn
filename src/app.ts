@@ -4,7 +4,7 @@ import { resolveChannel } from './channels';
 import { loadOverrides, parseOverrides, PROJECT_ROOT, saveOverrides, SETTINGS_FILE, watchConfig, withOverrides, type Config, type SettingsOverrides } from './config';
 import { excitement } from './engine/audio';
 import type { ScreenState, UserAction } from './engine/director';
-import { Engine, type TickResult } from './engine/engine';
+import { channelNetworks, Engine, type TickResult } from './engine/engine';
 import type { GameView } from './engine/ranker';
 import { espnDateKey } from './espn/client';
 import { HighlightService } from './highlights/service';
@@ -14,7 +14,7 @@ import { clock as fmtClock, dailyLogFile, DecisionLog, type LogEntry } from './l
 import { startServer, type LocalServer, type PostResult } from './server/server';
 import { effectiveChannels, upgradeLineup } from './providers/lineup';
 import { isSportId, SPORTS, sportOf } from './sports';
-import type { SportId } from './engine/types';
+import type { GameSnapshot, SportId } from './engine/types';
 import { mkdirSync as mkdirp, writeFileSync } from 'node:fs';
 import { lineupFile } from './providers/lineup';
 import { listProviders } from './providers/registry';
@@ -32,7 +32,9 @@ import { createAdapter, previewOverride, readOverrideFile, saveOverride, STATE_D
 import type { ProviderAdapter } from './providers/types';
 import { gameDTO, type AppState, type FeedItem, type PickerDTO, type ScreenDTO } from './server/state';
 import { attachShell, effectiveStandby, startShell, type Shell, type SigninStatus } from './shell';
-import { autoHomes, recordedFeed, synthFeed } from './sim';
+import { autoHomes, recordedFeed, synthFeed, type FeedTarget } from './sim';
+import { wantsAllSports } from './ui/ticker/model';
+import { normalizeScoreboard } from './espn/normalize';
 import { connect, ensureChrome } from './windows/chrome';
 import { WindowController } from './windows/controller';
 import { cacheFileFor } from './windows/tuner';
@@ -80,6 +82,9 @@ const ACTIONS = new Set(['setHome', 'lock', 'unlock', 'force', 'goHome', 'skip',
 const FEED_MAX = 150;
 const etTime = (iso: string) => new Date(iso).toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit' });
 
+/** The top bar's height (electron/main.cjs TOP_BAR, --top in src/ui/style.css). */
+const TOP_BAR_PX = 36;
+
 export class App {
   private readonly engine: Engine;
   private readonly log: DecisionLog;
@@ -91,6 +96,31 @@ export class App {
   private timers: NodeJS.Timeout[] = [];
   private homesSet = false;
   private focus = 0;
+  /** Per-screen fullscreen: the screen filling the window (0: the grid). */
+  private fullscreen = 0;
+  /** Height above the video grid: the top bar (36 px), or the big ticker covering it. */
+  private topInset = TOP_BAR_PX;
+  /** Latest games of sports you don't follow, kept only while a ticker shows "all sports". */
+  private tickerExtra = new Map<SportId, GameSnapshot[]>();
+  /**
+   * Where ESPN data goes: the engine, which ignores sports you don't follow; those are kept for the
+   * tickers instead when one wants every sport. Live polling and replays both feed through here.
+   */
+  private readonly ingest: FeedTarget = {
+    ingestScoreboard: (body, at, sport = 'cfb') => {
+      const snaps = this.engine.ingestScoreboard(body, at, sport);
+      if (!this.cfg.sports.enabled.includes(sport) && wantsAllSports(this.cfg.ticker)) this.tickerExtra.set(sport, normalizeScoreboard(body, at, sport));
+      return snaps;
+    },
+    ingestSummary: (id, body, at) => this.engine.ingestSummary(id, body, at),
+    ingestSnapshots: (snaps, at) => {
+      this.engine.ingestSnapshots(snaps, at);
+      if (!wantsAllSports(this.cfg.ticker)) return;
+      const other = snaps.filter((g) => !this.cfg.sports.enabled.includes(g.sport));
+      for (const sport of new Set(other.map((g) => g.sport))) this.tickerExtra.set(sport, other.filter((g) => g.sport === sport));
+    },
+    ingestPlays: (id, plays, at) => this.engine.ingestPlays(id, plays, at),
+  };
   private stopped = false;
   private stopWatching: (() => void) | null = null;
   private feed: FeedItem[] = [];
@@ -126,6 +156,7 @@ export class App {
     const added = upgradeLineup(withOverrides(cfg, this.overrides).provider, STATE_DIR);
     if (added.length) console.log(`Channels: added ${added.length} networks for other sports from your last channel scan (${added.join(', ')})`);
     this.cfg = cfg = resolveConfig(cfg, this.overrides);
+    this.topInset = this.tickerTop();
     this.setupState = migrateOwner(STATE_DIR, cfg) ?? loadSetup();
     this.screenCount = needsSetup(this.setupState, cfg) || opts.setup || opts.setupDemo ? 4 : this.setupState.screens;
     this.engine = new Engine(cfg, this.screenCount);
@@ -224,7 +255,7 @@ export class App {
       this.source = new LiveSource(
         cfg,
         {
-          scoreboard: (body, at, sport) => this.engine.ingestScoreboard(body, at, sport),
+          scoreboard: (body, at, sport) => this.ingest.ingestScoreboard(body, at, sport),
           summary: (id, body, at) => {
             this.engine.ingestSummary(id, body, at);
             this.highlights.ingestSummary(id, body, at);
@@ -235,6 +266,7 @@ export class App {
           date: espnDateKey(),
           interesting: () => this.engine.interestingGameIds(),
           onScreen: () => [...this.engine.relevantGameIds()],
+          alsoPoll: () => (wantsAllSports(this.cfg.ticker) ? SPORTS.map((m) => m.id).filter((id) => !this.cfg.sports.enabled.includes(id)) : []),
           recordDir: this.opts.record ? recordingDir(PROJECT_ROOT, `${espnDateKey()}-live`) : null,
         },
       );
@@ -260,6 +292,31 @@ export class App {
     this.browser = browser;
     this.controller = new WindowController(this.cfg, browser, null, this.controllerOpts(), this.controllerEvents());
     await this.controller.attach(screens, spares, (screen, view) => shell.present(screen, view));
+    this.syncLayout();
+  }
+
+  /** Tell the window where the grid starts and which screen is fullscreen (it resizes views, never reloads them). */
+  private syncLayout(): void {
+    if (this.fullscreen > this.screenCount) this.setFullscreen(0);
+    this.shell?.setLayout({ focus: this.fullscreen, top: this.topInset });
+  }
+
+  /** Per-screen fullscreen on (1–4) or off (0). Every screen keeps switching; sound follows the fullscreen one. */
+  private setFullscreen(screen: number): PostResult {
+    if (!Number.isInteger(screen) || screen < 0 || screen > this.screenCount) return { ok: false, message: 'bad screen' };
+    if (screen === this.fullscreen) return { ok: true };
+    this.fullscreen = screen;
+    const d = this.engine.holdAudio(screen, this.clock.now());
+    if (d) this.writeEntry({ type: 'audio', ...d });
+    if (this.engine.audio.focus !== this.focus) {
+      this.focus = this.engine.audio.focus;
+      void this.controller?.setAudioFocus(this.focus);
+    }
+    this.shell?.setLayout({ focus: screen, top: this.topInset });
+    this.info(screen ? `screen ${screen} fullscreen` : 'back to the grid');
+    this.refreshOverlays();
+    this.pushState();
+    return { ok: true };
   }
 
   /** Switch to another TV service: the window rebuilds its views in that service's own browser profile and signs in. */
@@ -380,14 +437,26 @@ export class App {
     this.source?.setConfig(next);
     this.controller?.setConfig(next);
     this.highlights.setConfig(next);
+    if (!wantsAllSports(next.ticker)) this.tickerExtra.clear();
+    for (const sport of next.sports.enabled) this.tickerExtra.delete(sport as SportId);
+    const top = this.tickerTop();
+    if (top !== this.topInset) {
+      this.topInset = top;
+      this.syncLayout();
+    }
     this.pushState();
+  }
+
+  /** The big ticker covers the top bar (one-window app only): the grid starts below it. */
+  private tickerTop(): number {
+    return this.opts.shell === 'electron' && this.cfg.ticker.big ? this.cfg.ticker.height : TOP_BAR_PX;
   }
 
   private changeSettings(body: Record<string, unknown>): PostResult {
     if (body.reset === true) {
-      // Setup choices (which service, how many standby streams) aren't tuning: reset keeps them.
-      const { provider, standbyViews, screenSports } = this.overrides;
-      this.overrides = { ...(provider ? { provider } : {}), ...(standbyViews !== undefined ? { standbyViews } : {}), ...(screenSports ? { screenSports } : {}) };
+      // Setup choices (which service, how many standby streams) and the tickers aren't tuning: reset keeps them.
+      const { provider, standbyViews, screenSports, ticker } = this.overrides;
+      this.overrides = { ...(provider ? { provider } : {}), ...(standbyViews !== undefined ? { standbyViews } : {}), ...(screenSports ? { screenSports } : {}), ...(ticker ? { ticker } : {}) };
       saveOverrides(this.overrides);
       this.applyConfig();
       this.info('settings reset to the config file');
@@ -399,10 +468,11 @@ export class App {
     } catch (err) {
       return { ok: false, message: String(err instanceof Error ? err.message : err) };
     }
-    this.overrides = { ...this.overrides, ...change };
+    // Ticker settings merge one key at a time (each switch posts only what it changes).
+    this.overrides = { ...this.overrides, ...change, ...(change.ticker ? { ticker: { ...this.overrides.ticker, ...change.ticker } } : {}) };
     saveOverrides(this.overrides);
     this.applyConfig();
-    this.info(`settings: ${Object.entries(change).map(([k, v]) => `${k} ${v}`).join(', ')} (saved in ${path.relative(PROJECT_ROOT, SETTINGS_FILE)})`);
+    this.info(`settings: ${Object.entries(change).map(([k, v]) => `${k} ${typeof v === 'object' ? JSON.stringify(v) : v}`).join(', ')} (saved in ${path.relative(PROJECT_ROOT, SETTINGS_FILE)})`);
     return { ok: true };
   }
 
@@ -432,6 +502,9 @@ export class App {
       }
       case '/api/settings':
         return this.changeSettings(body);
+      case '/api/view':
+        // { fullscreen: n }: screen n fills the window; 0 is the grid.
+        return this.setFullscreen(Number(body.fullscreen));
       case '/api/screen-sport': {
         // Choose a screen's sport before its game (the game list opens on it).
         const sport = String(body.sport);
@@ -1064,6 +1137,8 @@ export class App {
       signin: this.signin,
       streamLimit: this.controller?.streamLimit ?? c.windows.maxConcurrentStreams,
       audio: { mode: this.engine.audio.mode, focus: this.engine.audio.focus },
+      view: { fullscreen: this.fullscreen },
+      tickerExtra: [...this.tickerExtra.values()].flat().map((g) => gameDTO(g, undefined, this.engine.channelFor(g), null)),
       feed: this.feed.slice(-80),
       labels: this.labels,
       settings: {
@@ -1078,6 +1153,7 @@ export class App {
         gameOverAutoPickSeconds: c.director.gameOverAutoPickSeconds,
         enterThreshold: c.breakDetector.enterThreshold,
         youtube: this.highlights.youtubeEnabled,
+        ticker: c.ticker,
         overridden: Object.keys(this.overrides),
       },
       screens: this.engine.director.screens.map((s) => {
@@ -1102,7 +1178,7 @@ export class App {
         };
       }),
       games: [...views.values()].map((v) => {
-        const a = resolveChannel(this.cfg, v.game.networks);
+        const a = resolveChannel(this.cfg, channelNetworks(this.cfg, v.game));
         return gameDTO(v.game, v.assessment, v.channel, a.available ? null : a.reason);
       }),
       sports: SPORTS.map((m) => {
@@ -1139,7 +1215,7 @@ export class App {
           this.engine.tick(warmTick);
           warmTick += tickMs;
         }
-        item.apply(this.engine);
+        item.apply(this.ingest);
         warmTick ??= item.at;
         continue;
       }
@@ -1151,7 +1227,7 @@ export class App {
       }
       const wait = (item.at - this.clock.now()) / r.speed;
       if (wait > 0) await new Promise((res) => setTimeout(res, wait));
-      item.apply(this.engine);
+      item.apply(this.ingest);
     }
     this.info('replay finished');
   }

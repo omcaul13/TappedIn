@@ -1,5 +1,6 @@
 // Where each screen sits in the app window, for 1–4 screens. electron/main.cjs places the video
-// views with it, and src/ui/style.css mirrors it (.grid.n1–.n4) for the overlays drawn on top.
+// views with it, and src/ui/style.css mirrors it (.grid.n1–.n4, .grid.focus) for the overlays drawn
+// on top. `top` is the top bar's height (or the big ticker's, when it covers the top bar).
 //   1: the whole area        2: two columns
 //   3: screen 1 is the left half; 2 and 3 are stacked on the right
 //   4: 2x2
@@ -27,4 +28,14 @@ function cellRects(n, width, height, top, gap) {
   }
 }
 
-module.exports = { cellRects };
+/**
+ * Where screen `screen` sits: its cell, or (per-screen fullscreen, `focus` = that screen) the whole
+ * area below `top`. The other screens keep their cells: their views stay the same size and keep
+ * playing underneath the focused one, so going back to the grid is instant.
+ */
+function screenRect(n, screen, width, height, top, gap, focus) {
+  if (focus && focus === screen) return { x: 0, y: top, width, height: Math.max(0, height - top) };
+  return cellRects(n, width, height, top, gap)[Math.max(1, Math.min(n, screen)) - 1];
+}
+
+module.exports = { cellRects, screenRect };

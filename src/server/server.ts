@@ -1,5 +1,5 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
-import { uiBundle, uiFont, uiPage } from '../ui/build';
+import { tickerFont, uiBundle, uiFont, uiPage } from '../ui/build';
 import { halftimePage, idlePage, panelPage, pickerPage, tilePage } from './pages';
 import type { AppState } from './state';
 
@@ -80,6 +80,9 @@ export function startServer(port: number, handlers: ServerHandlers): Promise<Loc
       }
     }
     if (url.pathname === '/ui/inter.woff2') return send(200, 'font/woff2', uiFont());
+    const barlow = /^\/ui\/barlow-condensed-(\d00)\.woff2$/.exec(url.pathname);
+    const barlowFont = barlow ? tickerFont(Number(barlow[1])) : null;
+    if (barlowFont) return send(200, 'font/woff2', barlowFont);
 
     const screen = Number(/^\/(?:tile|halftime|idle|picker)\/(\d)$/.exec(url.pathname)?.[1]);
     if (url.pathname === '/api/state') return send(200, 'application/json', JSON.stringify(handlers.state()));

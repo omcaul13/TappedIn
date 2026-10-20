@@ -49,10 +49,11 @@ export function normalizeEvent(ev: Json, observedAt: number, sport: SportId = 'c
     observedAt,
   };
   if (live.live) snap.live = live.live;
-  return snap;
+  return mod.snapshotExtra ? { ...snap, ...mod.snapshotExtra(ev, comp) } : snap;
 }
 
 export function normalizeScoreboard(body: Json, observedAt: number, sport: SportId = 'cfb'): GameSnapshot[] {
-  const events: Json[] = Array.isArray(body?.events) ? body.events : [];
+  const mod = sportOf(sport);
+  const events: Json[] = mod.scoreboardEvents ? mod.scoreboardEvents(body) : Array.isArray(body?.events) ? body.events : [];
   return events.map((e) => normalizeEvent(e, observedAt, sport)).filter((g): g is GameSnapshot => g !== null);
 }

@@ -12,11 +12,13 @@ import { enabledSports, loadConfig, PROJECT_ROOT } from '../src/config';
 import { EspnClient, espnDateKey } from '../src/espn/client';
 import { normalizeScoreboard } from '../src/espn/normalize';
 import { appendRecord, trimSummary } from '../src/espn/recording';
+import { RankCache, recordableScoreboard } from '../src/espn/rankings';
 import type { GameSnapshot, SportId } from '../src/engine/types';
 import { isSportId, SPORT_IDS, sportOf } from '../src/sports';
 
 const cfg = loadConfig();
 const client = new EspnClient(cfg.espn);
+const ranks = new RankCache(client);
 const args = process.argv.slice(2);
 const sportsArg = args.includes('--sports') ? args[args.indexOf('--sports') + 1] : null;
 const date = args.find((a) => /^\d{8}$/.test(a)) ?? espnDateKey();
@@ -56,7 +58,8 @@ console.log(`Recording ESPN ${date} (${sports.map((s) => sportOf(s).short).join(
 async function pollScoreboard(sport: SportId): Promise<void> {
   try {
     const res = await client.scoreboard(date, sportOf(sport).espn);
-    bytes += appendRecord(files.scoreboard, { t: res.fetchedAt, kind: 'scoreboard', url: res.url, status: res.status, body: res.body, sport });
+    await ranks.attach(sport, date, res.body);
+    bytes += appendRecord(files.scoreboard, { t: res.fetchedAt, kind: 'scoreboard', url: res.url, status: res.status, body: recordableScoreboard(sport, res.body), sport });
     games.set(sport, normalizeScoreboard(res.body, Date.parse(res.fetchedAt), sport));
   } catch (err) {
     appendRecord(files.scoreboard, { t: new Date().toISOString(), kind: 'error', error: String(err), sport });
@@ -65,7 +68,8 @@ async function pollScoreboard(sport: SportId): Promise<void> {
 }
 
 async function saveFinals(): Promise<void> {
-  for (const g of all().filter((x) => isOver(x) && !finalsSaved.has(x.id))) {
+  // Tennis has no summary to save (a match's final state is in the scoreboard).
+  for (const g of all().filter((x) => isOver(x) && !finalsSaved.has(x.id) && !sportOf(x.sport).noSummary)) {
     if (stopping) return;
     try {
       const res = await client.summary(g.id, sportOf(g.sport).espn);
@@ -81,7 +85,7 @@ async function saveFinals(): Promise<void> {
 
 async function summaryLoop(): Promise<void> {
   while (!stopping) {
-    const live = all().filter(isLive);
+    const live = all().filter((g) => isLive(g) && !sportOf(g.sport).noSummary);
     if (live.length) {
       const g = live[rr++ % live.length];
       try {
@@ -109,7 +113,7 @@ while (!stopping) {
   });
   const bySport = sports.map((s) => `${sportOf(s).short} ${(games.get(s) ?? []).filter(isLive).length}/${(games.get(s) ?? []).length}`).join(' ');
   console.log(`${hhmmss()} live/games: ${bySport} · ${finalsSaved.size} finals saved · ${(bytes / 1e6).toFixed(1)} MB` + (hot.length ? ` · ${hot.join(', ')}` : ''));
-  if (list.length && !live.length && !pre.length && list.every((g) => finalsSaved.has(g.id) || !isOver(g))) {
+  if (list.length && !live.length && !pre.length && list.every((g) => finalsSaved.has(g.id) || !isOver(g) || sportOf(g.sport).noSummary)) {
     console.log(`${hhmmss()} all games final; done.`);
     break;
   }
