@@ -104,6 +104,13 @@ describe('export', () => {
     expect(text).toMatch(/\{ref\}/); // the override's templates survive
   });
 
+  it('strips session ids carried in the path (";jsessionid=", as school sign-in pages use)', () => {
+    const url = 'https://shib.example.edu/idp/profile/SAML2/Redirect/SSO;jsessionid=node0abc123?execution=e1s1';
+    const out = JSON.stringify(buildExport({ provider: { id: 'x', name: 'X', status: 'experimental' }, override: {}, results: [{ step: 'signin', pass: false, summary: `ended at ${url}`, facts: { url }, fields: [] }], appVersion: '0.1.0', gitCommit: null }));
+    expect(out).not.toMatch(/node0abc123/);
+    expect(out).toMatch(/https:\/\/shib\.example\.edu\/idp\/profile\/SAML2\/Redirect\/SSO"/);
+  });
+
   it('includes the provider, the override and each step result', () => {
     const out = buildExport({ provider: { id: 'sling', name: 'Sling TV', status: 'experimental' }, override: { a: 1 }, results: [{ step: 'tune', pass: true, summary: 'ok', facts: {}, fields: [] }], appVersion: '0.1.0', gitCommit: null }) as Record<string, unknown>;
     expect(out).toMatchObject({ provider: { id: 'sling' }, override: { a: 1 }, results: [{ step: 'tune', pass: true }] });
