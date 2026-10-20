@@ -23,29 +23,31 @@ const side = (comp: Json, ha: string): TeamSnap => {
   return { id: String(c?.team?.id ?? c?.id ?? ''), abbr: c?.team?.abbreviation ?? '?', name: c?.team?.shortDisplayName ?? c?.team?.displayName ?? '?', score: 0 };
 };
 
-export function clockSynth(o: ClockSynthOptions): SynthAdapter {
-  const prepare = (body: Json, sport: SportId): SynthGame | null => {
-    const comp = body?.header?.competitions?.[0];
-    if (!comp) return null;
-    const plays = o.plays(body).filter((p) => p.wallclock !== null);
-    if (!plays.length) return null;
-    plays.sort((a, b) => a.wallclock! - b.wallclock! || a.seq - b.seq);
-    const home = side(comp, 'home');
-    const away = side(comp, 'away');
-    const networks = networksOf(comp).length ? networksOf(comp) : networksOf({ geoBroadcasts: body?.broadcasts ?? [] });
-    return {
-      id: String(body?.header?.id ?? comp.id),
-      sport,
-      shortName: `${away.abbr} @ ${home.abbr}`,
-      name: `${away.name} at ${home.name}`,
-      start: Date.parse(comp.date ?? '') || plays[0].wallclock! - 10 * 60_000,
-      home,
-      away,
-      networks,
-      plays,
-      finalDetail: comp?.status?.type?.shortDetail ?? 'Final',
-    };
+/** A summary's game, teams and timed plays (in order), shared by the clock, soccer and baseball synths. */
+export function prepareSynthGame(body: Json, sport: SportId, playsOf: (body: Json) => PlaySnap[], finalDetail = 'Final'): SynthGame | null {
+  const comp = body?.header?.competitions?.[0];
+  if (!comp) return null;
+  const plays = playsOf(body).filter((p) => p.wallclock !== null);
+  if (!plays.length) return null;
+  plays.sort((a, b) => a.wallclock! - b.wallclock! || a.seq - b.seq);
+  const home = side(comp, 'home');
+  const away = side(comp, 'away');
+  return {
+    id: String(body?.header?.id ?? comp.id),
+    sport,
+    shortName: `${away.abbr} @ ${home.abbr}`,
+    name: `${away.name} at ${home.name}`,
+    start: Date.parse(comp.date ?? '') || plays[0].wallclock! - 10 * 60_000,
+    home,
+    away,
+    networks: networksOf(comp).length ? networksOf(comp) : networksOf({ geoBroadcasts: body?.broadcasts ?? [] }),
+    plays,
+    finalDetail: comp?.status?.type?.shortDetail ?? finalDetail,
   };
+}
+
+export function clockSynth(o: ClockSynthOptions): SynthAdapter {
+  const prepare = (body: Json, sport: SportId) => prepareSynthGame(body, sport, o.plays);
 
   const snapshot = (g: SynthGame, visible: number, t: number, delayMs: number): GameSnapshot => {
     const base = { id: g.id, sport: g.sport, shortName: g.shortName, name: g.name, startTime: new Date(g.start).toISOString(), networks: g.networks, observedAt: t, situation: null };

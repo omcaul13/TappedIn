@@ -22,16 +22,19 @@ export function lineupFile(providerId: string, stateDir: string): string {
   return path.join(stateDir, 'lineups', `${providerId}.json`);
 }
 
-export function effectiveChannels(cfg: Config, providerId: string, stateDir: string): Config['channels'] {
+export function effectiveChannels(cfg: Config, providerId: string, stateDir: string, warn: (msg: string) => void = console.warn): Config['channels'] {
+  const file = lineupFile(providerId, stateDir);
   let text: string;
   try {
-    text = readFileSync(lineupFile(providerId, stateDir), 'utf8');
+    text = readFileSync(file, 'utf8');
   } catch {
     return cfg.channels;
   }
   try {
     return LineupFileSchema.parse(JSON.parse(text));
-  } catch {
+  } catch (err) {
+    // Say so: otherwise every tune fails with "run a lineup scan" although one was run.
+    warn(`${file} is unreadable, using the config file's channels (run the channel scan again): ${String(err).split('\n')[0]}`);
     return cfg.channels;
   }
 }

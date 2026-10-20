@@ -118,7 +118,7 @@ export class GameStore {
       const lp = snap.situation?.lastPlay ?? snap.live?.lastPlay;
       if (lp) {
         this.seen(g.id).set(lp.id, now); // history before we started watching
-        this.setLastPlay(g, { playId: lp.id, at: est, order: this.syntheticOrder++, kind: sportOf(snap.sport).classifyPlay(lp.typeText, lp.scoreValue > 0, lp.scoreValue), typeText: lp.typeText, text: lp.text, period: snap.period, isTurnover: false });
+        this.setLastPlay(g, { playId: lp.id, at: est, order: this.syntheticOrder++, kind: sportOf(snap.sport).classifyPlay(lp.typeText, lp.scoreValue > 0, lp.scoreValue, lp.text), typeText: lp.typeText, text: lp.text, period: snap.period, isTurnover: false });
       }
       sportOf(snap.sport).inferFirstSeen?.(g, snap, this.inferContext(g, est, now));
       return;
@@ -137,7 +137,7 @@ export class GameStore {
     if (lp) g.playsCheckedAt = now;
     if (lp && !this.seen(g.id).has(lp.id)) {
       this.seen(g.id).set(lp.id, now);
-      const kind = sportOf(snap.sport).classifyPlay(lp.typeText, lp.scoreValue > 0, lp.scoreValue);
+      const kind = sportOf(snap.sport).classifyPlay(lp.typeText, lp.scoreValue > 0, lp.scoreValue, lp.text);
       this.addPlayEvents(g, { kind, id: lp.id, typeText: lp.typeText, text: lp.text, at: est, seenAt: now, order: this.syntheticOrder++, isTurnover: false, period: snap.period }, 'scoreboard');
     }
 

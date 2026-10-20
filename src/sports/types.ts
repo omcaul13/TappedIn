@@ -113,7 +113,7 @@ export interface SportModule {
   situationOf(situation: Json, home: TeamSnap, away: TeamSnap, ctx: { comp: Json; detail: string }): { situation: Situation | null; live: LiveDetail | null };
   /** Every play in a summary, deduped and in game order. */
   summaryPlays(body: Json): PlaySnap[];
-  classifyPlay(typeText: string, scoringPlay: boolean, scoreValue: number): PlayKind;
+  classifyPlay(typeText: string, scoringPlay: boolean, scoreValue: number, text?: string): PlayKind;
   /** Timeline events a scoreboard poll implies (quarter breaks, timeouts…) for a game seen for the first time. */
   inferFirstSeen?(g: GameState, snap: GameSnapshot, ctx: InferContext): void;
   /** …and when a new poll differs from the previous one. */

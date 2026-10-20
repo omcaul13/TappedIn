@@ -275,6 +275,10 @@ export function directorStep(prev: DirectorState, views: Map<string, GameView>, 
     if (hs === 'HALFTIME') {
       if (sc.mode === 'HALFTIME_REEL') {
         if (sc.halftimeSince !== null && now - sc.halftimeSince > halftimeMax * 1000) {
+          if (!home.channel) {
+            note(sc, 'NO_CANDIDATE', 'home-unavailable', [`home ${home.game.shortName} is not in your lineup`]);
+            continue;
+          }
           sc.mode = 'HOME';
           sc.halftimeSince = null;
           tune(sc, home);
@@ -340,6 +344,8 @@ export function directorStep(prev: DirectorState, views: Map<string, GameView>, 
           if (best) {
             tune(sc, best.view);
             decide(sc, 'FILL_REPLACE', from, [why, pickReason(best), ...homeReasons], { candidates: topList(ranked), duplicate, gameId: best.view.game.id, tier: best.tier });
+          } else if (!home.channel) {
+            note(sc, 'NO_CANDIDATE', 'home-unavailable', [`${why}, and home ${home.game.shortName} is not in your lineup`]);
           } else {
             sc.mode = 'HOME';
             tune(sc, home);

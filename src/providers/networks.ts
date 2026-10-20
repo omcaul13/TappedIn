@@ -22,8 +22,6 @@ export interface Network {
   /** A regional sports network: most lineups have one or two, so a missing one isn't worth listing. */
   regional?: boolean;
 }
-/** @deprecated name from when every network carried college football. */
-export type CfbNetwork = Network;
 
 const ALL: readonly SportId[] = ['cfb', 'nfl', 'mcbb', 'nba', 'nhl', 'mlb', 'wcbb', 'wnba', 'mls', 'epl', 'ucl', 'laliga', 'atp', 'wta'];
 const TENNIS: readonly SportId[] = ['atp', 'wta'];

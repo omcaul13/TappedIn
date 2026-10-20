@@ -82,6 +82,7 @@ export class WindowController {
   private videoAllowed = new Set<number>();
   private limit: number;
   private focus = 1;
+  private ticking = false;
 
   constructor(
     private cfg: Config,
@@ -269,9 +270,15 @@ export class WindowController {
 
   /** Health checks, retries and stream-limit reallocation. Call every couple of seconds. */
   async tick(now = Date.now()): Promise<void> {
-    if (this.opts.dryRun) return;
-    this.reallocate();
-    await Promise.all([...this.screens.map((sw) => this.checkScreen(sw, now)), ...[...this.parked.entries()].map(([screen, sw]) => this.checkParked(screen, sw))]);
+    // A slow check must not overlap the next one: both would count the same stall as two failures.
+    if (this.opts.dryRun || this.ticking) return;
+    this.ticking = true;
+    try {
+      this.reallocate();
+      await Promise.all([...this.screens.map((sw) => this.checkScreen(sw, now)), ...[...this.parked.entries()].map(([screen, sw]) => this.checkParked(screen, sw))]);
+    } finally {
+      this.ticking = false;
+    }
   }
 
   /** A parked home stream that stopped playing (or isn't the screen's game any more) is let go. */
@@ -551,8 +558,8 @@ export class WindowController {
     this.failures.set(screen, f);
     const sw = this.screens[screen - 1];
     if (advice.action === 'dataTile') {
-      const playing = this.screens.filter((s) => s.id !== screen && s.render === 'video' && s.lastHealth?.state === 'PLAYING').length;
-      this.limit = Math.max(1, Math.min(this.limit, playing));
+      // Count every open stream but this one (still-buffering screens and parked standby views use up the limit too).
+      this.limit = Math.max(1, Math.min(this.limit, this.streamsInUse - 1));
       this.events.limitLearned(this.limit, detail);
       this.failures.delete(screen);
       this.reallocate(true);

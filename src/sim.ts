@@ -33,7 +33,7 @@ export interface SimOptions {
 
 export interface TimelinePoint {
   at: number;
-  screens: { home: string | null; onHome: boolean; kind: 'home' | 'fill-in' | 'highlights' | 'none' }[];
+  screens: { home: string | null; sport: SportId | null; onHome: boolean; kind: 'home' | 'fill-in' | 'highlights' | 'none' }[];
 }
 
 export interface SimResult {
@@ -143,7 +143,7 @@ export async function runSim(cfg: Config, opts: SimOptions): Promise<SimResult> 
       const kind = sc.showing.kind === 'halftime' ? 'highlights' : sc.showing.kind === 'game' ? (sc.showing.gameId === sc.homeGameId ? 'home' : 'fill-in') : 'none';
       const share = (result.timeShare[sc.id] ??= {});
       share[kind] = (share[kind] ?? 0) + tickMs / 1000;
-      point.screens.push({ home: sc.homeGameId, onHome: kind === 'home', kind });
+      point.screens.push({ home: sc.homeGameId, sport: sc.homeGameId ? (engine.store.get(sc.homeGameId)?.snap.sport ?? null) : null, onHome: kind === 'home', kind });
     }
     if (opts.captureTimeline) result.timeline.push(point);
   };

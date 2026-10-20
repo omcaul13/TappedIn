@@ -28,7 +28,9 @@ describe('lineup', () => {
     const dir = emptyDir();
     mkdirSync(path.join(dir, 'lineups'), { recursive: true });
     writeFileSync(path.join(dir, 'lineups', 'sling.json'), '{ broken');
-    expect(effectiveChannels(cfg, 'sling', dir)).toEqual(cfg.channels);
+    const warnings: string[] = [];
+    expect(effectiveChannels(cfg, 'sling', dir, (m) => warnings.push(m))).toEqual(cfg.channels);
+    expect(warnings).toEqual([expect.stringContaining('sling.json is unreadable')]);
   });
 
   it('channelRef finds name, call sign and ref by number', () => {

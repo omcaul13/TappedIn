@@ -49,11 +49,12 @@
   }
 
   const text = (document.body && document.body.innerText) || '';
-  const errorMatches = ERROR_PATTERNS.filter((p) => new RegExp(p, 'i').test(text));
+  const res = ERROR_PATTERNS.map((p) => new RegExp(p, 'i'));
+  const errorMatches = ERROR_PATTERNS.filter((_, i) => res[i].test(text));
   const errorLines = text
     .split('\n')
     .map((l) => l.trim())
-    .filter((l) => l && l.length < 200 && ERROR_PATTERNS.some((p) => new RegExp(p, 'i').test(l)))
+    .filter((l) => l && l.length < 200 && res.some((re) => re.test(l)))
     .slice(0, 6);
 
   return {

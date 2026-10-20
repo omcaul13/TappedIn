@@ -12,9 +12,7 @@ import { FOOTBALL_CATEGORIES, FOOTBALL_LABELS } from '../sports/football';
 // to 51-66% (that's how TV timeouts, which aren't in play-by-play, show up).
 
 // Football's categories (college football's model); each sport defines its own (src/sports/).
-export { FOOTBALL_CATEGORIES as CATEGORIES, FOOTBALL_LABELS as CATEGORY_LABEL, categorizeFootball as categorize } from '../sports/football';
-export type { FootballCategory as BreakCategory } from '../sports/football';
-export type { CategorizablePlay } from '../sports/types';
+export { categorizeFootball as categorize } from '../sports/football';
 
 // ---- model --------------------------------------------------------------------------------------
 

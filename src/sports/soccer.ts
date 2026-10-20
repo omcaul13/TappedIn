@@ -10,12 +10,12 @@
 // "Halftime", "Start 2nd Half", "End Regular Time", "Start Delay"/"End Delay") carry wallclocks;
 // goals don't carry the score, but their text does ("Goal! Everton 0, Chelsea 1.").
 
-import type { RankedCandidate } from '../engine/ranker';
-import type { GameSnapshot, Phase, PlayKind, PlaySnap, SportId, TeamSnap } from '../engine/types';
-import { basePhase, networksOf, num, str, type Json } from '../espn/json';
+import type { GameSnapshot, Phase, PlayKind, PlaySnap, SportId } from '../engine/types';
+import { basePhase, num, str, type Json } from '../espn/json';
 import { basketballCompare, preset } from './basketball';
 import { normalizedScore } from './football';
-import type { SynthAdapter, SynthGame } from './synth/types';
+import { prepareSynthGame } from './synth/clock';
+import type { SynthAdapter } from './synth/types';
 import type { Excitement, SportModule } from './types';
 
 const REGULATION = 90 * 60;
@@ -110,10 +110,6 @@ export function soccerExcitement(g: GameSnapshot): Excitement {
 
 // ---- synth ---------------------------------------------------------------------------------------
 
-const side = (comp: Json, ha: string): TeamSnap => {
-  const c = (comp.competitors ?? []).find((x: Json) => x?.homeAway === ha) ?? {};
-  return { id: String(c?.team?.id ?? c?.id ?? ''), abbr: c?.team?.abbreviation ?? '?', name: c?.team?.shortDisplayName ?? c?.team?.displayName ?? '?', score: 0 };
-};
 const clockOf = (p: PlaySnap) => {
   const m = /^(\d+)'(?:\+(\d+)')?/.exec(p.displayClock ?? '');
   return m ? (Number(m[1]) + Number(m[2] ?? 0)) * 60 : null;
@@ -121,27 +117,7 @@ const clockOf = (p: PlaySnap) => {
 
 /** Soccer days rebuilt from keyEvents; the match clock runs on between events. */
 export const soccerSynth: SynthAdapter = {
-  prepare(body: Json, sport: SportId): SynthGame | null {
-    const comp = body?.header?.competitions?.[0];
-    if (!comp) return null;
-    const plays = soccerSummaryPlays(body).filter((p) => p.wallclock !== null);
-    if (!plays.length) return null;
-    plays.sort((a, b) => a.wallclock! - b.wallclock! || a.seq - b.seq);
-    const home = side(comp, 'home');
-    const away = side(comp, 'away');
-    return {
-      id: String(body?.header?.id ?? comp.id),
-      sport,
-      shortName: `${away.abbr} @ ${home.abbr}`,
-      name: `${away.name} at ${home.name}`,
-      start: Date.parse(comp.date ?? '') || plays[0].wallclock! - 10 * 60_000,
-      home,
-      away,
-      networks: networksOf(comp).length ? networksOf(comp) : networksOf({ geoBroadcasts: body?.broadcasts ?? [] }),
-      plays,
-      finalDetail: comp?.status?.type?.shortDetail ?? 'FT',
-    };
-  },
+  prepare: (body: Json, sport: SportId) => prepareSynthGame(body, sport, soccerSummaryPlays, 'FT'),
   snapshot(g, visible, t, delayMs) {
     const base = { id: g.id, sport: g.sport, shortName: g.shortName, name: g.name, startTime: new Date(g.start).toISOString(), networks: g.networks, observedAt: t, situation: null };
     const last = visible > 0 ? g.plays[visible - 1] : null;
@@ -192,7 +168,7 @@ export function soccerLeague(l: { id: SportId; name: string; short: string; path
     halftimeMaxSeconds: 1500,
     progressSeconds: soccerProgressSeconds,
     excitement: soccerExcitement,
-    compare: (a: RankedCandidate, b: RankedCandidate) => basketballCompare(a, b),
+    compare: basketballCompare,
     synth: soccerSynth,
     highlights: { query: l.query, youtubeChannels: l.channels },
   };

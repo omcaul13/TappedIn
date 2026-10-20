@@ -16,6 +16,8 @@ describe('MLB stoppages', () => {
     expect(mlb.breaks.categorize(play('Ball', 'Pitch 1 : Ball 1'))).toBe('pitch');
     expect(mlb.breaks.categorize(play('Start Batter/Pitcher', 'Smith pitches to Jones'))).toBeNull();
     expect(mlb.breaks.ignore!({ kind: 'admin', typeText: 'Start Inning' })).toBe(true);
+    // The scoreboard's last play: the pitching change is only in its text.
+    expect(mlb.classifyPlay('Play Result', false, 0, 'Armstrong relieved Herrin')).toBe('timeout');
   });
   it('your call: half-innings switch at Medium and High only', () => {
     expect(mlb.presets.low.excludeCategories).toContain('halfInning');

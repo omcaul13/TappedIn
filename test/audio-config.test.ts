@@ -1,7 +1,10 @@
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { audioStep, createAudio, setAudioFocus, setAudioMode } from '../src/engine/audio';
+import { audioStep, createAudio, excitement, setAudioFocus, setAudioMode } from '../src/engine/audio';
 import { createDirector } from '../src/engine/director';
-import { parseConfig } from '../src/config';
+import { loadOverrides, parseConfig, saveOverrides } from '../src/config';
 import type { Situation } from '../src/engine/types';
 import { sec, snap, T0, testConfig, view, viewsOf } from './helpers';
 
@@ -33,6 +36,14 @@ describe('audio', () => {
     const quiet = viewsOf(view(snap({ id: 'a', situation: rz }), 'LIVE'), view(snap({ id: 'b' }), 'LIVE'));
     expect(audioStep(s, screens, quiet, T0 + sec(10), cfg).decision).toBeNull(); // 30s audio dwell
     expect(audioStep(s, screens, quiet, T0 + sec(31), cfg).decision).toMatchObject({ to: 1 });
+  });
+
+  it('scores each screen by its own sport (a 5th-inning MLB game is not a 4th quarter)', () => {
+    const mlb = snap({ id: 'mlb', sport: 'mlb', period: 5, detail: 'Top 5th', home: { id: 'x', abbr: 'X', name: 'X', score: 4 }, away: { id: 'y', abbr: 'Y', name: 'Y', score: 1 } });
+    const nhl = snap({ id: 'nhl', sport: 'nhl', period: 3, clockSec: 300, displayClock: '5:00', detail: '5:00 - 3rd', home: { id: 'x', abbr: 'X', name: 'X', score: 2 }, away: { id: 'y', abbr: 'Y', name: 'Y', score: 1 } });
+    const vs = viewsOf(view(mlb, 'LIVE'), view(nhl, 'LIVE'));
+    const [onMlb, onNhl] = screensShowing('mlb', 'nhl');
+    expect(excitement(onNhl, vs).score).toBeGreaterThan(excitement(onMlb, vs).score);
   });
 
   it('clicking a tile in auto mode pins sound there', () => {
@@ -68,5 +79,15 @@ describe('config', () => {
     const c = loadConfig();
     expect(c.channels.ESPN.number).toBe(849);
     expect(c.channels['Big Ten Network'].number).toBeNull();
+  });
+
+  it('settings saved in the app: one bad or retired key keeps the rest', () => {
+    const file = path.join(mkdtempSync(path.join(tmpdir(), 'rz-settings-')), 'settings.json');
+    const warnings: string[] = [];
+    expect(loadOverrides(file, (m) => warnings.push(m))).toEqual({}); // no file yet: no warning
+    saveOverrides({ provider: 'spectrum', dwellSeconds: 30 }, file);
+    writeFileSync(file, JSON.stringify({ ...JSON.parse(readFileSync(file, 'utf8')), dwellSeconds: 9999, retiredKey: 1 }));
+    expect(loadOverrides(file, (m) => warnings.push(m))).toEqual({ provider: 'spectrum' });
+    expect(warnings).toEqual([`${file}: ignoring "dwellSeconds"`, `${file}: ignoring "retiredKey"`]);
   });
 });

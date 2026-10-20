@@ -9,11 +9,11 @@
 // The scoreboard's status detail is "Top 4th" / "Mid 4th" / "Bot 4th" / "End 4th"; hits per team
 // come with the competitors (no-hitter watch).
 
-import type { RankedCandidate } from '../engine/ranker';
-import type { GameSnapshot, LiveDetail, Phase, PlayKind, PlaySnap, SportId, TeamSnap } from '../engine/types';
-import { basePhase, networksOf, num, str, type Json } from '../espn/json';
+import type { GameSnapshot, LiveDetail, Phase, PlayKind, PlaySnap, SportId } from '../engine/types';
+import { basePhase, num, str, type Json } from '../espn/json';
 import { basketballCompare, preset } from './basketball';
 import { normalizedScore } from './football';
+import { prepareSynthGame } from './synth/clock';
 import type { SynthAdapter, SynthGame } from './synth/types';
 import type { CategorizablePlay, Excitement, SportModule } from './types';
 
@@ -150,34 +150,11 @@ interface BaseballSynthGame extends SynthGame {
 }
 
 const HIT = /^(single|double|triple|home run|ground rule double|inside the park)/i;
-const side = (comp: Json, ha: string): TeamSnap => {
-  const c = (comp.competitors ?? []).find((x: Json) => x?.homeAway === ha) ?? {};
-  return { id: String(c?.team?.id ?? c?.id ?? ''), abbr: c?.team?.abbreviation ?? '?', name: c?.team?.shortDisplayName ?? c?.team?.displayName ?? '?', score: 0 };
-};
 
 export const baseballSynth: SynthAdapter<BaseballSynthGame> = {
   prepare(body: Json, sport: SportId) {
-    const comp = body?.header?.competitions?.[0];
-    if (!comp) return null;
-    const plays = baseballSummaryPlays(body).filter((p) => p.wallclock !== null);
-    if (!plays.length) return null;
-    plays.sort((a, b) => a.wallclock! - b.wallclock! || a.seq - b.seq);
-    const raw = new Map<string, Json>((body?.plays ?? []).map((p: Json) => [String(p.id), p]));
-    const home = side(comp, 'home');
-    const away = side(comp, 'away');
-    return {
-      id: String(body?.header?.id ?? comp.id),
-      sport,
-      shortName: `${away.abbr} @ ${home.abbr}`,
-      name: `${away.name} at ${home.name}`,
-      start: Date.parse(comp.date ?? '') || plays[0].wallclock! - 10 * 60_000,
-      home,
-      away,
-      networks: networksOf(comp).length ? networksOf(comp) : networksOf({ geoBroadcasts: body?.broadcasts ?? [] }),
-      plays,
-      finalDetail: comp?.status?.type?.shortDetail ?? 'Final',
-      raw,
-    };
+    const g = prepareSynthGame(body, sport, baseballSummaryPlays);
+    return g && { ...g, raw: new Map<string, Json>((body?.plays ?? []).map((p: Json) => [String(p.id), p])) };
   },
   snapshot(g, visible, t, delayMs) {
     const base = { id: g.id, sport: g.sport, shortName: g.shortName, name: g.name, startTime: new Date(g.start).toISOString(), networks: g.networks, observedAt: t, situation: null };
@@ -231,7 +208,7 @@ export const mlb: SportModule = {
   endOfPeriod: baseballEndOfPeriod,
   situationOf: (s, _home, _away, { comp, detail }) => ({ situation: null, live: baseballSituation(s, comp, detail) }),
   summaryPlays: baseballSummaryPlays,
-  classifyPlay: (typeText, scoring, value) => classifyBaseballPlay(typeText, scoring, value),
+  classifyPlay: classifyBaseballPlay,
   inferFirstSeen: (_g, snap, ctx) => {
     if (snap.endOfPeriod) ctx.setLastPlay({ playId: null, at: ctx.est, order: ctx.order(), kind: 'endPeriod', typeText: 'End Inning', text: snap.detail, period: snap.period, isTurnover: false });
   },
@@ -258,6 +235,6 @@ export const mlb: SportModule = {
   },
   progressSeconds: baseballProgressSeconds,
   excitement: baseballExcitement,
-  compare: (a: RankedCandidate, b: RankedCandidate) => basketballCompare(a, b),
+  compare: basketballCompare,
   synth: baseballSynth,
 };
