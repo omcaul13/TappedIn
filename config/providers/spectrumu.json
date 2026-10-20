@@ -26,8 +26,8 @@
     "startUrl": null,
     "checkUrl": "https://watch.spectrum.net/guide",
     "signedOutPattern": "/\\bSign In\\b/",
-    "windowTitle": "RedZone: sign in to SpectrumU",
-    "instructions": "Click \"Sign In to SpectrumU\" at the bottom of the page, find your school and sign in with your school account. RedZone continues once the guide appears. Live TV usually needs the campus network"
+    "windowTitle": "TappedIn: sign in to SpectrumU",
+    "instructions": "Click \"Sign In to SpectrumU\" at the bottom of the page, find your school and sign in with your school account. TappedIn continues once the guide appears. Live TV usually needs the campus network"
   },
   "errors": {
     "probePatterns": [

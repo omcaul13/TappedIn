@@ -29,7 +29,7 @@ export function buildExport(o: {
   gitCommit: string | null;
 }): object {
   return {
-    kind: 'redzone-adapter-export',
+    kind: 'tappedin-adapter-export',
     exportedAt: new Date().toISOString(),
     app: { version: o.appVersion, commit: o.gitCommit },
     provider: o.provider,
@@ -43,12 +43,12 @@ export function buildExport(o: {
   };
 }
 
-/** Write the export to Documents\RedZone and return its path. */
+/** Write the export to Documents\TappedIn and return its path. */
 export function writeExport(data: object, documents: string, providerId: string, now = new Date()): string {
-  const dir = path.join(documents, 'RedZone');
+  const dir = path.join(documents, 'TappedIn');
   mkdirSync(dir, { recursive: true });
   const stamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
-  const file = path.join(dir, `redzone-${providerId}-${stamp}.json`);
+  const file = path.join(dir, `tappedin-${providerId}-${stamp}.json`);
   writeFileSync(file, JSON.stringify(data, null, 2));
   return file;
 }

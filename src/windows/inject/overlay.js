@@ -1,4 +1,4 @@
-// Draws RedZone's overlay on a tile: a small state badge, an error card when needed, and the
+// Draws TappedIn's overlay on a tile: a small state badge, an error card when needed, and the
 // game-over pop-up (pick the next home game; auto-pick countdown).
 // Function expression evaluated as `(OVERLAY)(state)`; plain JS so nothing is transformed.
 // Lives in a shadow root at max z-index; only the pop-up takes clicks, so the player is untouched.

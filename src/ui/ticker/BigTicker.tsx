@@ -221,7 +221,7 @@ export function BigTicker({ st, alerts, now, osFullscreen, settingsOpen, onSetti
     <div class="bt" style={{ '--h': `${H}px`, '--fs': `${fs}px`, '--cw': `${cw}px`, '--hw': `${hw}px`, '--lw': `${Math.round(fs * 6.3)}px`, '--sw': `${Math.round(fs * 5.5)}px` }}>
       <div class="label">
         <div class="brand">
-          <span class="rz">RZ</span>
+          <span class="rz">TI</span>
           <span class="clk">{new Date(now).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
         </div>
         <div class="date">

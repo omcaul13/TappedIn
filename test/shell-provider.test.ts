@@ -19,7 +19,7 @@ describe('shell provider for the Electron window', () => {
     expect(xoc.signin.portalUrl).toBe('https://www.xfinityoncampus.com/');
     expect(xoc.signin.autoClick).toEqual({ selector: 'a.watch-now-btn', text: 'watch now' });
     expect(xoc.signin).toMatchObject({ checkTimeoutMs: 20000, portalTimeoutMs: 30000, checkSettleMs: 4000, handoffSettleMs: 5000, autoClickTries: 30, autoClickIntervalMs: 500, waitAfterClickMs: 40000, waitForUserMs: 600000 });
-    expect(xoc.signin.windowTitle).toBe('RedZone: sign in to Xfinity On Campus');
+    expect(xoc.signin.windowTitle).toBe('TappedIn: sign in to Xfinity On Campus');
   });
 
   it('XOC page rules match what main.cjs hard-coded', () => {
@@ -58,13 +58,13 @@ describe('shell requests and view names', async () => {
     expect(markerTitle('SCREEN', 3, 2)).toBe('RZ-SCREEN-3-g2');
   });
 
-  it('only reveals files in the RedZone exports folder or .state', () => {
+  it('only reveals files in the TappedIn exports folder or .state', () => {
     const docs = String.raw`C:\Users\me\OneDrive\Documents`;
     const state = String.raw`C:\code\redzone\.state`;
-    expect(revealAllowed(String.raw`C:\Users\me\OneDrive\Documents\RedZone\redzone-sling.json`, docs, state)).toBe(true);
+    expect(revealAllowed(String.raw`C:\Users\me\OneDrive\Documents\TappedIn\tappedin-sling.json`, docs, state)).toBe(true);
     expect(revealAllowed(String.raw`C:\code\redzone\.state\provider-check\a.png`, docs, state)).toBe(true);
     expect(revealAllowed(String.raw`C:\Windows\System32\cmd.exe`, docs, state)).toBe(false);
-    expect(revealAllowed(String.raw`C:\Users\me\OneDrive\Documents\RedZone\..\secrets.txt`, docs, state)).toBe(false);
+    expect(revealAllowed(String.raw`C:\Users\me\OneDrive\Documents\TappedIn\..\secrets.txt`, docs, state)).toBe(false);
   });
 
   it('replies resolve only the matching request', async () => {

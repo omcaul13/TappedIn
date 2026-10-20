@@ -67,7 +67,7 @@ src/ui/onboarding.tsx         first-run flow
 src/ui/service.tsx            settings drawer "TV service" tab (+ mapping editor)
 src/ui/diagnostics.tsx        diagnostics mode
 src/ui/style.css              .grid.n1/.n2/.n3 layouts, onboarding/diagnostics styles
-Setup RedZone.cmd, Update RedZone.cmd, RedZone.cmd       installer, updater, launcher (repo root)
+Setup TappedIn.cmd, Update TappedIn.cmd, TappedIn.cmd       installer, updater, launcher (repo root)
 scripts/setup.ps1, scripts/update.ps1, scripts/evs.py, scripts/doctor.ts, scripts/postinstall.ts
 CONTRIBUTING.md, README.md, CLAUDE.md
 ```
@@ -134,12 +134,12 @@ CONTRIBUTING.md, README.md, CLAUDE.md
   - It runs `handoff()` unless the request says `defer`, then replies once the views exist. `startShell` gains `signin: 'now' | 'defer'` (passed as `--signin=defer`).
 - `Shell.logout(): Promise<void>`: `session.fromPartition(PARTITION).clearStorageData()`, then reload every view to a marker page.
 - `Shell.signinCheck(): Promise<{ url: string; isApp: boolean; signedOut: boolean }>`. It loads `checkUrl` in a hidden window, without the hand-off. The URL comes back as origin + path only.
-- `Shell.reveal(path: string): Promise<void>`: `shell.showItemInFolder`. The path must be inside the user's Documents\RedZone folder or `.state`; anything else is refused.
+- `Shell.reveal(path: string): Promise<void>`: `shell.showItemInFolder`. The path must be inside the user's Documents\TappedIn folder or `.state`; anything else is refused.
 - `attachShell` waits for the *new* marker titles after a configure: views get a generation suffix, `RZ-SCREEN-<n>-g<k>`.
 
 - [ ] **Step 1: Write the failing tests** (pure helpers exported from `src/shell.ts`):
   - `markerTitle(n, gen)`.
-  - `revealAllowed(path)`: true inside Documents\RedZone and `.state`, false for `C:\Windows`.
+  - `revealAllowed(path)`: true inside Documents\TappedIn and `.state`, false for `C:\Windows`.
   - `reply routing resolves the matching request id only`.
 - [ ] **Step 2:** Run the tests. Expected: FAIL. **Step 3:** Implement. **Step 4:** Run the tests. Expected: PASS. Then `node --check electron/main.cjs`.
 - [ ] **Step 5:** Run `npx tsx scripts/shell-check.ts` with the owner's OK. It runs the sign-in check only, no streams. Expected: `ready`.
@@ -170,7 +170,7 @@ CONTRIBUTING.md, README.md, CLAUDE.md
     - For k = 2..4, tunes screen k to a *different* matched network and waits for PLAYING.
     - Stops at the first `STREAM_LIMIT` or failure. `measured` = number playing (≥ 1 if `playTest` passed, else 0).
     - Then releases screens 2..4.
-    - `message` explains the result in plain words. With a documented limit it says "Your plan played 2 streams at once (Comcast documents 1). RedZone will use 2 screens." If nothing played, the reason comes from the last health detail.
+    - `message` explains the result in plain words. With a documented limit it says "Your plan played 2 streams at once (Comcast documents 1). TappedIn will use 2 screens." If nothing played, the reason comes from the last health detail.
   - **`finish(screens)`:**
     - Clamps `screens` to 1..max(1, measured).
     - Saves the setup as completed. It doesn't touch `standbyViews`: a saved setting stays, otherwise the provider default (0) applies.
@@ -190,7 +190,7 @@ CONTRIBUTING.md, README.md, CLAUDE.md
   - `zero playable streams reports the reason and keeps 1 screen`.
   - `finish clamps screens to what played and saves completed`.
 - [ ] **Step 2:** Run the tests. Expected: FAIL. **Step 3:** Implement the runner + app wiring. **Step 4:** Run `npm test` and the typecheck. Expected: PASS.
-- [ ] **Step 5:** Run `npm start -- --setup-demo`. Expected: the setup state advances through every step via the API. Check with `curl` POSTs carrying `x-redzone: 1`.
+- [ ] **Step 5:** Run `npm start -- --setup-demo`. Expected: the setup state advances through every step via the API. Check with `curl` POSTs carrying `x-tappedin: 1`.
 - [ ] **Step 6:** Commit: `feat(setup): onboarding runner and setup mode`.
 
 ### Task 5: Service settings API (switch, log out, rescan, mapping, standby)
@@ -237,7 +237,7 @@ CONTRIBUTING.md, README.md, CLAUDE.md
 - `evaluateHide(p: { onPlayer: boolean; hideClass: boolean; video: { w, h, visible } | null; viewport: { w, h } }): { pass; why }`. Passes when on the player, the hide class is set, and the visible video covers ≥ 90% of the viewport's width or height.
 - `previewOverride(id, override): { config: ProviderConfig; warnings: string[] }`, in `registry.ts`. It runs the same merge as `loadProviderConfig` without reading or writing files.
 - `saveOverride(id, override)` refuses when there are warnings. After a save, the app rebuilds the adapter and reconfigures the shell (screens unchanged).
-- `buildExport({ provider, override, results, appVersion, gitCommit }): object`. URLs in facts are reduced to origin + path, and page text is dropped. `writeExport(obj): string` writes `Documents\RedZone\redzone-<id>-<yyyymmdd-hhmm>.json`, then `Shell.reveal`.
+- `buildExport({ provider, override, results, appVersion, gitCommit }): object`. URLs in facts are reduced to origin + path, and page text is dropped. `writeExport(obj): string` writes `Documents\TappedIn\tappedin-<id>-<yyyymmdd-hhmm>.json`, then `Shell.reveal`.
 
 - [ ] **Step 1: Write the failing tests.**
   - `evaluateHide passes a full-width video on the player`; `fails when the hide class is missing`; `fails when the video is a thumbnail`.
@@ -264,7 +264,7 @@ All views reuse `style.css` tokens (`--red`, `--line`, `--dim`, Inter) and the d
 
 | Step | What it shows |
 |---|---|
-| welcome | what RedZone does; the non-affiliation and terms note; Get started |
+| welcome | what TappedIn does; the non-affiliation and terms note; Get started |
 | service | search box (service names, plus `search` keywords, plus school names); campus services first, then consumer; initials badge, name and status chip ("Experimental: untested, help us test it") |
 | signin | "A sign-in window opened. Sign in with your school account / service account." Live status. Retry. "Having trouble?" opens diagnostics |
 | channels | progress, then a ✓/✗ grid of the college-football networks |
@@ -317,14 +317,14 @@ All views reuse `style.css` tokens (`--red`, `--line`, `--dim`, Inter) and the d
   | Ports | 9335 and 7480 free |
   | ESPN | the scoreboard is reachable |
 
-- `postinstall.ts` prints one line when the signature is missing or stale ("run Setup RedZone.cmd or npm run sign-electron"). It never signs anything itself.
+- `postinstall.ts` prints one line when the signature is missing or stale ("run Setup TappedIn.cmd or npm run sign-electron"). It never signs anything itself.
 
 - [ ] **Step 1: Write the failing tests** for the pure checks: Node version parse, sig staleness by mtime, ECS tag detection. **Step 2:** Run the tests. Expected: FAIL. **Step 3:** Implement. **Step 4:** Run the tests. Expected: PASS. Run `npm run doctor` on the owner's machine (read-only). Expected: all ok.
 - [ ] **Step 5:** Commit: `feat(install): EVS wrapper with OS trust store, doctor, postinstall check`.
 
-### Task 11: Setup RedZone.cmd
+### Task 11: Setup TappedIn.cmd
 
-**Files:** Create `Setup RedZone.cmd` (calls `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\setup.ps1`), `scripts/setup.ps1`, and `RedZone.cmd` (the launcher: `npm start` in a minimized console).
+**Files:** Create `Setup TappedIn.cmd` (calls `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\setup.ps1`), `scripts/setup.ps1`, and `TappedIn.cmd` (the launcher: `npm start` in a minimized console).
 
 `setup.ps1` steps. Each prints what it does, is idempotent, and stops with a plain-English fix on failure:
 1. Check Node ≥ 22 and Python 3.12. If one is missing, explain why it's needed and ask "Install it with winget now? (Y/N)". Without a Y, print the download link and stop.
@@ -333,23 +333,23 @@ All views reuse `style.css` tokens (`--red`, `--line`, `--dim`, Inter) and the d
 4. EVS account: if `python scripts/evs.py account reauth` fails, run castLabs' interactive `account signup`. The user types into castLabs' own prompts; the script never reads or stores them.
 5. Run `npm run sign-electron`, then confirm `electron.exe.sig` exists.
 6. Run `npm run doctor`.
-7. Create Start-menu and desktop shortcuts named "RedZone" pointing at `RedZone.cmd`, with the repo as the working directory.
-8. Launch `RedZone.cmd`. The first start lands in onboarding.
+7. Create Start-menu and desktop shortcuts named "TappedIn" pointing at `TappedIn.cmd`, with the repo as the working directory.
+8. Launch `TappedIn.cmd`. The first start lands in onboarding.
 
 Flag `-CheckOnly` reports each step's status without changing anything.
 
 - [ ] **Step 1:** Write the scripts. **Step 2:** Run `powershell -File scripts\setup.ps1 -CheckOnly` on the owner's machine. Expected: every step reports "already done", with no installs and no signing.
-- [ ] **Step 3:** Commit: `feat(install): one-click Setup RedZone.cmd`.
+- [ ] **Step 3:** Commit: `feat(install): one-click Setup TappedIn.cmd`.
 
-### Task 12: Update RedZone.cmd
+### Task 12: Update TappedIn.cmd
 
-**Files:** Create `Update RedZone.cmd`, `scripts/update.ps1`.
+**Files:** Create `Update TappedIn.cmd`, `scripts/update.ps1`.
 
 - With git: `git pull --ff-only`. Without it, explain how to download the new zip.
 - Then `npm ci`. If the Electron version in `node_modules/electron/package.json` changed, offer to re-sign (Y/N). Then run `doctor`.
 - `-CheckOnly` reports without changing anything.
 
-- [ ] **Step 1:** Write it. **Step 2:** Run `-CheckOnly` locally. **Step 3:** Commit: `feat(install): Update RedZone.cmd`.
+- [ ] **Step 1:** Write it. **Step 2:** Run `-CheckOnly` locally. **Step 3:** Commit: `feat(install): Update TappedIn.cmd`.
 
 ## Part D: docs and verification
 
@@ -360,7 +360,7 @@ Flag `-CheckOnly` reports each step's status without changing anything.
   - How to fix it: edit fields in diagnostics; the override file format; `provider-check`.
   - How to send the export, and what it contains and doesn't.
   - How to add a new service: copy the closest config, its family, and the rules. Only URLs and the service's own guide and buttons; no hooks.
-- **README:** Setup (double-click `Setup RedZone.cmd`), onboarding, the services table with statuses, settings, diagnostics, updating, and the non-affiliation note.
+- **README:** Setup (double-click `Setup TappedIn.cmd`), onboarding, the services table with statuses, settings, diagnostics, updating, and the non-affiliation note.
 - **CLAUDE.md:** `src/setup/`, setup mode, the shell messages, the installer files.
 
 - [ ] **Step 1:** Write them. **Step 2:** Commit: `docs: setup, onboarding, diagnostics, contributing`.

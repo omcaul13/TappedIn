@@ -14,7 +14,7 @@ import { sleep } from './spike-lib';
 
 const cfg = loadConfig();
 cfg.chrome.debugPort = 9444;
-cfg.chrome.profileDir = mkdtempSync(path.join(os.tmpdir(), 'redzone-selftest-'));
+cfg.chrome.profileDir = mkdtempSync(path.join(os.tmpdir(), 'tappedin-selftest-'));
 
 // Find any highlight clip from today's games.
 const client = new EspnClient(cfg.espn);

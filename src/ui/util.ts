@@ -6,7 +6,7 @@ export type { AppState, GameDTO, ScreenDTO, SportDTO, TeamDTO };
 
 export async function post(path: string, body: Record<string, unknown>): Promise<{ ok: boolean; message?: string }> {
   try {
-    const r = await fetch(path, { method: 'POST', headers: { 'content-type': 'application/json', 'x-redzone': '1' }, body: JSON.stringify(body) });
+    const r = await fetch(path, { method: 'POST', headers: { 'content-type': 'application/json', 'x-tappedin': '1' }, body: JSON.stringify(body) });
     return await r.json();
   } catch (err) {
     return { ok: false, message: String(err) };

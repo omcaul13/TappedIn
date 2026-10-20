@@ -70,7 +70,7 @@ export class EspnClient {
       try {
         const res = await fetch(url, {
           signal: AbortSignal.timeout(this.opts.requestTimeoutMs),
-          headers: { accept: 'application/json', 'user-agent': 'redzone-personal/0.1 (personal, low-rate)' },
+          headers: { accept: 'application/json', 'user-agent': 'tappedin-personal/0.1 (personal, low-rate)' },
         });
         if (res.status === 429 || res.status >= 500) {
           const retryAfter = Number(res.headers.get('retry-after'));

@@ -1,10 +1,10 @@
-# Multi-service RedZone: spec
+# Multi-service TappedIn: spec
 
 Owner's brief (2026-10-18), condensed, plus the decisions approved after the Stage 1 research ([docs/research/streaming-services.md](../../research/streaming-services.md)).
 
 ## Goal
 
-Let students at other schools, and people with consumer live-TV services, use RedZone Director. It must stay as easy as possible for a non-technical person to install and use.
+Let students at other schools, and people with consumer live-TV services, use TappedIn. It must stay as easy as possible for a non-technical person to install and use.
 
 ## Stages and approval gates
 

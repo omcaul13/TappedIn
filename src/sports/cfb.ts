@@ -2,7 +2,7 @@ import { categorizeFootball, classifyFootballPlay, FOOTBALL_CATEGORIES, FOOTBALL
 import { footballSynth } from './synth/football';
 import type { SportModule } from './types';
 
-// College football: the sport RedZone started with. Its switching numbers come from
+// College football: the sport TappedIn started with. Its switching numbers come from
 // `switching.presets` in the config file (these are the same defaults), and its break model is the
 // one built from 76 recorded games.
 

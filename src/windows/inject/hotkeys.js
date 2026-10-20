@@ -1,4 +1,4 @@
-// RedZone hotkeys inside a tile window (installed on every page load of the tile).
+// TappedIn hotkeys inside a tile window (installed on every page load of the tile).
 // Alt+P panel · Alt+1..4 sound to screen · Alt+A audio mode · Alt+L lock/unlock · Alt+H home
 // Alt+N skip to the best other game · Alt+B "this is a break" · Alt+V "this is live"
 // Messages go to the app through the window.rzCall binding (no network request from the page).

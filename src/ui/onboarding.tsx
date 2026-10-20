@@ -53,7 +53,7 @@ export function Onboarding({ st, onError }: { st: AppState; onError(m: string): 
         {s.step === 'channels' && <Channels s={s} run={run} />}
         {s.step === 'playback' && <Playback s={s} run={run} />}
         {s.step === 'streams' && <Streams s={s} run={run} />}
-        {s.step === 'done' && <Busy text={s.busy ?? 'Starting RedZone…'} />}
+        {s.step === 'done' && <Busy text={s.busy ?? 'Starting TappedIn…'} />}
       </div>
     </div>
   );
@@ -115,18 +115,18 @@ function Welcome() {
   return (
     <>
       <div class="setup-hero">
-        <span class="mark big">RZ</span>
+        <span class="mark big">TI</span>
         <h1>
-          Welcome to Red<span>Zone</span>
+          Welcome to Tapped<span>In</span>
         </h1>
       </div>
-      <p class="lede">Four college football games at once, from the TV service you already have. RedZone watches live game data and switches a screen to the best other game when its game goes to a long commercial break.</p>
+      <p class="lede">Four college football games at once, from the TV service you already have. TappedIn watches live game data and switches a screen to the best other game when its game goes to a long commercial break.</p>
       <ul class="ticks">
-        <li>You sign in on your service's own page. RedZone never sees or stores your password.</li>
+        <li>You sign in on your service's own page. TappedIn never sees or stores your password.</li>
         <li>Everything runs on this computer. Nothing is sent anywhere except to your TV service and ESPN's public scores.</li>
-        <li>Setup takes about two minutes: pick your service, sign in, and RedZone checks your channels and how many streams your plan allows.</li>
+        <li>Setup takes about two minutes: pick your service, sign in, and TappedIn checks your channels and how many streams your plan allows.</li>
       </ul>
-      <p class="fine">RedZone isn't affiliated with or endorsed by any TV service, school, league or network. Your service's terms of use apply to your account.</p>
+      <p class="fine">TappedIn isn't affiliated with or endorsed by any TV service, school, league or network. Your service's terms of use apply to your account.</p>
       <div class="actions">
         <button class="btn primary big" onClick={() => go('service')}>
           Get started
@@ -185,7 +185,7 @@ function Picker({ providers, run }: { providers: ProviderSummary[]; run(p: Promi
         {group('campus').map(row)}
         {group('consumer').length > 0 && <h5>TV streaming services</h5>}
         {group('consumer').map(row)}
-        {!list.length && <p class="note">No service matches. RedZone supports the services listed when the search is empty; more can be added (see CONTRIBUTING.md).</p>}
+        {!list.length && <p class="note">No service matches. TappedIn supports the services listed when the search is empty; more can be added (see CONTRIBUTING.md).</p>}
       </div>
       <div class="actions">
         <button class="btn" onClick={() => go('welcome')}>
@@ -208,7 +208,7 @@ function Signin({ s, run }: { s: SetupView; run(p: Promise<{ ok: boolean; messag
         <div class="callout">
           <b>A sign-in window opened.</b>
           <span>{si.detail.replace(/\.?$/, '.')}</span>
-          <small>It's {name}'s own page (school sign-in pages included). RedZone never sees what you type; it only notices when the sign-in is done.</small>
+          <small>It's {name}'s own page (school sign-in pages included). TappedIn never sees what you type; it only notices when the sign-in is done.</small>
         </div>
       )}
       {si?.state === 'ok' && <Busy text="Signed in. Reading your channel guide…" />}
@@ -301,7 +301,7 @@ function Playback({ s, run }: { s: SetupView; run(p: Promise<{ ok: boolean; mess
       {ok && (
         <div class="callout good">
           <b>✓ {s.playback!.channel} is playing on screen 1.</b>
-          <span>Next, RedZone finds out how many streams your plan plays at once (about 30 seconds).</span>
+          <span>Next, TappedIn finds out how many streams your plan plays at once (about 30 seconds).</span>
         </div>
       )}
       {!ok && s.error && (

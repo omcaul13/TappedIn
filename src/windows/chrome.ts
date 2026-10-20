@@ -54,12 +54,12 @@ export async function listTargets(cfg: Config): Promise<TargetInfo[]> {
 
 function spawnChrome(cfg: Config, args: string[]): void {
   if (!existsSync(cfg.chrome.executablePath)) {
-    throw new Error(`Chrome not found at ${cfg.chrome.executablePath}. Fix chrome.executablePath in config/redzone.config.json5.`);
+    throw new Error(`Chrome not found at ${cfg.chrome.executablePath}. Fix chrome.executablePath in config/tappedin.config.json5.`);
   }
   spawn(cfg.chrome.executablePath, args, { detached: true, stdio: 'ignore', windowsHide: false }).unref();
 }
 
-/** Start RedZone Chrome if it isn't already running with the debug port open. */
+/** Start TappedIn Chrome if it isn't already running with the debug port open. */
 export async function ensureChrome(cfg: Config, startUrls: string[] = []): Promise<{ launched: boolean; version: VersionInfo }> {
   const existing = await debugEndpoint(cfg);
   if (existing) return { launched: false, version: existing };
@@ -70,12 +70,12 @@ export async function ensureChrome(cfg: Config, startUrls: string[] = []): Promi
     if (v) return { launched: true, version: v };
   }
   throw new Error(
-    `Chrome did not open its debug port ${cfg.chrome.debugPort}. If a RedZone Chrome window (profile ${cfg.chrome.profileDir}) is already open ` +
+    `Chrome did not open its debug port ${cfg.chrome.debugPort}. If a TappedIn Chrome window (profile ${cfg.chrome.profileDir}) is already open ` +
       `without remote debugging, close it and try again.`,
   );
 }
 
-/** Open a URL in a new tab of the running RedZone Chrome without attaching to any page. */
+/** Open a URL in a new tab of the running TappedIn Chrome without attaching to any page. */
 export async function openTabNoAttach(cfg: Config, url: string): Promise<void> {
   await fetch(`${endpoint(cfg)}/json/new?${encodeURIComponent(url)}`, { method: 'PUT', signal: AbortSignal.timeout(3000) });
 }

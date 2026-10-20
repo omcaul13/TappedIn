@@ -42,7 +42,7 @@ import type { BridgeMessage, OverlayState, Popup } from './windows/screen';
 import type { SwitchTiming } from './windows/timing';
 
 // The whole app: ESPN data → engine → window controller, plus the UI and local pages.
-// Shells: "electron" (default) is one RedZone window with four Xfinity views and the UI drawn on top;
+// Shells: "electron" (default) is one TappedIn window with four Xfinity views and the UI drawn on top;
 // "chrome" is the original four Chrome tile windows plus a control panel window.
 // Modes:
 //   live     real ESPN polling, Xfinity video in four tiles
@@ -192,7 +192,7 @@ export class App {
       reel: (n) => this.reel(n),
       cardSeconds: () => this.cfg.highlights.cardSeconds,
     });
-    this.info(`RedZone ${this.mode} mode (${this.opts.shell === 'electron' ? 'one window' : 'Chrome tiles'}); switch sensitivity ${cfg.switching.sensitivity}`);
+    this.info(`TappedIn ${this.mode} mode (${this.opts.shell === 'electron' ? 'one window' : 'Chrome tiles'}); switch sensitivity ${cfg.switching.sensitivity}`);
     this.info(`halftime highlights: ESPN clips ${cfg.highlights.espnClips ? 'on' : 'off'}, YouTube ${this.highlights.youtubeEnabled ? 'on' : 'off (set YT_API_KEY in .env to enable)'}`);
 
     if (this.opts.setupDemo) {
@@ -213,7 +213,7 @@ export class App {
         signin: (s) => this.onSignin(s),
         exit: (code) => {
           if (this.stopped) return;
-          this.info(`the RedZone window closed${code ? ` (exit ${code})` : ''}; stopping`);
+          this.info(`the TappedIn window closed${code ? ` (exit ${code})` : ''}; stopping`);
           void this.stop().then(() => process.exit(0));
         },
         log: (t) => this.info(t),
@@ -222,7 +222,7 @@ export class App {
       await this.attachController();
     } else {
       const { launched } = await ensureChrome(cfg);
-      if (launched && this.mode === 'live') this.info('Started RedZone Chrome. If a tile shows "Signed out of Xfinity", run "npm run login" and sign in.');
+      if (launched && this.mode === 'live') this.info('Started TappedIn Chrome. If a tile shows "Signed out of Xfinity", run "npm run login" and sign in.');
       const { browser, context } = await connect(cfg);
       this.controller = new WindowController(cfg, browser, context, this.controllerOpts(), this.controllerEvents());
       await this.controller.open(this.screenCount);
@@ -240,7 +240,7 @@ export class App {
 
     if (inSetup) {
       this.setupRunner = new SetupRunner(this.setupDeps());
-      this.info('first-run setup: pick your TV service in the RedZone window');
+      this.info('first-run setup: pick your TV service in the TappedIn window');
       this.pushState();
       return;
     }
@@ -607,7 +607,7 @@ export class App {
   }
 
   private serviceAction(action: string, body: Record<string, unknown>): PostResult | Promise<PostResult> {
-    if (!this.shell) return { ok: false, message: 'only in the RedZone window (npm start)' };
+    if (!this.shell) return { ok: false, message: 'only in the TappedIn window (npm start)' };
     if (this.setupRunner && action !== 'map') return { ok: false, message: 'finish the setup first' };
     const bg = (what: string, p: Promise<unknown>) => void p.catch((e) => this.info(`${what} failed: ${e}`));
     switch (action) {
@@ -621,7 +621,7 @@ export class App {
         const id = this.adapter.config.id;
         const runner = this.enterSetup();
         bg('logging out', this.shell.logout().then(() => runner.choose(id)));
-        this.info(`signed out of ${this.adapter.config.name} (its cookies in RedZone's browser profile were cleared)`);
+        this.info(`signed out of ${this.adapter.config.name} (its cookies in TappedIn's browser profile were cleared)`);
         return { ok: true };
       }
       case 'rescan':
@@ -671,7 +671,7 @@ export class App {
   }
 
   private async diagAction(action: string, body: Record<string, unknown>): Promise<PostResult> {
-    if (!this.shell) return { ok: false, message: 'only in the RedZone window (npm start)' };
+    if (!this.shell) return { ok: false, message: 'only in the TappedIn window (npm start)' };
     switch (action) {
       case 'open':
         if (!this.diag) {
