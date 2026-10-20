@@ -19,7 +19,7 @@ export function typingIn(target: EventTarget | null): boolean {
   return !!el && (/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) || el.isContentEditable);
 }
 
-export const act =(type: string, screen: number, extra: Record<string, unknown> = {}) => post('/api/action', { type, screen, ...extra });
+export const act = (type: string, screen: number, extra: Record<string, unknown> = {}) => post('/api/action', { type, screen, ...extra });
 
 export const mmss = (sec: number) => `${Math.floor(Math.max(0, sec) / 60)}:${String(Math.max(0, Math.round(sec)) % 60).padStart(2, '0')}`;
 
