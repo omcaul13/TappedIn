@@ -444,7 +444,7 @@ function macMenu() {
         { label: 'Toggle Full Screen', accelerator: 'Ctrl+Cmd+F', click: toggleFullscreen },
       ],
     },
-    { role: 'windowMenu' },
+    { label: 'Window', submenu: [{ role: 'minimize' }, { role: 'zoom' }, { type: 'separator' }, { role: 'close' }, { type: 'separator' }, { role: 'front' }] },
     {
       role: 'help',
       submenu: [
