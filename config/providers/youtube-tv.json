@@ -22,7 +22,7 @@
   "shell": {
     "partition": "persist:youtube-tv",
     "userAgent": "default",
-    "appUrl": "^https://tv\\.youtube\\.com/",
+    "appUrl": "^https://tv\\.youtube\\.com/(?!welcome)",
     "playerUrl": "/watch/",
     "hideCss": ""
   },
