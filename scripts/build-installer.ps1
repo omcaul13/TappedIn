@@ -62,6 +62,13 @@ if ($Unsigned) {
     }
     Write-Ok 'Signed.'
 }
+if (-not $Unsigned) {
+    $python = if (Test-Path -LiteralPath $VenvPython) { $VenvPython } else { 'python' }
+    if (-not (Test-ProductionSignature $python (Split-Path -Parent $StageElectron))) {
+        Stop-WithFix "The staged player has no streaming signature (castLabs' development one does not play video)." 'Sign in to EVS (Setup TappedIn.cmd does it) and run this again, or build with -Unsigned for a test build.'
+    }
+    Write-Ok "castLabs' check: streaming signature."
+}
 
 # 4. Bundled Node -----------------------------------------------------------------------------------
 Write-Step "4/5  Node $NodeVersion for the installer"
