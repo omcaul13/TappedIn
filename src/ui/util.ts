@@ -13,7 +13,13 @@ export async function post(path: string, body: Record<string, unknown>): Promise
   }
 }
 
-export const act = (type: string, screen: number, extra: Record<string, unknown> = {}) => post('/api/action', { type, screen, ...extra });
+/** A key pressed here is text being typed (a field, the diagnostics JSON editor, a select's type-ahead), not a hotkey. */
+export function typingIn(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null;
+  return !!el && (/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) || el.isContentEditable);
+}
+
+export const act =(type: string, screen: number, extra: Record<string, unknown> = {}) => post('/api/action', { type, screen, ...extra });
 
 export const mmss = (sec: number) => `${Math.floor(Math.max(0, sec) / 60)}:${String(Math.max(0, Math.round(sec)) % 60).padStart(2, '0')}`;
 
