@@ -1,9 +1,10 @@
 import { mkdtempSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { classifyClip, parseEspnVideos, type EspnClip } from '../src/highlights/espn';
 import { buildReel } from '../src/highlights/reel';
+import { HighlightService } from '../src/highlights/service';
 import { matchesGame, YouTubeClient, type SearchGame } from '../src/highlights/youtube';
 import { fixture, snap, T0, testConfig } from './helpers';
 
@@ -120,5 +121,24 @@ describe('reel with several sports', () => {
     const clips = new Map(games.slice(1).map((g) => [g.id, [clip(g.id)]]));
     const reel = buildReel({ homeGameId: 'home', games, clips, youtube: new Map(), now: T0, opts: { ...opts, cardEveryClips: 100 } });
     expect(reel.map((i) => (i.kind === 'card' ? 'CARD' : i.gameId))).toEqual(['nhlWide', 'cfbClose']);
+  });
+});
+
+describe('highlight refresh', () => {
+  it("never asks ESPN for a tennis match's summary (tennis has none: HTTP 400)", async () => {
+    const urls: string[] = [];
+    vi.stubGlobal('fetch', async (url: string) => {
+      urls.push(url);
+      return new Response(JSON.stringify({ videos: [] }), { status: 200, headers: { 'content-type': 'application/json' } });
+    });
+    try {
+      const svc = new HighlightService(testConfig(), null, () => {});
+      const games = [snap({ id: 'home', phase: 'HALFTIME' }), snap({ id: 'wta-185570', sport: 'wta', phase: 'LIVE' }), snap({ id: 'cfbFinal', phase: 'FINAL' })];
+      await svc.refresh(games, 'home', T0);
+      expect(urls.some((u) => u.includes('wta-185570'))).toBe(false);
+      expect(urls.filter((u) => /event=(home|cfbFinal)$/.test(u))).toHaveLength(2);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
