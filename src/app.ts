@@ -1226,6 +1226,8 @@ export class App {
         warmTick ??= item.at;
         continue;
       }
+      // A recording that starts after --from: begin at its first record, not hours of "No games today".
+      if (!started && item.at > r.fromMs) r = { ...r, fromMs: item.at };
       if (!started) {
         started = true;
         this.clock.start(r.fromMs);
