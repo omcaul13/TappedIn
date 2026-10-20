@@ -83,6 +83,13 @@ describe('reading channels from a guide API response', () => {
     const items = itemsFromJson(json, { items: 'channels[]', ref: 'guid', label: 'title', number: 'num', refPattern: '^([0-9a-f]{32})$' });
     expect(items).toEqual([{ label: 'ESPN', number: 5, callSign: null, ref: '0123456789abcdef0123456789abcdef' }]);
   });
+
+  it("Stream2's config reads its top-level channel array and finds the id in a /live/<id> URL", () => {
+    const t = loadProviderConfig('stream2').tuning as { refInUrl: string; watchUrl: string; lineup: Parameters<typeof itemsFromJson>[1] };
+    const items = itemsFromJson([{ identifier: 'espn-hd', title: 'ESPN', channelNumber: 201 }], t.lineup);
+    expect(items).toEqual([{ label: 'ESPN', number: 201, callSign: null, ref: 'espn-hd' }]);
+    expect(new RegExp(t.refInUrl).exec(t.watchUrl.replace('{ref}', 'espn-hd'))?.[1]).toBe('espn-hd');
+  });
 });
 
 describe('guide-reading options', () => {

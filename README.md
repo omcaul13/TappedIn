@@ -78,11 +78,12 @@ The usual rules still hold: no game on two screens unless it's the only option, 
 | Cox Contour on Campus / Cox Contour | Experimental | guide clicks | 1 / — |
 | YouTube TV | Experimental (sign-in not yet tested) | an address per channel | 3 |
 | Sling TV | Experimental | an address per channel | Orange 1, Blue 3, both 4 |
+| Apogee Stream2 (USC, George Mason, Rochester, JMU, Wake Forest and others) | Experimental (built from its web player's code; sign-in not yet tested) | an address per channel | — |
 
 - **Tested:** used with a real account.
 - **Experimental:** built from the service's documentation and from open-source projects that drive the same web players, but nobody has tested it with a real account yet. If it doesn't work for you, the app's **Diagnostics** can usually fix it, and you can send the fix back: see [CONTRIBUTING.md](CONTRIBUTING.md).
 - **Not supported yet:**
-  - Apogee Stream2 (USC, George Mason, Rochester, Wake Forest and others), Hulu + Live TV, Fubo, DIRECTV.
+  - Hulu + Live TV, Fubo, DIRECTV.
   - Philo, which carries no sports networks.
 - The research behind this list is in [docs/research/streaming-services.md](docs/research/streaming-services.md).
 

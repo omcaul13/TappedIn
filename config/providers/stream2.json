@@ -1,0 +1,93 @@
+{
+  "id": "stream2",
+  "name": "Apogee Stream2",
+  "shortName": "Stream2",
+  "family": "url",
+  "kind": "campus",
+  "status": "experimental",
+  "badge": {
+    "initials": "S2",
+    "color": "#0f766e"
+  },
+  "search": [
+    "Stream2",
+    "Apogee",
+    "Boldyn",
+    "mystream2"
+  ],
+  "documentedMaxStreams": null,
+  "defaults": {
+    "standbyViews": 0
+  },
+  "notes": "Boldyn Networks' campus TV (USC, George Mason, Rochester, JMU, Wake Forest, WashU and others). Sign-in is your school's SSO through login.apogeenet.net, sometimes with Duo, and an End User Agreement the first time: accept it yourself. Read from the web player's public code (10/20/2026), not tested with an account: channels come from /api/linear/channels (identifier, title, channelNumber) and each channel plays at webplayer.mystream2.com/live/<identifier>. Live TV usually needs the campus network. Untested.",
+  "shell": {
+    "partition": "persist:stream2",
+    "userAgent": "chrome",
+    "appUrl": "^https://webplayer\\.mystream2\\.com/",
+    "playerUrl": "/live/",
+    "hideCss": ""
+  },
+  "signin": {
+    "portalUrl": null,
+    "autoClick": null,
+    "startUrl": null,
+    "checkUrl": "https://webplayer.mystream2.com/channels/all",
+    "signedOutPattern": "select your institution|\\bsign in\\b",
+    "windowTitle": "TappedIn: sign in to Stream2",
+    "instructions": "Search for your school, click Next and sign in with your school account (and accept the End User Agreement if it appears). TappedIn continues once the Stream2 channels page appears. Live TV usually needs the campus network"
+  },
+  "errors": {
+    "probePatterns": [
+      "maximum number of",
+      "too many (devices|streams)",
+      "stream(ing)? limit",
+      "already (watching|streaming)",
+      "not available in your (area|location)",
+      "only available (on|when connected to)",
+      "outside (of )?(your )?(home|campus)",
+      "sign in",
+      "log in",
+      "session (has )?expired",
+      "something went wrong",
+      "error code",
+      "unable to play",
+      "playback error",
+      "not authorized",
+      "not entitled",
+      "try again later",
+      "still (watching|there)"
+    ],
+    "loginUrl": "(login|signin|sign-in|oauth|sso|idp|saml|shibboleth|microsoftonline|okta|duosecurity|auth\\.|apogeenet)",
+    "limit": "(maximum number of|too many|limit|already (watching|streaming))",
+    "unavailable": "(not available|only available|outside|not authorized|not entitled)",
+    "loginText": "(sign in|log in|session)",
+    "idlePrompt": "still (watching|there)"
+  },
+  "timing": {
+    "loadGapMs": 3500,
+    "maxParallelTunes": 2,
+    "spareWarmDelayMs": 20000,
+    "hidePollMs": 500
+  },
+  "tuning": {
+    "watchUrl": "https://webplayer.mystream2.com/live/{ref}",
+    "refInUrl": "/live/([^/?#]+)",
+    "pageTimeoutMs": 30000,
+    "idlePromptButton": null,
+    "lineup": {
+      "mode": "response",
+      "guideUrl": "https://webplayer.mystream2.com/channels/all",
+      "responseUrl": "/api/linear/channels(\\?|$)",
+      "items": "[]",
+      "ref": "identifier",
+      "label": "title",
+      "number": "channelNumber",
+      "refPattern": null,
+      "require": null,
+      "scrollContainer": null,
+      "settleMs": 300,
+      "maxScrolls": 0,
+      "timeoutMs": 30000
+    }
+  }
+}
