@@ -21,6 +21,8 @@ const { flags } = parseFlags(process.argv.slice(2));
 const date = typeof flags.day === 'string' ? flags.day : espnDateKey();
 const base = loadConfig();
 const quiet = flags.quiet === true || flags.compare === true;
+// --compare and --by-sport write their tables here; a fresh clone has no logs/ (it is gitignored).
+mkdirSync(path.join(PROJECT_ROOT, 'logs'), { recursive: true });
 const allGames = flags.games === true;
 
 const variant = (model: 'classic' | 'forecast', sensitivity?: 'low' | 'medium' | 'high'): Config => {
