@@ -91,6 +91,9 @@ for arch in arm64 x64; do
   # castLabs' development VMP signatures differ per architecture; the merge needs identical plain files,
   # and step 5 signs the universal framework anyway.
   find "$BUILD/electron-$arch/Electron.app" -name '*.sig' -delete
+  # @electron/universal merges apps, so it wants each to have one; step 4 puts the real one in.
+  mkdir -p "$BUILD/electron-$arch/Electron.app/Contents/Resources/app"
+  echo '{"name":"placeholder"}' > "$BUILD/electron-$arch/Electron.app/Contents/Resources/app/package.json"
 done
 (cd "$HERE" && npm ci --no-audit --no-fund --silent)
 node "$HERE/tools.mjs" universal "$BUILD/electron-x64/Electron.app" "$BUILD/electron-arm64/Electron.app" "$BUILD/Electron.app"
@@ -110,7 +113,7 @@ cp "$BUILD/node-$NODE_VERSION-darwin-arm64/LICENSE" "$STAGE/runtime/LICENSE"
 
 ditto "$BUILD/Electron.app" "$APP"
 RES="$APP/Contents/Resources"
-rm -f "$RES/default_app.asar" "$RES/electron.icns"
+rm -rf "$RES/default_app.asar" "$RES/electron.icns" "$RES/app"
 ditto "$STAGE" "$RES/app"
 ICONSET="$BUILD/TappedIn.iconset" && mkdir -p "$ICONSET"
 for s in 16 32 128 256 512; do
