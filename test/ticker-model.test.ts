@@ -118,6 +118,16 @@ describe('alerts', () => {
     expect(al.update([nhl('pp')], 1000).map((a) => a.label)).toEqual(['BOS power play']);
     expect(al.update([nhl('pp')], 2000)).toEqual([]);
   });
+  it('a hot-moment alert ends when the moment does (the drive leaves the red zone)', () => {
+    const al = new TickerAlerts();
+    const nhl = (strength: 'pp' | 'even') => dto(snap({ id: 'n', sport: 'nhl', period: 2, clockSec: 600, live: { family: 'hockey', lastPlay: null, strength, advantageTeamId: 'hn' }, home: team('hn', 'BOS', 1), away: team('an', 'TOR', 1) }));
+    al.update([nhl('even')], 0);
+    al.update([nhl('pp')], 1000);
+    expect(al.active('n', 2000)?.label).toBe('BOS power play');
+    al.update([nhl('even')], 10_000);
+    expect(al.active('n', 11_000)).toBeNull();
+    expect(formatCard(nhl('even'), al.active('n', 11_000)).s2).not.toMatch(/POWER PLAY/);
+  });
   it('goals, runs and tennis sets', () => {
     const al = new TickerAlerts();
     const h = (score: number) => dto(snap({ id: 'h', sport: 'nhl', home: team('x', 'BOS', score), away: team('y', 'TOR', 0) }));
