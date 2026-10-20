@@ -6,7 +6,7 @@ import { checkSignature, signatureFacts, signatureState } from './doctor';
 try {
   const facts = signatureFacts();
   const state = signatureState(facts);
-  if (!process.env.TAPPEDIN_INSTALLER && (state === 'missing' || state === 'stale')) {
+  if (!process.env.TAPPEDIN_INSTALLER && (state === 'missing' || state === 'stale' || state === 'development')) {
     console.log(`TappedIn: ${checkSignature(facts).title}. Run "Setup TappedIn.cmd" or npm run sign-electron.`);
   }
 } catch {

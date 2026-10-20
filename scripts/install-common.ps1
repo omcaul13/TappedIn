@@ -114,10 +114,19 @@ function Test-DepsInSync {
     return ($LASTEXITCODE -eq 0)
 }
 
-# Same rule as the doctor: electron.exe.sig exists and is not older than electron.exe.
+# Same rule as the doctor: electron.exe.sig exists, is not older than electron.exe, and is not development-only.
 function Test-SignatureFresh {
     if (-not (Test-Path -LiteralPath $ElectronExe) -or -not (Test-Path -LiteralPath $ElectronSig)) { return $false }
-    return ((Get-Item -LiteralPath $ElectronSig).LastWriteTime -ge (Get-Item -LiteralPath $ElectronExe).LastWriteTime)
+    if ((Get-Item -LiteralPath $ElectronSig).LastWriteTime -lt (Get-Item -LiteralPath $ElectronExe).LastWriteTime) { return $false }
+    # castLabs ships electron.exe.sig signed for development only; once the signing tool is installed, ask it.
+    if (Test-Path -LiteralPath $VenvPython) { return (Test-ProductionSignature $VenvPython (Split-Path -Parent $ElectronExe)) }
+    return $true
+}
+
+# castLabs' own check (offline): true only for a streaming (production) signature, not the development one.
+function Test-ProductionSignature([string]$Python, [string]$Dist) {
+    & $Python -I $EvsScript vmp -n verify-pkg $Dist *> $null
+    return ($LASTEXITCODE -eq 0)
 }
 
 # npm ci deletes node_modules, signature included. Keep a copy of a good signature with the hash of the

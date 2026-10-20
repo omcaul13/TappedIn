@@ -55,6 +55,8 @@ describe('doctor: Widevine signature', () => {
     expect(signatureState({ exeMtimeMs: 1000, sigMtimeMs: 2000 })).toBe('ok');
     expect(signatureState({ exeMtimeMs: 1000, sigMtimeMs: 1000 })).toBe('ok');
     expect(signatureState({ exeMtimeMs: null, sigMtimeMs: null })).toBe('no-electron');
+    expect(signatureState({ exeMtimeMs: 1000, sigMtimeMs: 2000, development: true })).toBe('development');
+    expect(signatureState({ exeMtimeMs: 1000, sigMtimeMs: 2000, development: null })).toBe('ok');
   });
 
   it('names npm run sign-electron as the fix', () => {

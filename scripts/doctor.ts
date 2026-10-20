@@ -3,6 +3,7 @@
 //   npm run doctor [-- --deps]
 // Exit code 0 when every check passes, 1 otherwise. The check* functions are pure (test/doctor.test.ts);
 // main() gathers the facts they judge.
+import { spawnSync } from 'node:child_process';
 import { readFileSync, realpathSync, statSync } from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
@@ -46,14 +47,17 @@ export function checkEcsElectron(installed: string | null): CheckResult {
 export interface SignatureFacts {
   exeMtimeMs: number | null;
   sigMtimeMs: number | null;
+  /** castLabs' verify-pkg said the signature is development-only (null: couldn't check, no .venv-evs). */
+  development?: boolean | null;
 }
 
-export type SignatureState = 'ok' | 'missing' | 'stale' | 'no-electron';
+export type SignatureState = 'ok' | 'missing' | 'stale' | 'no-electron' | 'development';
 
 export function signatureState(f: SignatureFacts): SignatureState {
   if (f.exeMtimeMs === null) return 'no-electron';
   if (f.sigMtimeMs === null) return 'missing';
-  return f.sigMtimeMs >= f.exeMtimeMs ? 'ok' : 'stale';
+  if (f.sigMtimeMs < f.exeMtimeMs) return 'stale';
+  return f.development ? 'development' : 'ok';
 }
 
 export function checkSignature(f: SignatureFacts): CheckResult {
@@ -65,6 +69,8 @@ export function checkSignature(f: SignatureFacts): CheckResult {
       return { ok: false, title: 'Electron is not signed for Widevine (no electron.exe.sig), so video will not play', fix };
     case 'stale':
       return { ok: false, title: 'The Widevine signature is older than electron.exe (Electron was reinstalled or updated)', fix };
+    case 'development':
+      return { ok: false, title: "Electron has only castLabs' development signature (the one it ships with), so video will not play", fix };
     case 'no-electron':
       return { ok: false, title: 'Electron binary not downloaded (no electron.exe)', fix: `${SETUP}, or run node node_modules\\electron\\install.js.` };
   }
@@ -185,7 +191,14 @@ export function electronVersion(root = PROJECT_ROOT): string | null {
 
 export function signatureFacts(root = PROJECT_ROOT): SignatureFacts {
   const exe = path.join(root, 'node_modules', 'electron', 'dist', 'electron.exe');
-  return { exeMtimeMs: mtime(exe), sigMtimeMs: mtime(`${exe}.sig`) };
+  const facts: SignatureFacts = { exeMtimeMs: mtime(exe), sigMtimeMs: mtime(`${exe}.sig`) };
+  // castLabs ships electron.exe.sig signed for development only; only their verifier can tell it apart.
+  const venvPython = path.join(root, '.venv-evs', 'Scripts', 'python.exe');
+  if (facts.sigMtimeMs !== null && mtime(venvPython) !== null) {
+    const r = spawnSync(venvPython, ['-I', path.join(root, 'scripts', 'evs.py'), 'vmp', '-n', 'verify-pkg', path.dirname(exe)], { encoding: 'utf8', windowsHide: true, timeout: 30_000 });
+    facts.development = r.status === 0 ? false : /development/i.test(`${r.stdout}${r.stderr}`) ? true : null;
+  }
+  return facts;
 }
 
 function portFree(port: number): Promise<boolean> {
