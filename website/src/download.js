@@ -24,7 +24,7 @@ export function metaLine(latest) {
 }
 
 /** What the Mac link says before latest-mac.json loads, or when it doesn't look right. */
-export const MAC_FALLBACK = 'Requires macOS 12 or later, Apple Silicon or Intel';
+export const MAC_FALLBACK = 'Requires macOS 13 or later, Apple Silicon or Intel';
 
 /** The line by the Mac link, from latest-mac.json; MAC_FALLBACK when it doesn't look right. */
 export function macMetaLine(latest) {

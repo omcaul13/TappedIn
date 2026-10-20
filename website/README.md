@@ -23,7 +23,7 @@ website/
 The downloads (about 160 MB each) are too big for Cloudflare Pages (25 MiB per file) and for git, so they live in a **private R2 bucket**, `tappedin-downloads`, holding:
 
 - `TappedIn-Setup.exe`, the latest Windows installer, and `latest.json`, `{ version, date, size, notes }`.
-- `TappedIn.dmg`, the latest universal (Apple Silicon and Intel) Mac disk image; `TappedIn-mac.zip`, the same app zipped for auto-updates; and `latest-mac.json`, `{ version, date, size, notes, minimumSystemVersion }` (`size` is the dmg's, `minimumSystemVersion` a string like `"12.0"`).
+- `TappedIn.dmg`, the latest universal (Apple Silicon and Intel) Mac disk image; `TappedIn-mac.zip`, the same app zipped for auto-updates; and `latest-mac.json`, `{ version, date, size, notes, minimumSystemVersion }` (`size` is the dmg's, `minimumSystemVersion` a string like `"13.0"`).
 
 The Functions serve them under the site's own address, with resumable downloads:
 
