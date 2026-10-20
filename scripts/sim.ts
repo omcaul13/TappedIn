@@ -119,7 +119,9 @@ if (flags['by-sport']) {
   // Per home sport: how often its screens switched, how long they stayed away, and how many switches
   // look false (the home game resumed within 45 s of the viewer leaving it).
   const finals = loadFinalPlays(recordingDir(PROJECT_ROOT, date));
-  const sports = [...new Set(res.homes.map((h) => h.sport))];
+  // Every sport a screen had as its home, not only the first picks: a game-over AUTO_PICK can bring another sport.
+  const laterHomes = res.timeline.flatMap((p) => p.screens.flatMap((s) => (s.home && finals.get(s.home)?.sport) || []));
+  const sports = [...new Set([...res.homes.map((h) => h.sport), ...laterHomes])];
   const rows = [computeMetrics('all', res, finals, cfg), ...sports.map((s) => computeMetrics(sportOf(s).short, res, finals, cfg, 90, 45, s))];
   const n = (x: number | null) => (x === null ? 'n/a' : String(x));
   console.log('\n' + ['sport'.padEnd(6), 'scr-hrs', 'switches', '/scr-hr', 'fills', 'same/screen/other', 'avg away', 'false (<45s)', 'long breaks caught'].join('  '));
