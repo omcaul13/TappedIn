@@ -215,7 +215,7 @@ export class App {
           void this.stop().then(() => process.exit(0));
         },
         log: (t) => this.info(t),
-      }, { provider: this.adapter.config, screens: this.screenCount, spares: inSetup ? 0 : effectiveStandby(cfg, this.adapter.config), signin: inSetup ? 'defer' : 'now' });
+      }, { provider: this.adapter.config, screens: this.screenCount, spares: inSetup ? 0 : effectiveStandby(cfg, this.adapter.config), signin: startupSignin(this.mode, inSetup) });
       await this.shell.ready;
       await this.attachController();
     } else {
@@ -1235,6 +1235,11 @@ export class App {
     }
     this.info('replay finished');
   }
+}
+
+/** Sign in when the window opens only for live video: setup has its own sign-in step, and dry run and replay show data tiles. */
+export function startupSignin(mode: AppState['mode'], inSetup: boolean): 'now' | 'defer' {
+  return mode === 'live' && !inSetup ? 'now' : 'defer';
 }
 
 /** Config file + settings changed in the app, with the provider's scanned lineup (if any) as the channels. */
