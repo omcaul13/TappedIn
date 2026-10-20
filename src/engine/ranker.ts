@@ -74,7 +74,8 @@ function tierOf(sport: SportId, opts: RankOptions): Tier {
 
 export function compareCandidates(a: RankedCandidate, b: RankedCandidate): number {
   if (a.tier !== b.tier) return a.tier - b.tier;
-  if (a.sport === b.sport) return sportOf(a.sport).compare(a, b);
+  // The sport's own order only within the screen's sport; tiers 2 and 3 go by the normalized score.
+  if (a.tier === 1 && a.sport === b.sport) return sportOf(a.sport).compare(a, b);
   return b.excitement.score - a.excitement.score || a.view.game.id.localeCompare(b.view.game.id);
 }
 
