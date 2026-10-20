@@ -8,7 +8,7 @@ CI already checks some things on every Mac build (`release-mac.yml`):
 
 CI can't check video, sign-in, Gatekeeper, the look or real updates. This list is for those. Tick each box; for anything that fails, note the macOS version, the Mac (Apple Silicon or Intel), what you did, and the logs listed at the end.
 
-**Setup:** a Mac on macOS 12 or later, ideally one Apple Silicon and one Intel. Download a tagged release's `TappedIn.dmg` (from the website or the GitHub release) with a browser, so it carries the same quarantine flag as a user's download.
+**Setup:** a Mac on macOS 13 Ventura or later, ideally one Apple Silicon and one Intel. Download a tagged release's `TappedIn.dmg` (from the website or the GitHub release) with a browser, so it carries the same quarantine flag as a user's download.
 
 ## 1. Install from the .dmg (Mode A)
 - [ ] The .dmg opens a window with TappedIn and an Applications folder.

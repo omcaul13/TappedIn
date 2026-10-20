@@ -124,7 +124,7 @@ npm test
 
 ## Install (Mac)
 
-One app for Apple Silicon and Intel Macs, macOS 12 Monterey or later.
+One app for Apple Silicon and Intel Macs, macOS 13 Ventura or later (the minimum of the castLabs Electron it is built on; the build reads it from Electron itself).
 
 1. Download **`TappedIn.dmg`** from the website or the [Releases](../../releases) page.
 2. Open it and drag **TappedIn** into **Applications**.
