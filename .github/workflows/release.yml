@@ -61,6 +61,33 @@ jobs:
           gh release view $tag *> $null
           if ($LASTEXITCODE -eq 0) { gh release upload $tag (Get-Item dist/*.exe) --clobber } else { gh release create $tag (Get-Item dist/*.exe) --generate-notes }
 
+      # The website (website/, Cloudflare Pages) serves the installer from a private R2 bucket. Repo secrets:
+      # R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY (an R2 API token with write access to tappedin-downloads).
+      - name: Publish the installer on the website
+        if: env.SIGNED == 'true'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          # R2 doesn't take the checksums newer AWS CLIs send by default.
+          AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+          AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+        run: |
+          if (-not $env:R2_ACCOUNT_ID) { Write-Warning 'R2 secrets are not set: the website still offers the previous installer.'; exit 0 }
+          $tag = '${{ github.ref_name }}'
+          $exe = Get-Item dist/*.exe | Select-Object -First 1
+          gh release view $tag --json body --jq .body | node website/release-info.mjs $tag $exe.FullName | Set-Content latest.json -Encoding utf8NoBOM
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $r2 = "https://$env:R2_ACCOUNT_ID.r2.cloudflarestorage.com"
+          # The installer first, so latest.json never names a version the site can't serve yet.
+          aws s3 cp $exe.FullName s3://tappedin-downloads/TappedIn-Setup.exe --endpoint-url $r2 --content-type application/vnd.microsoft.portable-executable
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          aws s3 cp latest.json s3://tappedin-downloads/latest.json --endpoint-url $r2 --content-type application/json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Upload the test installer
         if: env.SIGNED != 'true'
         uses: actions/upload-artifact@v4

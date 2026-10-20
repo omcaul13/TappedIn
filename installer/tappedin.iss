@@ -61,7 +61,7 @@ Type: filesandordirs; Name: "{app}\electron"
 [Files]
 ; Keep a copy of an edited config file before the new version's file replaces it.
 Source: "{app}\config\tappedin.config.json5"; DestDir: "{app}\config"; DestName: "tappedin.config.json5.bak"; Flags: external skipifsourcedoesntexist uninsneveruninstall
-Source: "{#Stage}\*"; DestDir: "{app}"; Excludes: "\test,\docs,\.github,\installer,\Setup TappedIn.cmd,\Update TappedIn.cmd"; Flags: recursesubdirs createallsubdirs ignoreversion
+Source: "{#Stage}\*"; DestDir: "{app}"; Excludes: "\test,\docs,\.github,\installer,\website,\Setup TappedIn.cmd,\Update TappedIn.cmd"; Flags: recursesubdirs createallsubdirs ignoreversion
 
 [Icons]
 ; electron.exe runs electron\launcher.cjs, which starts the app with no console window.

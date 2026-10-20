@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en" data-platform="windows">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Install TappedIn on Windows</title>
+  <meta name="description" content="How to download and install TappedIn on Windows 10 or 11, including the Windows SmartScreen warning, first-run setup and system requirements.">
+  <meta name="theme-color" content="#06070c">
+  <link rel="icon" href="/img/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/download.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+{{NAV}}
+
+<main id="main" class="wrap doc">
+  <h1>Install TappedIn</h1>
+  <p class="lede">About five minutes, start to finish. No admin rights needed, and you don't need anything else installed first.</p>
+
+  <h2 id="requirements">What you need</h2>
+  <ul class="reqs">
+    <li><strong>Windows 10 or 11, 64-bit</strong><span class="dim">No Mac version yet.</span></li>
+    <li><strong>About 1 GB of free space</strong><span class="dim">The app takes about 600 MB.</span></li>
+    <li><strong>Your own TV service</strong><span class="dim">Campus TV or a home TV service <a href="/#services">TappedIn supports</a>.</span></li>
+    <li><strong>Internet fast enough for a few HD streams</strong><span class="dim">Each screen is one stream. Campus TV usually needs the campus network.</span></li>
+  </ul>
+
+  <h2 id="steps">Step by step</h2>
+  <ol class="big">
+    <li>
+      <h3>Download the installer</h3>
+      <div class="dl">
+        <div class="for-windows">
+          <a class="btn btn-primary btn-xl" href="/download/windows">Download TappedIn for Windows</a>
+          <p class="dl-meta"><span data-latest>Latest beta</span></p>
+        </div>
+        <div class="for-mac">
+          <p class="dl-note"><strong>TappedIn is Windows-only for now.</strong> Open this page on your Windows PC.</p>
+          <p class="dl-meta"><a href="/download/windows">Download the Windows installer anyway</a></p>
+        </div>
+        <div class="for-mobile">
+          <p class="dl-note"><strong>Open this page on your Windows PC</strong> to download TappedIn: <span class="link-text" data-link-text>this site</span></p>
+          <div class="share">
+            <button class="btn btn-primary" type="button" data-copy>Copy link</button>
+            <button class="btn" type="button" data-share hidden>Share</button>
+            <a class="btn" href="mailto:" data-email>Email me the link</a>
+          </div>
+        </div>
+      </div>
+      <p>The file is called <code>TappedIn-Setup-&lt;version&gt;.exe</code>.</p>
+    </li>
+
+    <li>
+      <h3>If your browser asks, keep the file</h3>
+      <p>Because TappedIn is new and not downloaded by many people yet, Edge or Chrome may say the file "isn't commonly downloaded". Open the downloads list, choose <strong>Keep</strong> (in Edge: the <strong>…</strong> menu, then <strong>Keep</strong>, then <strong>Keep anyway</strong>).</p>
+      <figure>
+        <div class="illo browserbar" role="img" aria-label="Illustration of a browser download warning with a Keep button">
+          <div><span class="file">TappedIn-Setup-0.1.0-beta.1.exe</span> isn't commonly downloaded. Make sure you trust it before you open it.</div>
+          <div class="row"><span class="b">Delete</span><span class="b hl">Keep</span></div>
+        </div>
+        <figcaption>Illustration. The exact wording depends on your browser.</figcaption>
+      </figure>
+    </li>
+
+    <li>
+      <h3>Run it, and get past SmartScreen</h3>
+      <p>Double-click the file. Windows may show a blue <strong>"Windows protected your PC"</strong> screen. That's because the installer isn't signed with a paid code-signing certificate yet, not because anything is wrong with it. Click <strong>More info</strong>, then <strong>Run anyway</strong>.</p>
+      <figure>
+        <div class="illo smartscreen" role="img" aria-label="Illustration of the Windows protected your PC screen with More info and Run anyway highlighted">
+          <div class="t">Windows protected your PC</div>
+          <p>Microsoft Defender SmartScreen prevented an unrecognized app from starting. Running this app might put your PC at risk.</p>
+          <span class="more hl">More info</span>
+          <p class="meta">App: TappedIn-Setup-0.1.0-beta.1.exe<br>Publisher: Unknown publisher</p>
+          <div class="row"><span class="b hl">Run anyway</span><span class="b">Don't run</span></div>
+        </div>
+        <figcaption>Illustration. "Run anyway" only appears after you click "More info".</figcaption>
+      </figure>
+      <p class="tip">Only do this for a file you downloaded from this site. If you're unsure, delete it and download it again here.</p>
+    </li>
+
+    <li>
+      <h3>Click through the installer</h3>
+      <p>It installs just for you, to <code>%LOCALAPPDATA%\Programs\TappedIn</code>, so it doesn't ask for an administrator password. Choose whether you want a desktop shortcut, and leave <strong>Launch TappedIn</strong> ticked on the last page. Everything TappedIn needs is included.</p>
+    </li>
+
+    <li>
+      <h3>First-run setup</h3>
+      <p>The first start opens setup:</p>
+      <ol>
+        <li><strong>Pick your service.</strong> Search for your school to find its campus TV.</li>
+        <li><strong>Sign in</strong> on the service's own page, in a window TappedIn opens. School SSO and Duo work as usual. Accepting a service's terms is up to you; TappedIn never clicks them.</li>
+        <li><strong>Channels.</strong> TappedIn reads your service's guide to see which sports networks you get.</li>
+        <li><strong>Playback.</strong> One channel plays on screen 1.</li>
+        <li><strong>Streams.</strong> TappedIn adds screens one at a time to see how many your plan plays at once, then sizes the grid.</li>
+      </ol>
+      <figure>
+        <img class="frame" src="/img/setup.jpg" alt="TappedIn's setup screen: pick your TV service, with a search box for your school." width="1600" height="950" loading="lazy">
+      </figure>
+      <p>If a step gets stuck, press <strong>Having trouble?</strong> to open Diagnostics, or see <a href="/fix-your-service.html">fix your service</a>.</p>
+    </li>
+  </ol>
+
+  <h2 id="update">Updating and uninstalling</h2>
+  <ul>
+    <li><strong>Update:</strong> download the newest installer here and run it the same way. Your settings and sign-ins are kept.</li>
+    <li><strong>Uninstall:</strong> Windows Settings → Apps → Installed apps → TappedIn → Uninstall. Your settings stay in the <code>.state</code> folder inside the install folder and your service sign-ins in <code>%LOCALAPPDATA%\TappedIn</code>, in case you reinstall. Delete both folders to remove them too.</li>
+    <li>If you edited <code>config\tappedin.config.json5</code>, an update keeps your copy as <code>tappedin.config.json5.bak</code> next to it.</li>
+  </ul>
+
+  <h2 id="trouble">If something goes wrong</h2>
+  <ul>
+    <li><strong>The download link says it's unavailable:</strong> a new version is probably being published. Try again in a few minutes.</li>
+    <li><strong>A screen is black but the sound plays:</strong> TappedIn turns off a Windows video setting that causes this on some laptops. If it still happens, <a href="{{BUG_MAILTO}}">tell us</a>.</li>
+    <li><strong>"Maximum number of devices" or a stream limit:</strong> your plan plays fewer streams at once than you have screens. TappedIn shows live data tiles on the extra screens.</li>
+    <li><strong>Anything else:</strong> <a href="{{BUG_MAILTO}}">report a bug</a>.</li>
+  </ul>
+</main>
+
+{{FOOTER}}
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en" data-platform="windows">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fix your TV service</title>
+  <meta name="description" content="Test, fix and share a fix for your TV service in TappedIn's Diagnostics. No coding needed.">
+  <meta name="theme-color" content="#06070c">
+  <link rel="icon" href="/img/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/download.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+{{NAV}}
+
+<main id="main" class="wrap doc">
+  <h1>Fix your TV service</h1>
+  <p class="lede">TappedIn drives each TV service's own web player. Websites change, and most services were built without a real account to test with (they're marked <strong>Experimental</strong>). If you have one of them, you can test it, fix it, and send the fix back so it works for everyone. No coding needed.</p>
+
+  <h2>1. Test your service</h2>
+  <ol>
+    <li><a href="/install.html">Install TappedIn</a> and pick your service in setup.</li>
+    <li>If setup gets stuck at any step (sign-in, channels, playback), press <strong>Diagnostics</strong>. You can also open it later from <strong>Settings → TV service → Diagnostics</strong>.</li>
+    <li>Run the five steps in order. Each shows <strong>pass</strong> or <strong>fail</strong> and what it saw.</li>
+  </ol>
+  <table>
+    <thead><tr><th>Step</th><th>What it checks</th></tr></thead>
+    <tbody>
+      <tr><td>Sign-in detection</td><td>TappedIn can tell you're signed in</td></tr>
+      <tr><td>Channel guide</td><td>It can read the guide and find the sports networks</td></tr>
+      <tr><td>Tuning</td><td>It can put screen 1 on a channel</td></tr>
+      <tr><td>Playback</td><td>The video plays</td></tr>
+      <tr><td>Full-screen video</td><td>The service's menus are hidden and the video fills the screen</td></tr>
+    </tbody>
+  </table>
+
+  <h2>2. Fix what fails</h2>
+  <p>When a step fails, the settings it depends on appear right under it:</p>
+  <table>
+    <thead><tr><th>Setting</th><th>What it is</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td><code>signin.checkUrl</code></td><td>A page that shows the service when you're signed in</td><td><code>https://watch.spectrum.net/guide</code></td></tr>
+      <tr><td><code>signin.signedOutPattern</code></td><td>Text that only appears when you're signed out (a regular expression; <code>/…/</code> keeps upper and lower case exact)</td><td><code>/\bSign In\b/</code></td></tr>
+      <tr><td><code>shell.appUrl</code></td><td>Matches every page of the service's player</td><td><code>^https://watch\.spectrum\.net/</code></td></tr>
+      <tr><td><code>shell.playerUrl</code></td><td>Matches the page that's playing a channel</td><td><code>/livetv</code></td></tr>
+      <tr><td><code>tuning.lineup.row</code></td><td>A CSS selector for one channel row in the guide</td><td><code>li.channel-header-row</code></td></tr>
+      <tr><td><code>tuning.lineup.ref.*</code></td><td>Where the channel's id is inside that row: an element, an attribute, and a pattern whose first <code>( )</code> group is the id</td><td><code>img.channel-logo</code>, <code>src</code>, <code>/guide/(\d+)\?</code></td></tr>
+      <tr><td><code>tuning.watchUrl</code></td><td>The address of a channel; <code>{ref}</code> is replaced by its id</td><td><code>https://watch.spectrum.net/livetv?tmsid={ref}</code></td></tr>
+      <tr><td><code>tuning.refInUrl</code></td><td>Finds the id in the player's address, to check where a tune landed</td><td><code>[?&amp;]tmsid=(\d+)</code></td></tr>
+      <tr><td><code>shell.hideCss</code></td><td>Extra CSS to hide anything still covering the video</td><td><code>.player-controls { display: none !important }</code></td></tr>
+    </tbody>
+  </table>
+  <p class="tip"><strong>Tip:</strong> to find a selector, open the service in Chrome, right-click a channel in the guide, choose <strong>Inspect</strong>, and look at the element's tag, class and attributes.</p>
+  <p><strong>Saving.</strong> Change a value and press <strong>Save &amp; retry</strong>, then run the step again.</p>
+  <ul>
+    <li>TappedIn checks every fix before saving it. A value that wouldn't work (a broken pattern, a wrong type) is refused, with the reason.</li>
+    <li>Your fixes are stored on your computer and sit on top of the built-in settings, so updates to TappedIn don't erase them.</li>
+    <li><strong>Edit all fixes as JSON</strong> shows the whole fix file, for bigger changes.</li>
+  </ul>
+
+  <h2>3. Send the fix</h2>
+  <p>Press <strong>Export config</strong>. TappedIn writes <code>tappedin-&lt;service&gt;-&lt;date&gt;.json</code> to <code>Documents\TappedIn</code> and opens the folder.</p>
+  <ul>
+    <li><strong>What it contains:</strong> your fixes, each step's pass or fail, and what each step saw.</li>
+    <li><strong>What it never contains:</strong> your password, cookies, page text, or the parts of web addresses after <code>?</code> or <code>#</code> (that's where sign-in codes live).</li>
+  </ul>
+  <p>Open the file in Notepad first if you'd like to check it. Then <a href="{{BUG_MAILTO}}">email it to us</a> with the service's name, so the fix can go into the next version.</p>
+
+  <h2>What TappedIn will and won't do</h2>
+  <p>These rules keep TappedIn on the right side of the services' terms and the law, so a fix that needs to break one can't be accepted:</p>
+  <ul>
+    <li>TappedIn only does what you could do yourself in the service's player: load channel addresses, click its guide and its own buttons. Reading the page, and the data the page itself downloads, is fine.</li>
+    <li>It never types passwords and never clicks a terms, consent or activation button. The only button it presses on its own is Xfinity On Campus's <strong>Watch Now</strong>.</li>
+    <li>It never gets around a stream limit, a home-network or location check, or a "this browser isn't supported" or bot check. If a service blocks TappedIn, it's marked as not working, with the reason.</li>
+    <li>Nothing leaves your computer except what your service and ESPN's public scores need. No servers, no proxies, no tracking.</li>
+  </ul>
+
+  <h2>A service that isn't listed</h2>
+  <p>Not supported yet: Hulu + Live TV, Fubo and DIRECTV. If you use one of these, or another service with a web player, <a href="{{BUG_MAILTO}}">email us</a> its name and whether it's campus TV or a home service.</p>
+</main>
+
+{{FOOTER}}
+</body>
+</html>
