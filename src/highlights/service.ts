@@ -64,7 +64,10 @@ export class HighlightService {
   refresh(games: GameSnapshot[], homeGameId: string | null, now = Date.now()): Promise<void> {
     if (this.refreshing) return this.refreshing;
     this.lastRefresh = now;
-    this.refreshing = this.doRefresh(games, homeGameId, now).finally(() => (this.refreshing = null));
+    // Callers fire and forget (`void`): a rejection here would be unhandled and end the process.
+    this.refreshing = this.doRefresh(games, homeGameId, now)
+      .catch((err) => this.info(`highlights refresh failed: ${err}`))
+      .finally(() => (this.refreshing = null));
     return this.refreshing;
   }
 
