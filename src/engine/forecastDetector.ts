@@ -94,7 +94,10 @@ export function assessForecast(g: GameState, mem: DetectorMemory | undefined, no
   // ---- in play: does the stoppage after the latest play look like a long break? -----------------
   if (!lp) return finish('LIVE', 0, [], ['in play']);
   const cat = o.breaks.categorize(lp, lp.prevKind ? { kind: lp.prevKind } : null);
-  if (!cat || o.excludeCategories?.includes(cat)) return finish('LIVE', 0, [], ['in play']);
+  if (!cat) return finish('LIVE', 0, [], ['in play']);
+  // Not a switch at this sensitivity, but still a stoppage: keep its forecast so other screens skip it as a fill-in.
+  // (Not for timed-resume sports: no play says the stoppage ended, so the forecast would outlive it.)
+  if (o.excludeCategories?.includes(cat)) return finish('LIVE', 0, [], ['in play'], o.breaks.timedResume ? undefined : asForecast(fc(cat, lp.at)));
   if (mem?.suppressUntilAfter != null && lp.at <= mem.suppressUntilAfter) return finish('LIVE', 0, [], [o.breaks.timedResume ? 'in play (waiting for the next game)' : 'in play (waiting for a new play after the safety net)']);
   const f = fc(cat, lp.at);
   const signal: Signal = { name: cat, weight: f.confidence, detail: describe(f) };
