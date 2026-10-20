@@ -38,7 +38,10 @@ Write-Step '2/5  App dependencies (npm ci in the stage)'
 $env:TAPPEDIN_INSTALLER = '1'
 $p = Start-Process -FilePath 'npm.cmd' -ArgumentList 'ci' -WorkingDirectory $Stage -NoNewWindow -Wait -PassThru
 Remove-Item Env:\TAPPEDIN_INSTALLER -ErrorAction SilentlyContinue
-if ($p.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $StageElectron)) { Stop-WithFix "npm ci failed (exit code $($p.ExitCode))." 'Check your internet connection and run this again.' }
+if ($p.ExitCode -ne 0) { Stop-WithFix "npm ci failed (exit code $($p.ExitCode))." 'Check your internet connection and run this again.' }
+# castLabs Electron downloads its binary on first use, not during npm ci; the installer must ship it.
+$p = Start-Process -FilePath 'node' -ArgumentList 'node_modules\electron\install.js' -WorkingDirectory $Stage -NoNewWindow -Wait -PassThru
+if ($p.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $StageElectron)) { Stop-WithFix "Downloading castLabs Electron failed (exit code $($p.ExitCode))." 'Check your internet connection and run this again.' }
 Write-Ok 'Installed.'
 
 # 3. Widevine signature -----------------------------------------------------------------------------
