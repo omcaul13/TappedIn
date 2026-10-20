@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 
 /** Where the footer's "Report a bug" link sends mail. */
-export const REPORT_EMAIL = 'REPLACE-ME@example.com';
+export const REPORT_EMAIL = 'tappedinsupport@gmail.com';
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
