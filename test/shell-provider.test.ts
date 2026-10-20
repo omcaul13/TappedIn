@@ -34,6 +34,17 @@ describe('shell provider for the Electron window', () => {
     expect(r.signedOut(`${'x'.repeat(4000)} Sign In`)).toBe(false);
   });
 
+  it("YouTube TV's signed-out welcome page doesn't count as signed in", () => {
+    const r = rules(shellProvider(loadProviderConfig('youtube-tv')));
+    // "/\bSign in\b/" is the "/source/flags" form (case-sensitive), not a pattern with literal slashes.
+    expect(r.signedOut('Try it free  Sign in')).toBe(true);
+    // Signed out, /live sends you to the marketing page, whose text needn't say "Sign in".
+    expect(r.isApp('https://tv.youtube.com/welcome/')).toBe(false);
+    expect(r.signinDone([{ url: 'https://tv.youtube.com/welcome/?utm_source=x', bodyText: 'Live TV from 100+ channels. Try it free' }])).toBe(false);
+    expect(r.signinDone([{ url: 'https://tv.youtube.com/live', bodyText: 'Home  Live  Library' }])).toBe(true);
+    expect(r.isPlayer('https://tv.youtube.com/watch/niY10UGQat0')).toBe(true);
+  });
+
   it('signinDone checks every window', () => {
     const r = rules(xoc);
     expect(r.signinDone([{ url: 'https://idp.school.edu/sso', bodyText: '' }, { url: 'https://www.xfinity.com/stream/', bodyText: 'Live TV' }])).toBe(true);
