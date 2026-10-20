@@ -14,16 +14,17 @@ TappedIn plays your service's own web player in castLabs' Widevine-licensed Elec
 
 TappedIn isn't affiliated with or endorsed by any TV service, school, league or network, and each service's terms of use apply to your account.
 
-| Phase | What | Status |
+| Version | What | Status |
 |---|---|---|
-| 0–4 | Chrome tiles: data service, director, window control, control panel, halftime reel | ✅ done (live-tested 10/17) |
-| v2.1 | **One app window** (Electron) with per-screen overlays, settings drawer, team colors and logos | ✅ done (live-tested 10/17) |
-| v2.2 | **Faster switching:** standby views, in-window switching card, faster play-by-play for on-screen games | ✅ done (live-tested 10/17) |
-| v2.3 | **Switch less:** break forecast from 76 recorded games, Low/Medium/High sensitivity, hysteresis | ✅ done (replayed 10/10 and 10/17) |
-| v3.0 | **Other TV services:** provider adapters with per-service config files | ✅ Xfinity re-verified live 10/18 through the adapter; full app check on a game day pending |
-| v3.1 | **Setup for everyone:** one-click installer, first-run setup, TV service settings, diagnostics | ✅ setup run live on Xfinity On Campus 10/18 (sign-in, scan 17 networks, playback, 4 streams); installer checked in check-only mode |
-| v4.1 | **Tennis** (ATP, WTA), **per-screen fullscreen**, the **big ticker** (the CFB ticker, built in, every sport) and the **mini ticker** | ✅ built and tested on recorded data and replays (10/19); not yet watched live with streams |
-| v4.0 | **Multi-sport:** sport modules (NFL, men's and women's college basketball, NBA, WNBA, NHL, MLB, MLS, Premier League, Champions League, La Liga), sport picker, 3-tier fill-ins | ✅ built and tested on recorded and rebuilt days (10/18); college football unchanged (identical decisions on its recorded days); not yet watched live with streams |
+| v0.0.1 | Chrome tiles: data service, director, window control, control panel, halftime reel | ✅ done (live-tested 10/17) |
+| v0.0.2 | **One app window** (Electron) with per-screen overlays, settings drawer, team colors and logos | ✅ done (live-tested 10/17) |
+| v0.0.3 | **Faster switching:** standby views, in-window switching card, faster play-by-play for on-screen games | ✅ done (live-tested 10/17) |
+| v0.0.4 | **Switch less:** break forecast from 76 recorded games, Low/Medium/High sensitivity, hysteresis | ✅ done (replayed 10/10 and 10/17) |
+| v0.0.5 | **Other TV services:** provider adapters with per-service config files | ✅ Xfinity re-verified live 10/18 through the adapter; full app check on a game day pending |
+| v0.0.6 | **Setup for everyone:** one-click installer, first-run setup, TV service settings, diagnostics | ✅ setup run live on Xfinity On Campus 10/18 (sign-in, scan 17 networks, playback, 4 streams); installer checked in check-only mode |
+| v0.0.7 | **Multi-sport:** sport modules (NFL, men's and women's college basketball, NBA, WNBA, NHL, MLB, MLS, Premier League, Champions League, La Liga), sport picker, 3-tier fill-ins | ✅ built and tested on recorded and rebuilt days (10/18); college football unchanged (identical decisions on its recorded days); not yet watched live with streams |
+| v0.0.8 | **Tennis** (ATP, WTA), **per-screen fullscreen**, the **big ticker** (the CFB ticker, built in, every sport) and the **mini ticker** | ✅ built and tested on recorded data and replays (10/19); not yet watched live with streams |
+| v0.0.9 | **TappedIn:** renamed from RedZone, one-download Windows installer (TappedIn-Setup.exe), new look | ✅ merged (PRs #4–#7); first installer build is v0.1.0 |
 
 ## Supported sports
 
