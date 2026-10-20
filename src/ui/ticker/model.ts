@@ -331,6 +331,8 @@ export class TickerAlerts {
       const prev = this.seen.get(g.id);
       this.seen.set(g.id, cur);
       if (!prev || g.phase === 'PRE') continue;
+      // A hot-moment alert ("Red zone") ends with the moment, not 45 s later.
+      if (cur.hot !== prev.hot && this.alerts.get(g.id)?.kind === 'moment') this.alerts.delete(g.id);
       const add = (a: Omit<TickerAlert, 'gameId' | 'at'>) => {
         const x = { ...a, gameId: g.id, at: now };
         this.alerts.set(g.id, x);
