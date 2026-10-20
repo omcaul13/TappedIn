@@ -3,13 +3,15 @@ import path from 'node:path';
 import { z } from 'zod';
 import { PROJECT_ROOT } from '../config';
 import { createComcastAdapter } from './comcast/adapter';
-import { createUrlAdapter } from './url/adapter';
+import { ComcastTuningSchema } from './comcast/tvapp';
+import { createUrlAdapter, UrlTuningSchema } from './url/adapter';
 import { compileRegex, ProviderConfigSchema, type ProviderAdapter, type ProviderConfig, type ProviderSummary } from './types';
 
 export { compileRegex };
 
 export const PROVIDERS_DIR = path.join(PROJECT_ROOT, 'config', 'providers');
 export const STATE_DIR = path.join(PROJECT_ROOT, '.state');
+const TUNING_SCHEMAS = { comcast: ComcastTuningSchema, url: UrlTuningSchema } as const;
 
 export interface LoadOptions {
   /** Where user overrides live (<stateDir>/providers/<id>.json). */
@@ -65,8 +67,12 @@ function mergeOverride(shipped: ProviderConfig, override: Record<string, unknown
     if (key === 'id') continue;
     const candidate = { ...merged, [key]: key in merged ? deepMerge(merged[key], value) : value };
     const r = ProviderConfigSchema.safeParse(candidate);
-    if (r.success) merged = r.data as Record<string, unknown>;
-    else skipped(key, z.prettifyError(r.error).split('\n').slice(0, 3).join(' '));
+    // The family's own tuning schema too: the adapter throws on a bad section, which would stop the app.
+    const tuning = r.success && r.data.family === shipped.family ? TUNING_SCHEMAS[shipped.family].safeParse(r.data.tuning) : null;
+    if (r.success && tuning?.success) merged = r.data as Record<string, unknown>;
+    else if (!r.success) skipped(key, z.prettifyError(r.error).split('\n').slice(0, 3).join(' '));
+    else if (!tuning) skipped(key, "the family can't be changed by an override");
+    else if (!tuning.success) skipped(key, z.prettifyError(tuning.error).split('\n').slice(0, 3).join(' '));
   }
   return merged as ProviderConfig;
 }
@@ -75,7 +81,6 @@ function mergeOverride(shipped: ProviderConfig, override: Record<string, unknown
 export function previewOverride(id: string, override: Record<string, unknown>): { config: ProviderConfig; warnings: string[] } {
   const warnings: string[] = [];
   const config = mergeOverride(shippedConfig(id), override, (key, why) => warnings.push(`"${key}": ${why}`));
-  if (config.family !== shippedConfig(id).family) warnings.push('"family" can\'t be changed by an override');
   try {
     adapterFor(config);
   } catch (err) {
