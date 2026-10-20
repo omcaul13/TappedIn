@@ -50,4 +50,4 @@ On every `v*` tag, `.github/workflows/release.yml` builds the signed installer, 
 
 ## Screenshots
 
-`src/img/*.jpg` were taken from the app in replay mode (`npm start -- --replay 20261017 --from 19:30`): data tiles, no streams. ESPN's team logos were blocked, so teams show the app's own abbreviation badges, and the halftime reel's highlight video is pixelated. Keep new screenshots free of broadcast video and logos.
+`src/img/*.jpg` were taken from the app in replay mode (`npm start -- --replay 20261017 --from 19:30`): data tiles, no streams. ESPN's team logos were blocked, so teams show the app's own abbreviation badges, the halftime reel's highlight video and the logos in the game-over picker are pixelated, and `setup.jpg` comes from `--setup-demo`. Keep new screenshots free of broadcast video and logos.
