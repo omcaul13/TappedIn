@@ -42,7 +42,8 @@ function readBody(req: IncomingMessage, limit = 16_384): Promise<string> {
 }
 
 export function startServer(port: number, handlers: ServerHandlers): Promise<LocalServer> {
-  const origins = new Set([`http://localhost:${port}`, `http://127.0.0.1:${port}`]);
+  const hosts = new Set([`localhost:${port}`, `127.0.0.1:${port}`]);
+  const origins = new Set([...hosts].map((h) => `http://${h}`));
   const streams = new Set<ServerResponse>();
   const server: Server = createServer(async (req, res) => {
     const url = new URL(req.url ?? '/', 'http://localhost');
@@ -51,6 +52,8 @@ export function startServer(port: number, handlers: ServerHandlers): Promise<Loc
       res.end(body);
     };
     const html = (body: string) => send(200, 'text/html; charset=utf-8', body);
+    // DNS rebinding: a site whose name now points at 127.0.0.1 is "same origin" to the browser; only Host shows it.
+    if (!hosts.has(req.headers.host ?? '')) return send(403, 'text/plain', 'forbidden');
 
     if (req.method === 'POST') {
       const origin = req.headers.origin;
