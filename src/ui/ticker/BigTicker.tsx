@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { FullscreenIcon, GearIcon, LockIcon, SportIcon, TickerIcon } from '../icons';
-import { act, post, type AppState, type GameDTO, type TeamDTO } from '../util';
+import { act, FULLSCREEN_KEY, post, type AppState, type GameDTO, type TeamDTO } from '../util';
 import css from './ticker.css';
 import { formatCard, tickerGames, tickerSections, type TickerAlerts, type TickerCard, type TickerSection } from './model';
 
@@ -284,7 +284,7 @@ export function BigTicker({ st, alerts, now, osFullscreen, settingsOpen, onSetti
           <button class={`iconbtn${settingsOpen ? ' on' : ''}`} onClick={onSettings} title="Settings (S)" data-tour="settings">
             <GearIcon />
           </button>
-          <button class="iconbtn" onClick={() => void window.rzShell?.toggleFullscreen()} title="Window full screen (F11)">
+          <button class="iconbtn" onClick={() => void window.rzShell?.toggleFullscreen()} title={`Window full screen (${FULLSCREEN_KEY})`}>
             <FullscreenIcon on={osFullscreen} />
           </button>
         </div>

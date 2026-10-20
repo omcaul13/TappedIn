@@ -54,6 +54,7 @@ export async function listTargets(cfg: Config): Promise<TargetInfo[]> {
 
 function spawnChrome(cfg: Config, args: string[]): void {
   if (!existsSync(cfg.chrome.executablePath)) {
+    if (process.platform === 'darwin') throw new Error(`Google Chrome is not installed (no ${cfg.chrome.executablePath}). Install it from https://www.google.com/chrome/ into Applications, or set chrome.executablePath in config/tappedin.config.json5.`);
     throw new Error(`Chrome not found at ${cfg.chrome.executablePath}. Fix chrome.executablePath in config/tappedin.config.json5.`);
   }
   spawn(cfg.chrome.executablePath, args, { detached: true, stdio: 'ignore', windowsHide: false }).unref();

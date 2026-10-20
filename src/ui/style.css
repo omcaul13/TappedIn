@@ -51,6 +51,9 @@ img { display: block; }
   -webkit-app-region: drag;
 }
 .app.fullscreen .topbar { padding-right: 12px; }
+/* Mac: the traffic lights sit top left and nothing on the right; in native full screen they're hidden. */
+.mac .topbar { padding-right: 12px; }
+.mac .app:not(.fullscreen) .topbar { padding-left: 80px; }
 .topbar > * { -webkit-app-region: no-drag; }
 .topbar .spacer { flex: 1; -webkit-app-region: drag; }
 .brand { display: flex; align-items: center; gap: 8px; font-weight: 800; letter-spacing: 0.02em; font-size: 14px; -webkit-app-region: drag; }

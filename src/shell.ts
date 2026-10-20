@@ -4,7 +4,7 @@ import { createRequire } from 'node:module';
 import path from 'node:path';
 import { createInterface } from 'node:readline';
 import { chromium, type Browser, type Page } from 'playwright-core';
-import { PROJECT_ROOT, type Config } from './config';
+import { DATA_ROOT, PROJECT_ROOT, type Config } from './config';
 import type { ProviderConfig } from './providers/types';
 
 // Starts the one-window app shell (electron/main.cjs) and finds its video views over the local
@@ -70,14 +70,16 @@ export function markerTitle(kind: 'SCREEN' | 'SPARE', n: number, generation: num
   return `RZ-${kind}-${n}${generation ? `-g${generation}` : ''}`;
 }
 
-/** Explorer may only be pointed at TappedIn's exports folder (Documents\TappedIn) or .state. */
-export function revealAllowed(file: string, documents: string, stateDir: string): boolean {
-  const target = path.win32.resolve(file).toLowerCase();
-  return [path.win32.join(documents, 'TappedIn'), stateDir].some((dir) => {
-    const d = path.win32.resolve(dir).toLowerCase();
-    return target.startsWith(d + '\\');
+/** Explorer (Finder on a Mac) may only be pointed at TappedIn's exports folder (Documents\TappedIn) or .state. */
+export function revealAllowed(file: string, documents: string, stateDir: string, p: typeof path.posix = osPathModule()): boolean {
+  const target = p.resolve(file).toLowerCase();
+  return [p.join(documents, 'TappedIn'), stateDir].some((dir) => {
+    const d = p.resolve(dir).toLowerCase();
+    return target.startsWith(d + p.sep);
   });
 }
+
+const osPathModule = () => (process.platform === 'win32' ? path.win32 : path.posix);
 
 interface Reply {
   type: 'reply';
@@ -158,7 +160,7 @@ export function shellProvider(p: ProviderConfig): ShellProvider {
 
 /** Write the shell provider file and return its path. */
 export function writeShellProvider(p: ProviderConfig): string {
-  const file = path.join(PROJECT_ROOT, '.state', 'shell-provider.json');
+  const file = path.join(DATA_ROOT, '.state', 'shell-provider.json');
   mkdirSync(path.dirname(file), { recursive: true });
   writeFileSync(file, JSON.stringify(shellProvider(p), null, 2));
   return file;
@@ -173,7 +175,8 @@ export async function startShell(cfg: Config, uiUrl: string, events: ShellEvents
   if (await debugPortOpen(cfg.electron.debugPort)) {
     throw new Error(`Something already uses port ${cfg.electron.debugPort} (an open TappedIn window?). Close it and start again.`);
   }
-  const electronPath = require('electron') as string;
+  // The Mac app has no node_modules/electron/dist: its launcher passes the app's own Electron.
+  const electronPath = process.env.TAPPEDIN_ELECTRON || (require('electron') as string);
   // Always --name=value: Electron exits at once on some space-separated values ("--screens 4").
   const args = [
     path.join(PROJECT_ROOT, 'electron', 'main.cjs'),
@@ -242,8 +245,8 @@ export async function startShell(cfg: Config, uiUrl: string, events: ShellEvents
     paths,
     reveal: async (file) => {
       const { documents } = await paths();
-      if (!revealAllowed(file, documents, path.join(PROJECT_ROOT, '.state'))) throw new Error(`won't open ${file}: only TappedIn exports can be shown`);
-      await router.request('reveal', { file: path.win32.resolve(file) }, 5000);
+      if (!revealAllowed(file, documents, path.join(DATA_ROOT, '.state'))) throw new Error(`won't open ${file}: only TappedIn exports can be shown`);
+      await router.request('reveal', { file: osPathModule().resolve(file) }, 5000);
     },
     quit: () => {
       if (child.connected) child.send({ type: 'quit' });

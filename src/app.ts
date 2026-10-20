@@ -1,7 +1,7 @@
 import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { resolveChannel } from './channels';
-import { loadOverrides, parseOverrides, PROJECT_ROOT, saveOverrides, SETTINGS_FILE, watchConfig, withOverrides, type Config, type SettingsOverrides } from './config';
+import { DATA_ROOT, loadOverrides, parseOverrides, PROJECT_ROOT, saveOverrides, SETTINGS_FILE, watchConfig, withOverrides, type Config, type SettingsOverrides } from './config';
 import { excitement } from './engine/audio';
 import type { ScreenState, UserAction } from './engine/director';
 import { channelNetworks, Engine, type TickResult } from './engine/engine';
@@ -165,14 +165,14 @@ export class App {
           channels: [...new Set([...cfg.highlights.youtubeChannels, ...SPORTS.flatMap((m) => m.highlights?.youtubeChannels ?? [])])],
           maxSearchesPerDay: cfg.highlights.maxYoutubeSearchesPerDay,
           minMinutesAfterFinal: cfg.highlights.youtubeMinMinutesAfterFinal,
-          cacheFile: path.join(PROJECT_ROOT, '.state', 'youtube-cache.json'),
+          cacheFile: path.join(DATA_ROOT, '.state', 'youtube-cache.json'),
         })
       : null;
     this.highlights = new HighlightService(cfg, youtube, (t) => this.info(t));
     if (opts.audioMode) this.engine.setAudioMode(opts.audioMode);
     this.clock = new Clock(opts.replay?.speed ?? 1);
-    const logs = path.join(PROJECT_ROOT, 'logs');
-    const file = opts.replay ? path.join(logs, `replay-${opts.replay.date}.jsonl`) : dailyLogFile(PROJECT_ROOT);
+    const logs = path.join(DATA_ROOT, 'logs');
+    const file = opts.replay ? path.join(logs, `replay-${opts.replay.date}.jsonl`) : dailyLogFile(DATA_ROOT);
     this.labelsFile = path.join(logs, opts.replay ? `labels-replay-${opts.replay.date}.jsonl` : 'labels.jsonl');
     this.log = new DecisionLog({ file, console: true });
     this.adapter = createAdapter(cfg.provider, { onWarning: (m) => this.info(m) });
@@ -270,7 +270,7 @@ export class App {
           interesting: () => this.engine.interestingGameIds(),
           onScreen: () => [...this.engine.relevantGameIds()],
           alsoPoll: () => (wantsAllSports(this.cfg.ticker) ? SPORTS.map((m) => m.id).filter((id) => !this.cfg.sports.enabled.includes(id)) : []),
-          recordDir: this.opts.record ? recordingDir(PROJECT_ROOT, `${espnDateKey()}-live`) : null,
+          recordDir: this.opts.record ? recordingDir(DATA_ROOT, `${espnDateKey()}-live`) : null,
         },
       );
       this.source.start();
@@ -387,7 +387,7 @@ export class App {
     return {
       dryRun: this.mode !== 'live',
       serverUrl: this.server.url,
-      stateFile: path.join(PROJECT_ROOT, '.state', 'tiles.json'),
+      stateFile: path.join(DATA_ROOT, '.state', 'tiles.json'),
       cacheFile: cacheFileFor(this.adapter.config.id, STATE_DIR),
       adapter: this.adapter,
     };
@@ -476,7 +476,7 @@ export class App {
     this.overrides = { ...this.overrides, ...change, ...(change.ticker ? { ticker: { ...this.overrides.ticker, ...change.ticker } } : {}) };
     saveOverrides(this.overrides);
     this.applyConfig();
-    this.info(`settings: ${Object.entries(change).map(([k, v]) => `${k} ${typeof v === 'object' ? JSON.stringify(v) : v}`).join(', ')} (saved in ${path.relative(PROJECT_ROOT, SETTINGS_FILE)})`);
+    this.info(`settings: ${Object.entries(change).map(([k, v]) => `${k} ${typeof v === 'object' ? JSON.stringify(v) : v}`).join(', ')} (saved in ${path.relative(DATA_ROOT, SETTINGS_FILE)})`);
     return { ok: true };
   }
 
@@ -1206,7 +1206,7 @@ export class App {
   }
 
   private async runReplay(r: NonNullable<AppOptions['replay']>): Promise<void> {
-    const dir = recordingDir(PROJECT_ROOT, r.date);
+    const dir = recordingDir(DATA_ROOT, r.date);
     const feed = r.synth ? synthFeed(dir, this.cfg) : recordedFeed(dir);
     const warmFrom = r.fromMs - 15 * 60_000;
     const tickMs = this.cfg.director.tickSeconds * 1000;

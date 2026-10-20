@@ -1,7 +1,7 @@
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
-import { PROJECT_ROOT } from '../config';
+import { DATA_ROOT, PROJECT_ROOT } from '../config';
 import { createComcastAdapter } from './comcast/adapter';
 import { ComcastTuningSchema } from './comcast/tvapp';
 import { createUrlAdapter, UrlTuningSchema } from './url/adapter';
@@ -10,7 +10,7 @@ import { compileRegex, ProviderConfigSchema, type ProviderAdapter, type Provider
 export { compileRegex };
 
 export const PROVIDERS_DIR = path.join(PROJECT_ROOT, 'config', 'providers');
-export const STATE_DIR = path.join(PROJECT_ROOT, '.state');
+export const STATE_DIR = path.join(DATA_ROOT, '.state');
 const TUNING_SCHEMAS = { comcast: ComcastTuningSchema, url: UrlTuningSchema } as const;
 
 export interface LoadOptions {

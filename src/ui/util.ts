@@ -21,6 +21,10 @@ export function typingIn(target: EventTarget | null): boolean {
 
 export const act = (type: string, screen: number, extra: Record<string, unknown> = {}) => post('/api/action', { type, screen, ...extra });
 
+/** The window runs on a Mac: traffic lights top left, ⌃⌘F instead of F11 (which macOS keeps for Show Desktop). */
+export const IS_MAC = typeof navigator !== 'undefined' && /^Mac/.test(navigator.platform);
+export const FULLSCREEN_KEY = IS_MAC ? '⌃⌘F' : 'F11';
+
 export const mmss = (sec: number) => `${Math.floor(Math.max(0, sec) / 60)}:${String(Math.max(0, Math.round(sec)) % 60).padStart(2, '0')}`;
 
 export const kickoff = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '');

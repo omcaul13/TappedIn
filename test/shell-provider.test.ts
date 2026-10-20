@@ -1,6 +1,7 @@
 import { createRequire } from 'node:module';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { parseConfig } from '../src/config';
+import { osPath, parseConfig } from '../src/config';
 import { loadProviderConfig } from '../src/providers/registry';
 import { effectiveStandby, shellProvider, type ShellProvider } from '../src/shell';
 
@@ -72,10 +73,22 @@ describe('shell requests and view names', async () => {
   it('only reveals files in the TappedIn exports folder or .state', () => {
     const docs = String.raw`C:\Users\me\OneDrive\Documents`;
     const state = String.raw`C:\code\redzone\.state`;
-    expect(revealAllowed(String.raw`C:\Users\me\OneDrive\Documents\TappedIn\tappedin-sling.json`, docs, state)).toBe(true);
-    expect(revealAllowed(String.raw`C:\code\redzone\.state\provider-check\a.png`, docs, state)).toBe(true);
-    expect(revealAllowed(String.raw`C:\Windows\System32\cmd.exe`, docs, state)).toBe(false);
-    expect(revealAllowed(String.raw`C:\Users\me\OneDrive\Documents\TappedIn\..\secrets.txt`, docs, state)).toBe(false);
+    const win = path.win32;
+    expect(revealAllowed(String.raw`C:\Users\me\OneDrive\Documents\TappedIn\tappedin-sling.json`, docs, state, win)).toBe(true);
+    expect(revealAllowed(String.raw`C:\code\redzone\.state\provider-check\a.png`, docs, state, win)).toBe(true);
+    expect(revealAllowed(String.raw`C:\Windows\System32\cmd.exe`, docs, state, win)).toBe(false);
+    expect(revealAllowed(String.raw`C:\Users\me\OneDrive\Documents\TappedIn\..\secrets.txt`, docs, state, win)).toBe(false);
+  });
+
+  it('on a Mac, only reveals files in ~/Documents/TappedIn or the Application Support .state', () => {
+    const docs = '/Users/me/Documents';
+    const state = '/Users/me/Library/Application Support/TappedIn/.state';
+    const mac = path.posix;
+    expect(revealAllowed('/Users/me/Documents/TappedIn/tappedin-sling.json', docs, state, mac)).toBe(true);
+    expect(revealAllowed(`${state}/provider-check/a.png`, docs, state, mac)).toBe(true);
+    expect(revealAllowed('/etc/passwd', docs, state, mac)).toBe(false);
+    expect(revealAllowed('/Users/me/Documents/TappedIn/../secrets.txt', docs, state, mac)).toBe(false);
+    expect(revealAllowed('/Users/me/Documents/TappedInOther/a.json', docs, state, mac)).toBe(false);
   });
 
   it('replies resolve only the matching request', async () => {
@@ -92,5 +105,27 @@ describe('shell requests and view names', async () => {
   it('a request with no reply times out', async () => {
     const router = new ReplyRouter(() => {});
     await expect(router.request('logout', {}, 20)).rejects.toThrow(/no reply/);
+  });
+});
+
+describe('config paths per OS', () => {
+  const file = String.raw`%LOCALAPPDATA%\TappedIn\electron`;
+
+  it('Windows paths are expanded as before', () => {
+    expect(osPath(file, 'win32', { LOCALAPPDATA: String.raw`C:\Users\me\AppData\Local` })).toBe(String.raw`C:\Users\me\AppData\Local\TappedIn\electron`);
+  });
+
+  it("on a Mac the config file's Windows paths land in Application Support", () => {
+    expect(osPath(file, 'darwin', {}, '/Users/me')).toBe('/Users/me/Library/Application Support/TappedIn/electron');
+    expect(osPath(String.raw`%LOCALAPPDATA%\TappedIn\chrome-profile`, 'darwin', {}, '/Users/me')).toBe('/Users/me/Library/Application Support/TappedIn/chrome-profile');
+    expect(osPath('/Volumes/x/profile', 'darwin', {}, '/Users/me')).toBe('/Volumes/x/profile');
+  });
+
+  it.runIf(process.platform === 'darwin')('the Mac uses Chrome.app, not chrome.exe', () => {
+    expect(parseConfig({}).chrome.executablePath).toBe('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome');
+  });
+
+  it.runIf(process.platform === 'win32')('Windows keeps chrome.exe', () => {
+    expect(parseConfig({}).chrome.executablePath).toBe(String.raw`C:\Program Files\Google\Chrome\Application\chrome.exe`);
   });
 });
