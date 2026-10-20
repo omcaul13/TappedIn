@@ -1,7 +1,7 @@
 import { appendFileSync, createReadStream, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { createInterface } from 'node:readline';
-import { createGunzip, gunzipSync, gzipSync } from 'node:zlib';
+import { constants, createGunzip, gunzipSync, gzipSync } from 'node:zlib';
 import type { SportId } from '../engine/types';
 
 // Recordings are NDJSON where every line is its own gzip member, so the file can be appended to
@@ -29,9 +29,9 @@ export function appendRecord(file: string, rec: RecordLine): number {
 /** Stream records one at a time (a full game day is far too big to hold as one string). */
 export async function* streamRecords(file: string): AsyncGenerator<RecordLine> {
   if (!existsSync(file)) return;
-  const gunzip = createGunzip();
+  // The recorder may be mid-append: a truncated last member just ends the stream (sync flush: no "unexpected end of file").
+  const gunzip = createGunzip({ finishFlush: constants.Z_SYNC_FLUSH });
   const lines = createInterface({ input: createReadStream(file).pipe(gunzip), crlfDelay: Infinity });
-  // The recorder may be mid-append: a truncated last member just ends the stream.
   gunzip.on('error', () => lines.close());
   for await (const line of lines) {
     if (!line) continue;
@@ -67,11 +67,15 @@ export function recordingFiles(dir: string) {
 }
 
 export function readRecords(file: string): RecordLine[] {
-  const text = gunzipSync(readFileSync(file)).toString('utf8');
-  return text
-    .split('\n')
-    .filter(Boolean)
-    .map((l) => JSON.parse(l) as RecordLine);
+  // Like streamRecords: a torn last member (recorder killed mid-append) is skipped, not fatal.
+  const text = gunzipSync(readFileSync(file), { finishFlush: constants.Z_SYNC_FLUSH }).toString('utf8');
+  return text.split('\n').flatMap((l) => {
+    try {
+      return l ? [JSON.parse(l) as RecordLine] : [];
+    } catch {
+      return [];
+    }
+  });
 }
 
 // Summary keys worth keeping for replay, tuning and halftime highlights (football: drives; most other
