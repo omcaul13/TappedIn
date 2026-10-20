@@ -14,9 +14,10 @@ export function stripUrls(s: string): string {
   return s.replace(/\bhttps?:\/\/[^\s"'<>)]+/g, (u) => {
     try {
       const x = new URL(u);
-      return `${x.origin}${x.pathname}`;
+      // Path parameters too: ";jsessionid=…" is a session id (school sign-in pages carry one).
+      return `${x.origin}${x.pathname.replace(/;[^/]*/g, '')}`;
     } catch {
-      return u.split(/[?#]/)[0];
+      return u.split(/[?#;]/)[0];
     }
   });
 }
