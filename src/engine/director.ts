@@ -170,10 +170,10 @@ export function otherScreenSports(screens: ScreenState[], self: number, views: M
   return out;
 }
 
-export function pickBest(screens: ScreenState[], sc: ScreenState, views: Map<string, GameView>, extraExclude: string[] = [], maxBreakRisk?: number): { best: RankedCandidate | null; ranked: RankedCandidate[]; duplicate: boolean } {
+export function pickBest(screens: ScreenState[], sc: ScreenState, views: Map<string, GameView>, extraExclude: string[] = [], maxBreakRisk?: number, includeBreaks = false): { best: RankedCandidate | null; ranked: RankedCandidate[]; duplicate: boolean } {
   const shown = othersShowing(screens, sc.id);
   const exclude = new Set([...(sc.homeGameId ? [sc.homeGameId] : []), ...extraExclude]);
-  const { ranked, duplicateFallback } = rankCandidates(views.values(), { exclude, shownGames: shown.games, shownChannels: shown.channels, maxBreakRisk, homeSport: screenSport(sc, views), otherSports: otherScreenSports(screens, sc.id, views) });
+  const { ranked, duplicateFallback } = rankCandidates(views.values(), { exclude, shownGames: shown.games, shownChannels: shown.channels, maxBreakRisk, homeSport: screenSport(sc, views), otherSports: otherScreenSports(screens, sc.id, views), includeBreaks });
   return { best: ranked[0] ?? null, ranked, duplicate: duplicateFallback };
 }
 
@@ -256,7 +256,13 @@ export function directorStep(prev: DirectorState, views: Map<string, GameView>, 
         continue;
       }
       if (sc.gameOver?.autoPickAt != null && now >= sc.gameOver.autoPickAt) {
-        const { best, ranked, duplicate } = pick(sc);
+        let r = pick(sc);
+        // A new home is for good: before doubling up on another screen's game, take a free live game that's only in a commercial.
+        if (r.duplicate) {
+          const free = pickBest(state.screens, sc, views, [], undefined, true);
+          if (free.best && !free.duplicate) r = free;
+        }
+        const { best, ranked, duplicate } = r;
         if (!best) {
           note(sc, 'NO_CANDIDATE', 'gameover-none', ['game over and no other live game to adopt yet']);
           continue;

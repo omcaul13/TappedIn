@@ -52,6 +52,8 @@ export interface RankOptions {
   homeSport?: SportId;
   /** Sports other screens are watching (their home games'). */
   otherSports?: ReadonlySet<SportId>;
+  /** Also take live games in a break of their own (a new home, not a fill-in). */
+  includeBreaks?: boolean;
 }
 
 /** Football's game clock math (kept for callers that predate src/sports/). */
@@ -88,7 +90,7 @@ export function rankCandidates(views: Iterable<GameView>, opts: RankOptions): { 
     const g = view.game;
     if (opts.exclude.has(g.id)) continue;
     if (!view.channel || view.channel.regional === 'unconfirmed') continue;
-    if (view.assessment.state !== 'LIVE' || g.phase !== 'LIVE') continue;
+    if (!(view.assessment.state === 'LIVE' || (opts.includeBreaks && view.assessment.state === 'BREAK')) || g.phase !== 'LIVE') continue;
     if (opts.maxBreakRisk !== undefined && (view.assessment.forecast?.confidence ?? 0) >= opts.maxBreakRisk) continue;
     const mod = sportOf(g.sport);
     const shownElsewhere = opts.shownGames.has(g.id) || opts.shownChannels.has(view.channel.number);
