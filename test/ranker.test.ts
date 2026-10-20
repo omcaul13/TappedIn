@@ -50,4 +50,11 @@ describe('ranker', () => {
     expect(onlyShown.ranked.map((x) => x.view.game.id)).toEqual(['shown']);
     expect(onlyShown.duplicateFallback).toBe(true);
   });
+
+  it("another screen's sport (tier 2) is ordered by the normalized score, not that sport's own order", () => {
+    const blowoutRz = view(snap({ id: 'rz', ...score(28, 0), period: 1, clockSec: 600, situation: rz }), 'LIVE', 849); // hot, but score 25
+    const closeLate = view(snap({ id: 'close', ...score(17, 14), period: 4, clockSec: 120 }), 'LIVE', 850); // score ~80
+    const r = rankCandidates([blowoutRz, closeLate], { ...none, homeSport: 'nhl', otherSports: new Set(['cfb'] as const) });
+    expect(r.ranked.map((x) => [x.view.game.id, x.tier])).toEqual([['close', 2], ['rz', 2]]);
+  });
 });
