@@ -282,6 +282,8 @@ export function directorStep(prev: DirectorState, views: Map<string, GameView>, 
         }
         continue;
       }
+      // The reel already gave up on this halftime (longer than halftimeMax): don't start it again.
+      if (now - home.assessment.since > halftimeMax * 1000) continue;
       if (dwellLeft(sc) > 0) {
         note(sc, 'HOLD_DWELL', 'dwell-halftime', [`halftime, holding ${Math.ceil(dwellLeft(sc) / 1000)}s for dwell`]);
         continue;

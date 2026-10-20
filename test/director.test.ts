@@ -176,6 +176,19 @@ describe('director', () => {
     expect(w.showing(1)).toBe('h1');
   });
 
+  it('a halftime longer than halftimeMaxSeconds: back to the game, and the reel does not start again', () => {
+    const w = world();
+    w.act({ type: 'setHome', screen: 1, gameId: 'h1' }, T0);
+    w.set('h1', 'HALFTIME', T0 + sec(30));
+    w.step(T0 + sec(30));
+    expect(w.showing(1)).toBe('halftime');
+    const over = T0 + sec(30 + cfg.halftimeMaxSeconds + 1);
+    expect(w.step(over).decisions[0].rule).toBe('HALFTIME_OVER');
+    expect(w.showing(1)).toBe('h1');
+    expect(w.step(over + sec(60)).commands).toEqual([]); // still halftime on ESPN, past the dwell
+    expect(w.showing(1)).toBe('h1');
+  });
+
   it('game over → pop-up after the linger → auto-pick after 120s becomes the new home', () => {
     const w = world();
     w.act({ type: 'setHome', screen: 1, gameId: 'h1' }, T0);
