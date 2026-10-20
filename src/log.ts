@@ -50,12 +50,22 @@ export interface DecisionLogOptions {
 }
 
 export class DecisionLog {
+  private warned = false;
+
   constructor(private readonly opts: DecisionLogOptions) {
     if (opts.file) mkdirSync(path.dirname(opts.file), { recursive: true });
   }
 
   write(e: LogEntry): void {
-    if (this.opts.file) appendFileSync(this.opts.file, JSON.stringify(e) + '\n');
+    if (this.opts.file) {
+      // A locked or full disk must not crash the app (this runs inside timers and IPC handlers).
+      try {
+        appendFileSync(this.opts.file, JSON.stringify(e) + '\n');
+      } catch (err) {
+        if (!this.warned) console.warn(`could not write ${this.opts.file} (${err instanceof Error ? err.message : err}); some log lines are missing`);
+        this.warned = true;
+      }
+    }
     if (this.opts.console && (e.type !== 'assess' || e.relevant)) console.log(formatEntry(e));
   }
 
