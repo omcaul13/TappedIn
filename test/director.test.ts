@@ -227,6 +227,31 @@ describe('director', () => {
     expect(w.screen(1).homeGameId).toBe('c1');
   });
 
+  it("game over: the auto-pick takes a free live game in a commercial over another screen's home", () => {
+    const w = world();
+    w.act({ type: 'setHome', screen: 1, gameId: 'h2' }, T0);
+    w.act({ type: 'setHome', screen: 2, gameId: 'h1' }, T0);
+    w.set('c1', 'BREAK', T0); // live, on no screen, only in a commercial
+    w.set('c2', 'FINAL', T0);
+    w.set('h1', 'FINAL', T0 + sec(100));
+    w.step(T0 + sec(120)); // pop-up
+    const pick = w.step(T0 + sec(240));
+    expect(pick.decisions.find((d) => d.screen === 2)).toMatchObject({ rule: 'AUTO_PICK', gameId: 'c1', duplicate: false });
+    expect(w.screen(2).homeGameId).toBe('c1');
+  });
+
+  it('game over: with every live game on another screen, the auto-pick still takes a duplicate (flagged)', () => {
+    const w = world();
+    w.act({ type: 'setHome', screen: 1, gameId: 'h2' }, T0);
+    w.act({ type: 'setHome', screen: 2, gameId: 'h1' }, T0);
+    w.set('c1', 'FINAL', T0);
+    w.set('c2', 'FINAL', T0);
+    w.set('h1', 'FINAL', T0 + sec(100));
+    w.step(T0 + sec(120));
+    const pick = w.step(T0 + sec(240));
+    expect(pick.decisions.find((d) => d.screen === 2)).toMatchObject({ rule: 'AUTO_PICK', gameId: 'h2', duplicate: true });
+  });
+
   it('picking from the pop-up sets the new home right away', () => {
     const w = world();
     w.act({ type: 'setHome', screen: 1, gameId: 'h1' }, T0);
