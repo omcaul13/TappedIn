@@ -91,6 +91,8 @@ export class App {
   private source: LiveSource | null = null;
   private timers: NodeJS.Timeout[] = [];
   private homesSet = false;
+  /** The replay's feed: not started, warming up (before --from), or playing (its ticks are running). */
+  private replay: 'idle' | 'warming' | 'playing' = 'idle';
   private focus = 0;
   /** Per-screen fullscreen: the screen filling the window (0: the grid). */
   private fullscreen = 0;
@@ -246,8 +248,13 @@ export class App {
   /** ESPN data, the engine's ticks and the window checks: the app proper (after setup). */
   private startNormal(): void {
     const cfg = this.cfg;
-    if (this.opts.replay) void this.runReplay(this.opts.replay);
-    else {
+    if (this.opts.replay) {
+      // Diagnostics and setup pause the app, not the replay's feed: resume its ticks instead of starting it over.
+      if (this.replay === 'idle') {
+        this.replay = 'warming';
+        void this.runReplay(this.opts.replay);
+      } else if (this.replay === 'playing') this.startTicking();
+    } else {
       this.source = new LiveSource(
         cfg,
         {
@@ -1219,6 +1226,7 @@ export class App {
         started = true;
         this.clock.start(r.fromMs);
         this.info(`replaying ${r.date} from ${fmtClock(r.fromMs)} ET at ${r.speed}x`);
+        this.replay = 'playing';
         this.startTicking();
       }
       const wait = (item.at - this.clock.now()) / r.speed;
