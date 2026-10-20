@@ -79,7 +79,8 @@ export class HighlightService {
     const finals = games.filter((g) => g.id !== homeGameId && g.phase === 'FINAL').sort(order);
     let fetched = 0;
     if (h.espnClips) {
-      for (const g of [...home, ...live, ...finals].slice(0, h.maxGamesPerRefresh)) {
+      // Tennis has no summary endpoint (HTTP 400): asking would only burn a slot every refresh.
+      for (const g of [...home, ...live, ...finals].filter((g) => !sportOf(g.sport).noSummary).slice(0, h.maxGamesPerRefresh)) {
         const have = this.clips.get(g.id);
         const ttl = g.phase === 'FINAL' ? FINAL_TTL : LIVE_TTL;
         if (have && Date.now() - have.fetchedAt < ttl) continue;
