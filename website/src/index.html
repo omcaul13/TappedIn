@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TappedIn: the red zone channel for every sport</title>
-  <meta name="description" content="TappedIn shows up to four live games from your own TV service in one window, and switches a screen to the best live game whenever its game goes to commercial. Free for Windows.">
+  <meta name="description" content="TappedIn shows up to four live games from your own TV service in one window, and switches a screen to the best live game whenever its game goes to commercial. Free for Windows and Mac.">
   <meta name="theme-color" content="#06070c">
   <meta property="og:title" content="TappedIn: the red zone channel for every sport">
   <meta property="og:description" content="Up to four games in one window. Commercial break? TappedIn switches to the best live game, then comes back when play resumes.">
@@ -23,7 +23,7 @@
 <section class="hero" id="download">
   <div class="wrap">
     <div>
-      <span class="eyebrow">Free · for Windows</span>
+      <span class="eyebrow">Free · for Windows and Mac</span>
       <h1>Every commercial break, <span class="grad">a better game.</span></h1>
       <p class="lede">TappedIn puts up to four live games from your own TV service in one window. When a game goes to a commercial break, its screen jumps to the best game that's live right now, and comes back the moment play resumes.</p>
 
@@ -33,21 +33,26 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 5.5 10.5 4.4v7.1H3zm0 13L10.5 19.6v-7.1H3zm8.5 1.2L21 21v-8.5h-9.5zm0-15.4v7.2H21V3z"/></svg>
             Download TappedIn for Windows
           </a>
-          <p class="dl-meta"><span data-latest>Latest beta · Windows 10 &amp; 11, 64-bit</span> · <a href="/install.html">Install guide</a></p>
-          <p class="dl-alt">On a Mac? TappedIn is Windows-only for now.</p>
         </div>
         <div class="for-mac">
-          <p class="dl-note"><strong>TappedIn is Windows-only for now.</strong> There's no Mac version yet. If you have a Windows PC, download it there.</p>
-          <p class="dl-meta"><a href="/download/windows">Download the Windows installer anyway</a> · <span data-latest>Latest beta</span></p>
+          <a class="btn btn-primary btn-xl" href="/download/mac">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="11" rx="1.5"/><path d="M2 19h20"/></svg>
+            Download TappedIn for Mac
+          </a>
         </div>
         <div class="for-mobile">
-          <p class="dl-note"><strong>TappedIn is a desktop app for Windows.</strong> Send yourself the link and open it on your PC: <span class="link-text" data-link-text>this page</span></p>
+          <p class="dl-note"><strong>TappedIn is a desktop app for Windows and Mac.</strong> Send yourself the link and open it on your computer: <span class="link-text" data-link-text>this page</span></p>
           <div class="share">
             <button class="btn btn-primary" type="button" data-copy>Copy link</button>
             <button class="btn" type="button" data-share hidden>Share</button>
             <a class="btn" href="mailto:" data-email>Email me the link</a>
           </div>
         </div>
+        <ul class="dl-platforms no-mobile">
+          <li><a href="/download/windows">Windows</a> · <span data-latest>Latest beta · Windows 10 &amp; 11, 64-bit</span></li>
+          <li><a href="/download/mac">Mac</a> · <span data-latest-mac>Requires macOS 12 or later, Apple Silicon or Intel</span></li>
+        </ul>
+        <p class="dl-meta no-mobile"><a href="/install.html">Install guide</a></p>
       </div>
       <details class="notes" data-notes hidden>
         <summary>Release notes for <span data-notes-version></span></summary>
@@ -207,7 +212,8 @@
     </details>
     <details>
       <summary>Is there a Mac version?</summary>
-      <p>Not yet. TappedIn runs on Windows 10 and 11 (64-bit).</p>
+      <!-- Unsigned Mac build: drop the "isn't notarized" sentence once it's Developer ID signed and notarized (see install.html data-unsigned-mac). -->
+      <p>Yes, for Apple Silicon and Intel Macs. It isn't notarized by Apple yet, so the first time you open it you allow it once in System Settings: see the <a href="/install.html#mac">install guide</a>. TappedIn also runs on Windows 10 and 11 (64-bit).</p>
     </details>
     <details>
       <summary>Does it record or share the games?</summary>
@@ -223,27 +229,33 @@
 <section class="cta">
   <div class="wrap">
     <h2>Ready for kickoff?</h2>
-    <p class="dim">Free. Windows 10 &amp; 11. Bring your own TV service.</p>
+    <p class="dim">Free. Windows 10 &amp; 11 or macOS. Bring your own TV service.</p>
     <div class="dl">
       <div class="for-windows">
         <a class="btn btn-primary btn-xl" href="/download/windows">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 5.5 10.5 4.4v7.1H3zm0 13L10.5 19.6v-7.1H3zm8.5 1.2L21 21v-8.5h-9.5zm0-15.4v7.2H21V3z"/></svg>
           Download TappedIn for Windows
         </a>
-        <p class="dl-meta"><span data-latest>Latest beta</span> · <a href="/install.html">Install guide</a></p>
       </div>
       <div class="for-mac">
-        <p class="dl-note"><strong>TappedIn is Windows-only for now.</strong> If you have a Windows PC, download it there.</p>
-        <p class="dl-meta"><a href="/download/windows">Download the Windows installer anyway</a></p>
+        <a class="btn btn-primary btn-xl" href="/download/mac">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="11" rx="1.5"/><path d="M2 19h20"/></svg>
+          Download TappedIn for Mac
+        </a>
       </div>
       <div class="for-mobile">
-        <p class="dl-note"><strong>TappedIn is a desktop app for Windows.</strong> Send yourself the link and open it on your PC.</p>
+        <p class="dl-note"><strong>TappedIn is a desktop app for Windows and Mac.</strong> Send yourself the link and open it on your computer.</p>
         <div class="share">
           <button class="btn btn-primary" type="button" data-copy>Copy link</button>
           <button class="btn" type="button" data-share hidden>Share</button>
           <a class="btn" href="mailto:" data-email>Email me the link</a>
         </div>
       </div>
+      <ul class="dl-platforms no-mobile">
+        <li><a href="/download/windows">Windows</a> · <span data-latest>Latest beta · Windows 10 &amp; 11, 64-bit</span></li>
+        <li><a href="/download/mac">Mac</a> · <span data-latest-mac>Requires macOS 12 or later, Apple Silicon or Intel</span></li>
+      </ul>
+      <p class="dl-meta no-mobile"><a href="/install.html">Install guide</a></p>
     </div>
   </div>
 </section>

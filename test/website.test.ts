@@ -35,6 +35,14 @@ describe('website build', async () => {
     }
   });
 
+  it('links both platforms on the home page, with the static Mac requirement as the fallback', () => {
+    const html = page('index.html');
+    expect(html).toContain('href="/download/mac"');
+    expect(html).toContain('href="/download/windows"');
+    expect(html).toContain('<span data-latest-mac>Requires macOS 12 or later, Apple Silicon or Intel</span>');
+    expect(page('install.html')).toContain('<section data-unsigned-mac>');
+  });
+
   it("covers exactly the app's sports", () => {
     const groups = JSON.parse(readFileSync(path.join(PROJECT_ROOT, 'website', 'sports.json'), 'utf8')) as { leagues: { id: string }[] }[];
     expect(groups.flatMap((g) => g.leagues.map((l) => l.id)).sort()).toEqual([...SPORT_IDS].sort());
@@ -42,7 +50,7 @@ describe('website build', async () => {
 });
 
 describe('download button', async () => {
-  const { pickPlatform, metaLine } = await site('src/download.js');
+  const { pickPlatform, metaLine, macMetaLine, MAC_FALLBACK } = await site('src/download.js');
 
   it('picks the platform from the browser hints', () => {
     const ua = {
@@ -69,6 +77,17 @@ describe('download button', async () => {
     expect(metaLine({ version: '1', date: 'yesterday', size: 1 })).toBeNull();
     expect(metaLine({ version: '1', date: '2026-10-20', size: '1' })).toBeNull();
   });
+
+  it('shows the Mac version, size and requirement, or the static requirement when latest-mac.json is missing or odd', () => {
+    expect(macMetaLine({ version: '0.1.0-beta.2', date: '2026-10-20', size: 209715200, minimumSystemVersion: '12.0' })).toBe(
+      'Version 0.1.0-beta.2 · 200 MB · Requires macOS 12.0 or later, Apple Silicon or Intel',
+    );
+    expect(MAC_FALLBACK).toBe('Requires macOS 12 or later, Apple Silicon or Intel');
+    expect(macMetaLine(null)).toBe(MAC_FALLBACK);
+    expect(macMetaLine({ error: 'No release has been published yet.' })).toBe(MAC_FALLBACK);
+    expect(macMetaLine({ version: '1', size: 1, minimumSystemVersion: '<b>12</b>' })).toBe(MAC_FALLBACK);
+    expect(macMetaLine({ version: '1', size: '1', minimumSystemVersion: '12.0' })).toBe(MAC_FALLBACK);
+  });
 });
 
 describe('release notes', async () => {
@@ -90,12 +109,18 @@ describe('release notes', async () => {
 
 describe('download functions', async () => {
   const { onRequest, parseRange } = await site('functions/download/windows.js');
+  const { onRequest: mac } = await site('functions/download/mac.js');
+  const { onRequest: macZip } = await site('functions/download/mac-zip.js');
   const { onRequestGet: latest } = await site('functions/api/latest.js');
+  const { onRequestGet: macUpdate, compareVersions } = await site('functions/api/update/mac/[version].js');
   const exe = 'MZ0123456789';
+  const dmg = 'koly-0123456789abcdef';
   const latestJson = JSON.stringify({ version: '0.1.0-beta.1', date: '2026-10-20', size: exe.length, notes: [] });
+  const latestMacJson = JSON.stringify({ version: '0.1.0-beta.2', date: '2026-10-21', size: dmg.length, notes: ['Mac version'], minimumSystemVersion: '12.0' });
+  const allFiles = { 'TappedIn-Setup.exe': exe, 'latest.json': latestJson, 'TappedIn.dmg': dmg, 'TappedIn-mac.zip': 'PK0123', 'latest-mac.json': latestMacJson };
 
-  /** A stand-in for the R2 binding with the installer and latest.json, or only what's given. */
-  function bucket(files: Record<string, string> = { 'TappedIn-Setup.exe': exe, 'latest.json': latestJson }) {
+  /** A stand-in for the R2 binding with every release object, or only what's given. */
+  function bucket(files: Record<string, string> = allFiles) {
     const obj = (key: string, body: string) => ({ size: files[key].length, httpEtag: `"etag-${key}"`, body, json: async () => JSON.parse(body) });
     return {
       head: async (key: string) => (key in files ? obj(key, '') : null),
@@ -108,6 +133,7 @@ describe('download functions', async () => {
   }
   const call = (init: RequestInit & { url?: string } = {}, env = { DOWNLOADS: bucket() }) =>
     onRequest({ request: new Request('https://tappedin.pages.dev/download/windows', init), env });
+  const req = (url: string, init?: RequestInit) => new Request(`https://tappedin.pages.dev${url}`, init);
 
   it('serves the whole installer under its versioned name', async () => {
     const res = await call();
@@ -151,9 +177,61 @@ describe('download functions', async () => {
   });
 
   it('passes latest.json through, or 404s before the first release', async () => {
-    const ok = await latest({ env: { DOWNLOADS: bucket() } });
+    const ok = await latest({ request: req('/api/latest'), env: { DOWNLOADS: bucket() } });
     expect(ok.status).toBe(200);
     expect(await ok.json()).toMatchObject({ version: '0.1.0-beta.1' });
-    expect((await latest({ env: { DOWNLOADS: bucket({}) } })).status).toBe(404);
+    expect((await latest({ request: req('/api/latest'), env: { DOWNLOADS: bucket({}) } })).status).toBe(404);
+    const forMac = await latest({ request: req('/api/latest?platform=mac'), env: { DOWNLOADS: bucket() } });
+    expect(await forMac.json()).toMatchObject({ version: '0.1.0-beta.2', minimumSystemVersion: '12.0' });
+    expect((await latest({ request: req('/api/latest?platform=mac'), env: { DOWNLOADS: bucket({ 'latest.json': latestJson }) } })).status).toBe(404);
+  });
+
+  it('serves the Mac disk image and update zip with the same shared streaming', async () => {
+    const env = { DOWNLOADS: bucket() };
+    const whole = await mac({ request: req('/download/mac'), env });
+    expect(whole.status).toBe(200);
+    expect(whole.headers.get('content-type')).toBe('application/x-apple-diskimage');
+    expect(whole.headers.get('content-disposition')).toBe('attachment; filename="TappedIn-0.1.0-beta.2.dmg"');
+    expect(await whole.text()).toBe(dmg);
+    const part = await mac({ request: req('/download/mac', { headers: { range: 'bytes=-4' } }), env });
+    expect(part.status).toBe(206);
+    expect(part.headers.get('content-range')).toBe(`bytes ${dmg.length - 4}-${dmg.length - 1}/${dmg.length}`);
+    expect(await part.text()).toBe('cdef');
+    expect((await mac({ request: req('/download/mac', { headers: { range: 'bytes=999-' } }), env })).status).toBe(416);
+    expect((await mac({ request: req('/download/mac'), env: { DOWNLOADS: bucket({ 'TappedIn-Setup.exe': exe }) } })).status).toBe(503);
+    const noMeta = await mac({ request: req('/download/mac'), env: { DOWNLOADS: bucket({ 'TappedIn.dmg': dmg }) } });
+    expect(noMeta.headers.get('content-disposition')).toBe('attachment; filename="TappedIn.dmg"');
+    const zip = await macZip({ request: req('/download/mac-zip'), env });
+    expect(zip.headers.get('content-type')).toBe('application/zip');
+    expect(await zip.text()).toBe('PK0123');
+    expect((await macZip({ request: req('/download/mac-zip'), env: { DOWNLOADS: bucket({}) } })).status).toBe(503);
+  });
+
+  it('compares versions for the Mac update feed', () => {
+    expect(compareVersions('0.1.0', '0.1.0')).toBe(0);
+    expect(compareVersions('0.1.0', '0.2.0')).toBeLessThan(0);
+    expect(compareVersions('0.10.0', '0.9.0')).toBeGreaterThan(0);
+    expect(compareVersions('1.0', '1.0.0')).toBe(0);
+    expect(compareVersions('0.1.0-beta.1', '0.1.0')).toBeLessThan(0);
+    expect(compareVersions('0.1.0', '0.1.0-beta.1')).toBeGreaterThan(0);
+    expect(compareVersions('0.1.0-beta.2', '0.1.0-beta.10')).toBeLessThan(0);
+    expect(compareVersions('0.1.0-beta.2', '0.1.0-beta.2')).toBe(0);
+  });
+
+  it('answers the Mac update feed: 204 when current, the zip when older', async () => {
+    const env = { DOWNLOADS: bucket() };
+    const feed = (version: string, e = env) => macUpdate({ request: req(`/api/update/mac/${version}`), env: e, params: { version } });
+    expect((await feed('0.1.0-beta.2')).status).toBe(204);
+    expect((await feed('0.1.0')).status).toBe(204);
+    expect((await feed('0.2.0')).status).toBe(204);
+    const older = await feed('0.1.0-beta.1');
+    expect(older.status).toBe(200);
+    expect(await older.json()).toEqual({
+      url: 'https://tappedin.pages.dev/download/mac-zip',
+      name: '0.1.0-beta.2',
+      notes: 'Mac version',
+      pub_date: '2026-10-21T00:00:00Z',
+    });
+    expect((await feed('0.0.1', { DOWNLOADS: bucket({}) })).status).toBe(204);
   });
 });

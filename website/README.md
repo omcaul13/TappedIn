@@ -8,25 +8,36 @@ website/
   partials/               nav and footer shared by every page
   sports.json             the sports section (a test checks it lists exactly the app's sports)
   build.mjs               src/ -> dist/, filling in the sports and the TV services (from config/providers/*.json)
-  functions/              Cloudflare Pages Functions: /download/windows and /api/latest, served from R2
+  functions/              Cloudflare Pages Functions: /download/*, /api/latest and the Mac update feed, served from R2
+  lib/r2-file.js          the streaming (ranges, If-Range, 503) every /download/* Function shares
   release-info.mjs        writes latest.json for a release (release.yml runs it)
 ```
 
 - **Build:** `node website/build.mjs` writes `website/dist/`.
-- **Preview:** `python -m http.server -d website/dist 8080`. The download button and version line need the Functions, so locally the button 404s and the line shows its fallback text.
+- **Preview:** `python -m http.server -d website/dist 8080`. The download buttons and version lines need the Functions, so locally the buttons 404 and the lines show their fallback text.
 - **Tests:** `npx vitest run test/website.test.ts`.
 - **The bug-report address** is `REPORT_EMAIL` at the top of `build.mjs`.
 
 ## How the download works
 
-The installer (about 160 MB) is too big for Cloudflare Pages (25 MiB per file) and for git, so it lives in a **private R2 bucket**, `tappedin-downloads`, holding two objects:
+The downloads (about 160 MB each) are too big for Cloudflare Pages (25 MiB per file) and for git, so they live in a **private R2 bucket**, `tappedin-downloads`, holding:
 
-- `TappedIn-Setup.exe`, the latest installer.
-- `latest.json`, `{ version, date, size, notes }`.
+- `TappedIn-Setup.exe`, the latest Windows installer, and `latest.json`, `{ version, date, size, notes }`.
+- `TappedIn.dmg`, the latest universal (Apple Silicon and Intel) Mac disk image; `TappedIn-mac.zip`, the same app zipped for auto-updates; and `latest-mac.json`, `{ version, date, size, notes, minimumSystemVersion }` (`size` is the dmg's, `minimumSystemVersion` a string like `"12.0"`).
 
-`/download/windows` streams the installer from the bucket under the site's own address, named `TappedIn-Setup-<version>.exe`, with resumable downloads. `/api/latest` returns `latest.json` for the version line and release notes.
+The Functions serve them under the site's own address, with resumable downloads:
 
-On every `v*` tag, `.github/workflows/release.yml` builds the signed installer, attaches it to the GitHub release, then uploads both objects to R2. The site never needs editing for a new version.
+| Endpoint | Serves |
+| --- | --- |
+| `/download/windows` | `TappedIn-Setup.exe`, named `TappedIn-Setup-<version>.exe` |
+| `/download/mac` | `TappedIn.dmg`, named `TappedIn-<version>.dmg` |
+| `/download/mac-zip` | `TappedIn-mac.zip`, for the Mac app's updater |
+| `/api/latest` | `latest.json`, for the Windows version line and release notes; `?platform=mac` returns `latest-mac.json` for the Mac line |
+| `/api/update/mac/<version>` | the Squirrel.Mac feed: 204 when `<version>` is current, else `{ url, name, notes, pub_date }` pointing at `/download/mac-zip` (a prerelease like `0.1.0-beta.1` counts as older than `0.1.0`) |
+
+A missing object gives a 503 ("try again in a few minutes") or a 404 from `/api/latest`; the page then keeps its static text and links.
+
+On every `v*` tag, `.github/workflows/release.yml` builds the signed installer, attaches it to the GitHub release, then uploads the Windows objects to R2; the Mac release workflow uploads the Mac ones. The site never needs editing for a new version.
 
 ## One-time setup (Cloudflare)
 

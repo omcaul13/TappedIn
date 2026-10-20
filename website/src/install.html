@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Install TappedIn on Windows</title>
-  <meta name="description" content="How to download and install TappedIn on Windows 10 or 11, including the Windows SmartScreen warning, first-run setup and system requirements.">
+  <title>Install TappedIn</title>
+  <meta name="description" content="How to download and install TappedIn on Windows 10 or 11 or on a Mac, including the Windows SmartScreen and macOS security warnings, first-run setup and system requirements.">
   <meta name="theme-color" content="#06070c">
   <link rel="icon" href="/img/mark.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/style.css">
@@ -16,31 +16,28 @@
 
 <main id="main" class="wrap doc">
   <h1>Install TappedIn</h1>
-  <p class="lede">About five minutes, start to finish. No admin rights needed, and you don't need anything else installed first.</p>
+  <p class="lede">About five minutes, start to finish. You don't need anything else installed first. On a Mac? Skip to <a href="#mac">installing on a Mac</a>.</p>
 
   <h2 id="requirements">What you need</h2>
   <ul class="reqs">
-    <li><strong>Windows 10 or 11, 64-bit</strong><span class="dim">No Mac version yet.</span></li>
+    <li><strong>Windows 10 or 11, 64-bit</strong><span class="dim">No admin rights needed.</span></li>
+    <li><strong>Or a Mac with macOS 12 or later</strong><span class="dim">Apple Silicon or Intel.</span></li>
     <li><strong>About 1 GB of free space</strong><span class="dim">The app takes about 600 MB.</span></li>
     <li><strong>Your own TV service</strong><span class="dim">Campus TV or a home TV service <a href="/#services">TappedIn supports</a>.</span></li>
     <li><strong>Internet fast enough for a few HD streams</strong><span class="dim">Each screen is one stream. Campus TV usually needs the campus network.</span></li>
   </ul>
 
-  <h2 id="steps">Step by step</h2>
+  <h2 id="steps">On Windows, step by step</h2>
   <ol class="big">
     <li>
       <h3>Download the installer</h3>
       <div class="dl">
-        <div class="for-windows">
+        <div class="no-mobile">
           <a class="btn btn-primary btn-xl" href="/download/windows">Download TappedIn for Windows</a>
           <p class="dl-meta"><span data-latest>Latest beta</span></p>
         </div>
-        <div class="for-mac">
-          <p class="dl-note"><strong>TappedIn is Windows-only for now.</strong> Open this page on your Windows PC.</p>
-          <p class="dl-meta"><a href="/download/windows">Download the Windows installer anyway</a></p>
-        </div>
         <div class="for-mobile">
-          <p class="dl-note"><strong>Open this page on your Windows PC</strong> to download TappedIn: <span class="link-text" data-link-text>this site</span></p>
+          <p class="dl-note"><strong>Open this page on your computer</strong> to download TappedIn: <span class="link-text" data-link-text>this site</span></p>
           <div class="share">
             <button class="btn btn-primary" type="button" data-copy>Copy link</button>
             <button class="btn" type="button" data-share hidden>Share</button>
@@ -84,7 +81,7 @@
       <p>It installs just for you, to <code>%LOCALAPPDATA%\Programs\TappedIn</code>, so it doesn't ask for an administrator password. Choose whether you want a desktop shortcut, and leave <strong>Launch TappedIn</strong> ticked on the last page. Everything TappedIn needs is included.</p>
     </li>
 
-    <li>
+    <li id="setup">
       <h3>First-run setup</h3>
       <p>The first start opens setup:</p>
       <ol>
@@ -101,11 +98,44 @@
     </li>
   </ol>
 
+  <h2 id="mac">On a Mac, step by step</h2>
+  <ol class="big">
+    <li>
+      <h3>Download the disk image</h3>
+      <div class="dl no-mobile">
+        <a class="btn btn-primary btn-xl" href="/download/mac">Download TappedIn for Mac</a>
+        <p class="dl-meta"><span data-latest-mac>Requires macOS 12 or later, Apple Silicon or Intel</span></p>
+      </div>
+      <p>The file is called <code>TappedIn-&lt;version&gt;.dmg</code>. The same file works on Apple Silicon and Intel Macs.</p>
+    </li>
+    <li>
+      <h3>Drag TappedIn to Applications</h3>
+      <p>Double-click the <code>.dmg</code> in your Downloads. In the window that opens, drag <strong>TappedIn</strong> onto the <strong>Applications</strong> folder. Then eject the disk image: click the eject button next to TappedIn in the Finder sidebar.</p>
+    </li>
+  </ol>
+
+  <!-- The Mac app is only ad-hoc signed for now. Delete this section once it's Developer ID signed and notarized. -->
+  <section data-unsigned-mac>
+    <h3>The first time you open it</h3>
+    <p>TappedIn isn't notarized by Apple yet, so macOS asks you to allow it once. These steps are for macOS 15 and later:</p>
+    <ol>
+      <li>Open <strong>TappedIn</strong> from Applications. macOS says it can't verify that TappedIn is free of malware. Click <strong>Done</strong>.</li>
+      <li>Open <strong>System Settings → Privacy &amp; Security</strong> and scroll down to <strong>Security</strong>. Next to <strong>"TappedIn was blocked to protect your Mac"</strong>, click <strong>Open Anyway</strong>.</li>
+      <li>Confirm with your password or Touch ID, then click <strong>Open</strong>.</li>
+    </ol>
+    <p>After that, TappedIn opens normally. On macOS 14 and earlier you can instead Control-click TappedIn in Applications, choose <strong>Open</strong>, then click <strong>Open</strong> again.</p>
+    <p class="tip">Only do this for a file you downloaded from this site. If you're unsure, delete it and download it again here.</p>
+  </section>
+
+  <p>Then TappedIn runs the same <a href="#setup">first-run setup</a> as on Windows.</p>
+
   <h2 id="update">Updating and uninstalling</h2>
   <ul>
-    <li><strong>Update:</strong> download the newest installer here and run it the same way. Your settings and sign-ins are kept.</li>
-    <li><strong>Uninstall:</strong> Windows Settings → Apps → Installed apps → TappedIn → Uninstall. Your settings stay in the <code>.state</code> folder inside the install folder and your service sign-ins in <code>%LOCALAPPDATA%\TappedIn</code>, in case you reinstall. Delete both folders to remove them too.</li>
+    <li><strong>Update on Windows:</strong> download the newest installer here and run it the same way. Your settings and sign-ins are kept.</li>
+    <li><strong>Uninstall on Windows:</strong> Windows Settings → Apps → Installed apps → TappedIn → Uninstall. Your settings stay in the <code>.state</code> folder inside the install folder and your service sign-ins in <code>%LOCALAPPDATA%\TappedIn</code>, in case you reinstall. Delete both folders to remove them too.</li>
     <li>If you edited <code>config\tappedin.config.json5</code>, an update keeps your copy as <code>tappedin.config.json5.bak</code> next to it.</li>
+    <li><strong>Update on a Mac:</strong> download the newest <code>.dmg</code> here and drag TappedIn to Applications again, choosing <strong>Replace</strong>.</li>
+    <li><strong>Uninstall on a Mac:</strong> quit TappedIn and drag it from Applications to the Trash.</li>
   </ul>
 
   <h2 id="trouble">If something goes wrong</h2>
