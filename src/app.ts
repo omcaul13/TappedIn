@@ -462,6 +462,7 @@ export class App {
       this.overrides = { ...(provider ? { provider } : {}), ...(standbyViews !== undefined ? { standbyViews } : {}), ...(screenSports ? { screenSports } : {}), ...(ticker ? { ticker } : {}) };
       saveOverrides(this.overrides);
       this.applyConfig();
+      this.engine.setAudioMode(this.cfg.audio.mode);
       this.info('settings reset to the config file');
       return { ok: true };
     }
@@ -492,10 +493,7 @@ export class App {
         return this.userAction({ type, screen, gameId: body.gameId } as UserAction);
       }
       case '/api/audio': {
-        if (body.mode === 'manual' || body.mode === 'auto') {
-          this.engine.setAudioMode(body.mode);
-          this.info(`sound mode: ${body.mode}`);
-        }
+        if (body.mode === 'manual' || body.mode === 'auto') this.setSoundMode(body.mode);
         // { screen: n } puts sound on screen n; 0 mutes every screen.
         const focus = Number(body.screen ?? body.focus);
         if (Number.isInteger(focus) && focus >= 0 && focus <= this.screenCount) this.focusAudio(focus);
@@ -837,6 +835,14 @@ export class App {
     return { ok: false, message: 'unknown setup action' };
   }
 
+  /** Sound mode, saved in .state/settings.json like the other Basic settings. */
+  private setSoundMode(mode: 'manual' | 'auto'): void {
+    this.engine.setAudioMode(mode);
+    this.overrides = { ...this.overrides, audioMode: mode };
+    saveOverrides(this.overrides);
+    this.info(`sound mode: ${mode}`);
+  }
+
   private onBridge(screen: number, msg: BridgeMessage): void {
     if (msg.type === 'hotkey') this.hotkey(screen, msg.key);
     else if (msg.type === 'pick' && screen > 0) this.userAction({ type: 'setHome', screen, gameId: msg.gameId });
@@ -850,9 +856,7 @@ export class App {
         void this.controller.togglePanel();
         return;
       case 'audioMode': {
-        const mode = this.engine.audio.mode === 'auto' ? 'manual' : 'auto';
-        this.engine.setAudioMode(mode);
-        this.info(`sound mode: ${mode}`);
+        this.setSoundMode(this.engine.audio.mode === 'auto' ? 'manual' : 'auto');
         this.refreshOverlays();
         return;
       }

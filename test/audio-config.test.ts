@@ -91,3 +91,13 @@ describe('config', () => {
     expect(warnings).toEqual([`${file}: ignoring "dwellSeconds"`, `${file}: ignoring "retiredKey"`]);
   });
 });
+
+describe('sound mode in settings.json', async () => {
+  const { parseOverrides, withOverrides } = await import('../src/config');
+  it('"Follows the action" set in the app is saved and wins over the config file at the next start', () => {
+    const o = parseOverrides({ audioMode: 'auto' });
+    expect(withOverrides(parseConfig({}), o).audio.mode).toBe('auto');
+    expect(withOverrides(parseConfig({ audio: { mode: 'auto' } }), {}).audio.mode).toBe('auto');
+    expect(() => parseOverrides({ audioMode: 'loud' })).toThrow();
+  });
+});
