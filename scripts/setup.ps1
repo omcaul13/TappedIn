@@ -158,14 +158,16 @@ $shortcuts = @(
 foreach ($lnkPath in $shortcuts) {
     # CreateShortcut only reads an existing .lnk; nothing is written until Save().
     $lnk = $shell.CreateShortcut($lnkPath)
-    if ((Test-Path -LiteralPath $lnkPath) -and $lnk.TargetPath -ieq $Launcher) {
+    if ((Test-Path -LiteralPath $lnkPath) -and $lnk.TargetPath -ieq $ElectronExe -and $lnk.Arguments -eq $LaunchArgs) {
         Write-Ok $lnkPath
     } elseif ($CheckOnly) {
         Write-Todo "Setup would create $lnkPath"
     } else {
-        $lnk.TargetPath = $Launcher
+        # electron.exe runs electron\launcher.cjs, which starts the app with no console window.
+        $lnk.TargetPath = $ElectronExe
+        $lnk.Arguments = $LaunchArgs
         $lnk.WorkingDirectory = $Root
-        $lnk.WindowStyle = 7
+        $lnk.WindowStyle = 1
         $lnk.Description = 'TappedIn'
         $lnk.IconLocation = (Join-Path $Root 'electron\tappedin.ico')
         $lnk.Save()
@@ -192,8 +194,8 @@ if ($CheckOnly) {
     Write-Host "$($script:Todo) item(s) still to do. Double-click Setup TappedIn.cmd to do them." -ForegroundColor Yellow
     exit 1
 }
-Start-Process -FilePath $Launcher -WorkingDirectory $Root
-Write-Ok 'TappedIn is starting (its console window is minimized). The first start opens the setup screens.'
+Start-Process -FilePath $ElectronExe -ArgumentList $LaunchArgs -WorkingDirectory $Root
+Write-Ok 'TappedIn is starting. The first start opens the setup screens.'
 Write-Host ''
 if ($script:Todo -gt 0) { Write-Host "Setup is done, but $($script:Todo) item(s) above still need a look." -ForegroundColor Yellow }
 Write-Host 'Next time, open TappedIn from the Start menu or the desktop.' -ForegroundColor Green

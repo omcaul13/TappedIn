@@ -9,7 +9,7 @@ $EvsScript = Join-Path $Root 'scripts\evs.py'
 $ElectronExe = Join-Path $Root 'node_modules\electron\dist\electron.exe'
 $ElectronSig = "$ElectronExe.sig"
 $SigBackupDir = Join-Path $Root '.state\installer'
-$Launcher = Join-Path $Root 'TappedIn.cmd'
+$LaunchArgs = '"' + (Join-Path $Root 'electron\launcher.cjs') + '"'
 $NodeLink = 'https://nodejs.org/en/download'
 $PythonLink = 'https://www.python.org/downloads/windows/ (pick Python 3.12)'
 
