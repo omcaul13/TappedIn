@@ -51,3 +51,22 @@ describe('messages name the service', () => {
     expect(adviseOnStream('CHANNEL_UNAVAILABLE', 0, 60, 'Sling').hint).not.toMatch(/campus network/);
   });
 });
+
+describe('stall detection', () => {
+  it('a playing video checked less often than every 4 s still reads as playing', () => {
+    // Health checks don't overlap, so a slow round (busy pages) can space one screen's checks 6 s apart.
+    const t = new HealthTracker({ startupSeconds: 25, stallSeconds: 12 });
+    t.reset(0);
+    const states = [0, 6000, 12000, 18000, 24000, 30000].map((now) => t.update([frame({ currentTime: now / 1000 })], now).state);
+    expect(states.slice(1)).toEqual(['PLAYING', 'PLAYING', 'PLAYING', 'PLAYING', 'PLAYING']);
+  });
+
+  it('a frozen video checked 6 s apart is still a stall', () => {
+    const t = new HealthTracker({ startupSeconds: 25, stallSeconds: 12 });
+    t.reset(0);
+    t.update([frame({ currentTime: 0 })], 0);
+    t.update([frame({ currentTime: 6 })], 6000);
+    const states = [12000, 18000, 24000].map((now) => t.update([frame({ currentTime: 6 })], now).state);
+    expect(states).toEqual(['BUFFERING', 'STALLED', 'STALLED']);
+  });
+});
