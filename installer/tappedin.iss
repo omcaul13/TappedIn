@@ -10,7 +10,7 @@
 #endif
 #define Icon "{app}\electron\tappedin.ico"
 #define Electron "{app}\node_modules\electron\dist\electron.exe"
-#define Launch """{app}\electron\launcher.cjs"""
+#define Launch "{app}\electron\launcher.cjs"
 
 [Setup]
 ; Never change AppId: it is how a newer installer finds and upgrades an existing install.
@@ -65,8 +65,8 @@ Source: "{#Stage}\*"; DestDir: "{app}"; Excludes: "\test,\docs,\.github,\install
 
 [Icons]
 ; electron.exe runs electron\launcher.cjs, which starts the app with no console window.
-Name: "{autoprograms}\TappedIn"; Filename: "{#Electron}"; Parameters: "{#Launch}"; WorkingDir: "{app}"; IconFilename: "{#Icon}"
-Name: "{autodesktop}\TappedIn"; Filename: "{#Electron}"; Parameters: "{#Launch}"; WorkingDir: "{app}"; IconFilename: "{#Icon}"; Tasks: desktopicon
+Name: "{autoprograms}\TappedIn"; Filename: "{#Electron}"; Parameters: """{#Launch}"""; WorkingDir: "{app}"; IconFilename: "{#Icon}"
+Name: "{autodesktop}\TappedIn"; Filename: "{#Electron}"; Parameters: """{#Launch}"""; WorkingDir: "{app}"; IconFilename: "{#Icon}"; Tasks: desktopicon
 
 [Run]
-Filename: "{#Electron}"; Parameters: "{#Launch}"; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,TappedIn}"; Flags: nowait postinstall skipifsilent
+Filename: "{#Electron}"; Parameters: """{#Launch}"""; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,TappedIn}"; Flags: nowait postinstall skipifsilent
