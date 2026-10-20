@@ -1,10 +1,10 @@
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { loadConfig, PROJECT_ROOT } from '../src/config';
+import { PROJECT_ROOT } from '../src/config';
 import { Engine } from '../src/engine/engine';
 import { etTime, runSim } from '../src/sim';
-import { FIXTURES } from './helpers';
+import { FIXTURES, frozenConfig } from './helpers';
 
 const require = createRequire(import.meta.url);
 type Rect = { x: number; y: number; width: number; height: number };
@@ -76,7 +76,7 @@ describe('per-screen fullscreen and the height above the grid', () => {
 
 describe('engine with fewer screens', () => {
   it('a 2-screen engine only commands screens 1-2 and keeps every rule', async () => {
-    const cfg = loadConfig();
+    const cfg = frozenConfig();
     const date = '20261017';
     const res = await runSim(cfg, { root: PROJECT_ROOT, date, dir: path.join(FIXTURES, `replay-${date}`), fromMs: etTime(date, '18:45'), screens: 2 });
     expect(res.homes).toHaveLength(2);
@@ -87,7 +87,7 @@ describe('engine with fewer screens', () => {
   });
 
   it('resizeScreens keeps the remaining screens as they were', () => {
-    const e = new Engine(loadConfig(), 4);
+    const e = new Engine(frozenConfig(), 4);
     e.director.screens[0].homeGameId = 'g1';
     e.director.screens[3].homeGameId = 'g4';
     e.resizeScreens(2);

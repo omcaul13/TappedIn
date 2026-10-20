@@ -1,14 +1,14 @@
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { loadConfig, PROJECT_ROOT } from '../src/config';
+import { PROJECT_ROOT } from '../src/config';
 import { etTime, runSim } from '../src/sim';
-import { FIXTURES } from './helpers';
+import { FIXTURES, frozenConfig } from './helpers';
 
 // Golden replay: the real director over 30 minutes of real ESPN data recorded on 2026-10-17
 // (18:45–19:15 ET, late 4th quarters: lots of timeouts, scores and finishes).
 // We don't snapshot exact switches (thresholds will be tuned); we check the rules always hold.
 
-const cfg = loadConfig();
+const cfg = frozenConfig();
 const date = '20261017';
 
 describe('golden replay 2026-10-17 18:45–19:15', async () => {

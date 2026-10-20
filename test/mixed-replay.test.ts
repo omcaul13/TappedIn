@@ -1,10 +1,10 @@
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { loadConfig, PROJECT_ROOT, type Config } from '../src/config';
+import { PROJECT_ROOT, type Config } from '../src/config';
 import { etTime, runSim } from '../src/sim';
 import { computeMetrics, loadFinalPlays } from '../src/simMetrics';
 import type { SportId } from '../src/engine/types';
-import { FIXTURES } from './helpers';
+import { FIXTURES, frozenConfig } from './helpers';
 
 // A mixed-sport night: 10/17/2026's college football (4 games) and NHL (14 games), rebuilt from final
 // play-by-play and run through the real engine with every game watchable. Checks the 3-tier order
@@ -14,7 +14,7 @@ const dir = path.join(FIXTURES, 'mixed-20261017');
 const date = '20261017';
 
 async function run(screenSports: SportId[], mut: (c: Config) => void = () => {}) {
-  const cfg = loadConfig();
+  const cfg = frozenConfig();
   cfg.simulation.fullLineup = true;
   mut(cfg);
   const res = await runSim(cfg, { root: PROJECT_ROOT, date, dir, synth: true, screenSports, captureTimeline: true, fromMs: etTime(date, '13:05') });

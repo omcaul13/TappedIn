@@ -1,11 +1,15 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+import JSON5 from 'json5';
 import { parseConfig, type Config } from '../src/config';
 import type { Assessment, BreakState, GameSnapshot, PlayKind, PlaySnap } from '../src/engine/types';
 import type { GameView } from '../src/engine/ranker';
 
 export const FIXTURES = path.join(import.meta.dirname, 'fixtures');
 export const fixture = (name: string) => JSON.parse(readFileSync(path.join(FIXTURES, name), 'utf8'));
+
+/** The config frozen with the CFB goldens, for replay tests: edits to the user's config/tappedin.config.json5 can't fail them. */
+export const frozenConfig = (): Config => parseConfig(JSON5.parse(readFileSync(path.join(FIXTURES, 'golden', 'config.json5'), 'utf8')));
 
 /** Default config plus a small lineup (ESPN 849, ESPN2 850, ABC 805, FOX 806, FS1 925, SECN 928). */
 export function testConfig(overrides: Record<string, unknown> = {}): Config {
