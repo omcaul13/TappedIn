@@ -75,6 +75,13 @@ export function clockSeconds(status: Json): number | null {
   return m ? Number(m[1]) * 60 + Number(m[2]) : null;
 }
 
+/** Rank (top 25 only; ESPN uses 99 for unranked) and record, for the tickers. Absent when ESPN has neither. */
+function extras(c: Json): Pick<TeamSnap, 'rank' | 'record'> {
+  const rank = num(c?.curatedRank?.current);
+  const record = str(c?.records?.[0]?.summary);
+  return { ...(rank !== null && rank >= 1 && rank <= 25 ? { rank } : {}), ...(record ? { record } : {}) };
+}
+
 export function team(comp: Json, side: 'home' | 'away'): TeamSnap {
   const c = (comp?.competitors ?? []).find((x: Json) => x?.homeAway === side) ?? {};
   return {
@@ -86,5 +93,6 @@ export function team(comp: Json, side: 'home' | 'away'): TeamSnap {
     altColor: hex(c?.team?.alternateColor),
     // The UI is dark: ESPN's dark-background logo variant keeps navy/black logos visible.
     logo: str(c?.team?.logoDark) ?? str(c?.team?.logo) ?? null,
+    ...extras(c),
   };
 }

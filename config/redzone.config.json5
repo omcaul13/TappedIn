@@ -102,8 +102,8 @@
   sports: {
     // Polled from ESPN, listed in the game menu, and used as fill-ins (the settings drawer can turn
     // sports off too). Ids: cfb, nfl, mcbb (men's college basketball), nba, nhl, mlb, wcbb, wnba,
-    // mls, epl (Premier League), ucl (Champions League), laliga.
-    enabled: ["cfb", "nfl", "mcbb", "nba", "nhl", "mlb", "wcbb", "wnba", "mls", "epl", "ucl", "laliga"],
+    // mls, epl (Premier League), ucl (Champions League), laliga, atp and wta (tennis singles).
+    enabled: ["cfb", "nfl", "mcbb", "nba", "nhl", "mlb", "wcbb", "wnba", "mls", "epl", "ucl", "laliga", "atp", "wta"],
     // Your TV market: in a Sunday CBS/FOX window with several NFL games, only your market's team's game
     // (or the one the TV guide names) is picked automatically; your local station shows just one.
     market: "Boston",
@@ -114,6 +114,10 @@
     //   mlb: { presets: { low: { excludeCategories: [] } } },  // also switch between innings at Low
     //   nba: { presets: { low: { confidence: 0.85 } } },
     overrides: {},
+    // Tennis: ESPN lists TV networks only at the Grand Slams. Tour-level matches are assumed to be on
+    // this channel, shown as "courts vary" and never picked automatically (pick them yourself).
+    // "" leaves them unwatchable.
+    tennis: { assumedNetwork: "Tennis Channel" },
   },
 
   // Classic break heuristic (breakModel: "classic"). streamDelaySeconds, dataDelaySeconds and
@@ -203,6 +207,25 @@
     manualPinSeconds: 120,
   },
 
+  // The tickers in the app window. The switches in the app (T, the ticker button, Settings -> Tickers)
+  // are saved in .state/settings.json and win over these.
+  ticker: {
+    // The big ticker across the top of the window (it covers the top bar; the clock moves into it).
+    big: false,
+    // The mini ticker next to the clock: one game at a time. Hidden while the big ticker is on.
+    mini: true,
+    // What they show: "screens" (games on your screens), "followed" (every game of the sports you
+    // follow) or "all" (every sport; the ones you don't follow are polled at the idle rate for it).
+    scope: "followed",
+    // miniScope: "screens",   // the mini ticker's own choice (default: same as `scope`)
+    miniIntervalSeconds: 5,
+    // Big ticker height in pixels (88-150) and scroll speed (1 = normal).
+    height: 96,
+    speed: 1,
+    // College football: only games with a top-25 team.
+    cfbTop25: false,
+  },
+
   // Network name (as ESPN reports it) -> channel in YOUR Xfinity On Campus lineup (every sport).
   // Xfinity's live URLs contain a per-program id that changes with every show, so we store the
   // channel NUMBER and tune by clicking that row in the Xfinity guide (like you would).
@@ -234,6 +257,7 @@
     "NHL Network":        { number: 822,  callSign: "NHLHD", aliases: ["NHL Net", "NHL Network", "NHLN"] },
     "MLB Network":        { number: 914,  callSign: "MLBHD", aliases: ["MLB Net", "MLB Network", "MLBN"] },
     "TBS":                { number: 831,  callSign: "TBSHD", aliases: ["TBS"] },
+    "Tennis Channel":     { number: 838,  callSign: "TNND",  aliases: ["Tennis Channel", "TENNIS"] },
     "ION":                { number: 803,  callSign: "IONHD", aliases: ["ION"] },
     "Telemundo":          { number: 815,  callSign: "WNEUD", aliases: ["Telemundo"] },
     "Universo":           { number: 1232, callSign: "UNVSH", aliases: ["Universo"] },

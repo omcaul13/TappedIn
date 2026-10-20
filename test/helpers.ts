@@ -48,6 +48,7 @@ export function snap(o: Partial<GameSnapshot> & { id?: string } = {}): GameSnaps
     networks: o.networks ?? ['ESPN'],
     situation: o.situation === undefined ? null : o.situation,
     ...(o.live ? { live: o.live } : {}),
+    ...(o.tennis ? { tennis: o.tennis } : {}),
     observedAt: o.observedAt ?? T0,
   };
 }

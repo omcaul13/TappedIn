@@ -25,7 +25,8 @@ export interface Network {
 /** @deprecated name from when every network carried college football. */
 export type CfbNetwork = Network;
 
-const ALL: readonly SportId[] = ['cfb', 'nfl', 'mcbb', 'nba', 'nhl', 'mlb', 'wcbb', 'wnba', 'mls', 'epl', 'ucl', 'laliga'];
+const ALL: readonly SportId[] = ['cfb', 'nfl', 'mcbb', 'nba', 'nhl', 'mlb', 'wcbb', 'wnba', 'mls', 'epl', 'ucl', 'laliga', 'atp', 'wta'];
+const TENNIS: readonly SportId[] = ['atp', 'wta'];
 const COLLEGE: readonly SportId[] = ['cfb', 'mcbb', 'wcbb'];
 const SOCCER: readonly SportId[] = ['mls', 'epl', 'ucl', 'laliga'];
 const net = (key: string, espnNames: string[], guideNames: string[], callSigns: string[], sports: readonly SportId[]): Network => ({ key, espnNames, guideNames, callSigns, sports });
@@ -55,6 +56,7 @@ export const NETWORKS: Network[] = [
   net('NHL Network', ['NHL Net', 'NHL Network', 'NHLN'], ['nhl'], ['NHL', 'NHLHD', 'NHLN'], ['nhl']),
   net('MLB Network', ['MLB Net', 'MLB Network', 'MLBN'], ['mlb'], ['MLBN', 'MLBHD'], ['mlb']),
   net('TBS', ['TBS'], ['tbs'], ['TBS', 'TBSHD'], ['mlb', 'nhl', 'mcbb']),
+  net('Tennis Channel', ['Tennis Channel', 'TENNIS', 'Tennis Channel 2'], ['tennis channel', 'tennis'], ['TNND', 'TENNS', 'TENIS', 'TENNHD'], TENNIS),
   net('ION', ['ION'], ['ion'], [], ['wnba']),
   // Spanish-language networks (soccer, some NFL/MLB)
   net('Telemundo', ['Telemundo'], ['telemundo'], [], SOCCER),

@@ -69,6 +69,41 @@ export const ChannelSchema = z.object({
   aliases: z.array(z.string()).default([]),
 });
 
+/** What a ticker shows: the games on your screens, every game of the sports you follow, or every sport. */
+const TickerScope = z.enum(['screens', 'followed', 'all']);
+const TickerSchema = z.object({
+  /** The big ticker: your scrolling score strip across the top of the window (it covers the top bar). */
+  big: z.boolean().default(false),
+  /** The mini ticker next to the clock (one game at a time). Hidden while the big ticker is on. */
+  mini: z.boolean().default(true),
+  scope: TickerScope.default('followed'),
+  /** The mini ticker's own choice (default: the big ticker's). */
+  miniScope: TickerScope.optional(),
+  /** Seconds each game shows in the mini ticker. */
+  miniIntervalSeconds: z.number().min(2).max(30).default(5),
+  /** Big ticker height in pixels (88 at least: two rows of controls fit under the window buttons). */
+  height: z.number().int().min(88).max(150).default(96),
+  /** Big ticker scroll speed (1 = normal). */
+  speed: z.number().min(0.25).max(4).default(1),
+  /** College football: only games with a top-25 team. */
+  cfbTop25: z.boolean().default(false),
+});
+/** A change to the ticker settings (no defaults: only the keys you changed). */
+const TickerOverride = z
+  .object({
+    big: z.boolean(),
+    mini: z.boolean(),
+    scope: TickerScope,
+    /** null: back to "same as the big ticker". */
+    miniScope: TickerScope.nullable(),
+    miniIntervalSeconds: z.number().min(2).max(30),
+    height: z.number().int().min(88).max(150),
+    speed: z.number().min(0.25).max(4),
+    cfbTop25: z.boolean(),
+  })
+  .partial()
+  .strict();
+
 export const ConfigSchema = z.object({
   /** Which TV service the screens play (config/providers/<id>.json). */
   provider: z.string().default('xfinity-on-campus'),
@@ -213,8 +248,20 @@ export const ConfigSchema = z.object({
       nflRegionalCheck: z.boolean().default(true),
       /** Per sport: { nhl: { sensitivity: 'medium', presets: { low: { confidence: 0.8 } } } }. College football also follows `switching.presets`. */
       overrides: z.record(z.string(), SportOverride).default({}),
+      tennis: z
+        .object({
+          /**
+           * ESPN lists no TV network for tour-level matches (only at the Grand Slams): they're assumed to be
+           * on this channel, flagged "courts vary" and never picked automatically. Empty: leave them unwatchable.
+           */
+          assumedNetwork: z.string().default('Tennis Channel'),
+        })
+        .prefault({}),
     })
     .prefault({}),
+
+  /** The tickers in the app window (their switches in the app go to .state/settings.json). */
+  ticker: TickerSchema.prefault({}),
 
   audio: z
     .object({
@@ -294,6 +341,7 @@ export type ChannelEntry = z.infer<typeof ChannelSchema>;
 export type BreakDetectorConfig = Config['breakDetector'];
 export type DirectorConfig = Config['director'];
 export type AudioConfig = Config['audio'];
+export type TickerConfig = Config['ticker'];
 export type WindowsConfig = Config['windows'];
 export type HighlightsConfig = Config['highlights'];
 export type Sensitivity = Config['switching']['sensitivity'];
@@ -413,6 +461,8 @@ const OverridesSchema = z
     allowDuplicates: z.boolean().optional(),
     provider: z.string().regex(/^[a-z0-9-]+$/).optional(),
     standbyViews: z.number().int().min(0).max(4).optional(),
+    /** Ticker switches and choices (merged one key at a time). */
+    ticker: TickerOverride.optional(),
   })
   .strict();
 export type SettingsOverrides = z.infer<typeof OverridesSchema>;
@@ -453,6 +503,10 @@ export function withOverrides(cfg: Config, o: SettingsOverrides): Config {
   if (o.allowDuplicates !== undefined) c.director.allowDuplicates = o.allowDuplicates;
   if (o.provider) c.provider = o.provider;
   if (o.standbyViews !== undefined) c.electron.standbyViews = o.standbyViews;
+  if (o.ticker) {
+    c.ticker = { ...c.ticker, ...Object.fromEntries(Object.entries(o.ticker).filter(([, v]) => v !== undefined && v !== null)) };
+    if (o.ticker.miniScope === null) delete c.ticker.miniScope;
+  }
   return c;
 }
 

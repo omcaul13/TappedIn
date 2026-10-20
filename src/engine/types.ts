@@ -4,8 +4,8 @@
 export type Phase = 'PRE' | 'LIVE' | 'HALFTIME' | 'FINAL' | 'DELAYED' | 'POSTPONED' | 'CANCELED' | 'UNKNOWN';
 
 /** One sport at one level (src/sports/): NFL and college football are different sports here. */
-export type SportId = 'cfb' | 'nfl' | 'mcbb' | 'nba' | 'nhl' | 'mlb' | 'wcbb' | 'wnba' | 'mls' | 'epl' | 'ucl' | 'laliga';
-export type SportFamily = 'football' | 'basketball' | 'hockey' | 'baseball' | 'soccer';
+export type SportId = 'cfb' | 'nfl' | 'mcbb' | 'nba' | 'nhl' | 'mlb' | 'wcbb' | 'wnba' | 'mls' | 'epl' | 'ucl' | 'laliga' | 'atp' | 'wta';
+export type SportFamily = 'football' | 'basketball' | 'hockey' | 'baseball' | 'soccer' | 'tennis';
 
 export interface TeamSnap {
   id: string;
@@ -16,6 +16,41 @@ export interface TeamSnap {
   color?: string | null;
   altColor?: string | null;
   logo?: string | null;
+  /** College football: AP/CFP rank (top 25 only). */
+  rank?: number | null;
+  /** Season record ("6-1"), shown before kickoff. */
+  record?: string | null;
+}
+
+/** One set of a tennis match: games won, and the tiebreak points when it went to one. */
+export interface TennisSet {
+  home: number;
+  away: number;
+  tbHome: number | null;
+  tbAway: number | null;
+  /** Finished (someone won it). The last set of a live match is the one in progress. */
+  done: boolean;
+}
+
+/** A tennis match's state (tennis has no play-by-play: everything comes from the scoreboard). */
+export interface TennisInfo {
+  tour: 'atp' | 'wta';
+  tournament: string;
+  /** Grand Slam (ESPN's `major`). */
+  grandSlam: boolean;
+  round: string | null;
+  court: string | null;
+  /** 3 or 5. */
+  bestOf: number;
+  sets: TennisSet[];
+  /** Tournament seeds and world rankings (null when unseeded / unknown). */
+  seeds: { home: number | null; away: number | null };
+  ranks: { home: number | null; away: number | null };
+  /** Who is serving, and the points in the current game ("0" "15" "30" "40" "AD", or tiebreak points), when ESPN has them. */
+  server: 'home' | 'away' | null;
+  points: { home: string; away: string } | null;
+  /** ESPN listed a TV network for this match (else the channel is a guess: `sports.tennis.assumedNetwork`). */
+  networkListed: boolean;
 }
 
 export interface Situation {
@@ -88,6 +123,8 @@ export interface GameSnapshot {
   situation: Situation | null;
   /** Other sports' live situation (only while LIVE). */
   live?: LiveDetail | null;
+  /** Tennis: sets, games, server, tournament (every phase). */
+  tennis?: TennisInfo;
   observedAt: number;
 }
 

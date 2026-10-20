@@ -8,8 +8,12 @@ import { build } from 'esbuild';
 const DIR = import.meta.dirname;
 let cache: { mtime: number; js: string } | null = null;
 
-function newestMtime(): number {
-  return Math.max(...readdirSync(DIR).map((f) => statSync(path.join(DIR, f)).mtimeMs));
+/** Newest change anywhere under src/ui (folders like ticker/ included). */
+function newestMtime(dir = DIR): number {
+  return Math.max(
+    0,
+    ...readdirSync(dir, { withFileTypes: true }).map((f) => (f.isDirectory() ? newestMtime(path.join(dir, f.name)) : statSync(path.join(dir, f.name)).mtimeMs)),
+  );
 }
 
 export async function uiBundle(): Promise<string> {
@@ -35,6 +39,7 @@ export function uiPage(): string {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>RedZone</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>@font-face{font-family:'Inter';font-style:normal;font-weight:100 900;font-display:swap;src:url(/ui/inter.woff2) format('woff2')}
+${TICKER_WEIGHTS.map((w) => `@font-face{font-family:'Barlow Condensed';font-style:normal;font-weight:${w};font-display:swap;src:url(/ui/barlow-condensed-${w}.woff2) format('woff2')}`).join('')}
 html,body{margin:0;height:100%;background:transparent;overflow:hidden}</style>
 </head><body><div id="app"></div><script type="module" src="/ui.js"></script></body></html>`;
 }
@@ -42,4 +47,10 @@ html,body{margin:0;height:100%;background:transparent;overflow:hidden}</style>
 const FONT = path.join(DIR, '..', '..', 'node_modules', '@fontsource-variable', 'inter', 'files', 'inter-latin-wght-normal.woff2');
 export function uiFont(): Buffer {
   return readFileSync(FONT);
+}
+
+/** The tickers' font, Barlow Condensed (SIL Open Font License: src/ui/fonts/OFL-barlow-condensed.txt), latin subset. */
+export const TICKER_WEIGHTS = [500, 600, 700, 800] as const;
+export function tickerFont(weight: number): Buffer | null {
+  return (TICKER_WEIGHTS as readonly number[]).includes(weight) ? readFileSync(path.join(DIR, 'fonts', `barlow-condensed-${weight}.woff2`)) : null;
 }

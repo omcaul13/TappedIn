@@ -8,7 +8,10 @@ import { FIXTURES } from './helpers';
 
 const require = createRequire(import.meta.url);
 type Rect = { x: number; y: number; width: number; height: number };
-const { cellRects } = require('../electron/layout.cjs') as { cellRects(n: number, w: number, h: number, top: number, gap: number): Rect[] };
+const { cellRects, screenRect } = require('../electron/layout.cjs') as {
+  cellRects(n: number, w: number, h: number, top: number, gap: number): Rect[];
+  screenRect(n: number, screen: number, w: number, h: number, top: number, gap: number, focus: number): Rect;
+};
 
 /** The 2x2 formula electron/main.cjs used before 1-3 screen layouts existed. */
 function oldCellBounds(screen: number, w: number, h: number, top: number, gap: number): Rect {
@@ -49,6 +52,25 @@ describe('screen layout', () => {
     expect(b.x).toBe(c.x);
     expect(b.x).toBeGreaterThan(a.x);
     expect(area(a)).toBeGreaterThan(area(b) * 1.9);
+  });
+});
+
+describe('per-screen fullscreen and the height above the grid', () => {
+  const [w, h, gap] = [1600, 940, 2];
+  it('the fullscreen screen fills everything below the top bar; the others keep their cells', () => {
+    for (const n of [1, 2, 3, 4]) {
+      for (let f = 1; f <= n; f++) {
+        expect(screenRect(n, f, w, h, 36, gap, f)).toEqual({ x: 0, y: 36, width: w, height: h - 36 });
+        for (let s = 1; s <= n; s++) if (s !== f) expect(screenRect(n, s, w, h, 36, gap, f)).toEqual(cellRects(n, w, h, 36, gap)[s - 1]);
+      }
+    }
+  });
+  it('no fullscreen is exactly the grid', () => {
+    for (let s = 1; s <= 4; s++) expect(screenRect(4, s, w, h, 36, gap, 0)).toEqual(cellRects(4, w, h, 36, gap)[s - 1]);
+  });
+  it('a taller top (the big ticker covering the top bar) moves the whole grid down', () => {
+    for (const r of cellRects(4, w, h, 96, gap)) expect(r.y).toBeGreaterThanOrEqual(96);
+    expect(screenRect(4, 2, w, h, 96, gap, 2)).toEqual({ x: 0, y: 96, width: w, height: h - 96 });
   });
 });
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { BackIcon, LockIcon, SoundIcon, SportIcon } from './icons';
-import { act, gameClock, mmss, network, pickReason, post, screenBadge, scoreLine, substituteReason, teamColor, watchableToday, type AppState, type GameDTO, type ScreenDTO, type SportDTO, type TeamDTO } from './util';
+import { BackIcon, FullscreenIcon, LockIcon, SoundIcon, SportIcon } from './icons';
+import { act, gameClock, mmss, network, pickReason, post, screenBadge, scoreLine, sharedPill, substituteReason, teamColor, tennisLine, watchableToday, type AppState, type GameDTO, type ScreenDTO, type SportDTO, type TeamDTO } from './util';
 
 // One screen's overlay: header (game dropdown, state badge, back-to-my-game, lock, sound) that hides
 // after a few seconds without mouse movement, plus cards drawn inside the screen (switching, game
@@ -27,13 +27,19 @@ export interface ScreenProps {
   sc: ScreenDTO;
   games: Map<string, GameDTO>;
   now: number;
+  /** This screen fills the window (per-screen fullscreen). */
+  fullscreen: boolean;
+  /** Another screen is fullscreen: this one keeps running, hidden. */
+  hiddenByFullscreen: boolean;
+  /** The one-window app can do per-screen fullscreen (not the Chrome tiles). */
+  canFullscreen: boolean;
   menuOpen: boolean;
   setMenuOpen(open: boolean): void;
   onHover(screen: number | null): void;
   onError(message: string): void;
 }
 
-export function Screen({ st, sc, games, now, menuOpen, setMenuOpen, onHover, onError }: ScreenProps) {
+export function Screen({ st, sc, games, now, fullscreen, hiddenByFullscreen, canFullscreen, menuOpen, setMenuOpen, onHover, onError }: ScreenProps) {
   const [lastMove, setLastMove] = useState(0);
   const [hover, setHover] = useState(false);
   const [flashUntil, setFlashUntil] = useState(0);
@@ -69,7 +75,12 @@ export function Screen({ st, sc, games, now, menuOpen, setMenuOpen, onHover, onE
 
   return (
     <div
-      class={`cell${sc.audio ? ' sound' : ''}${showingRz ? ' rz' : ''}${hover && !recent && !menuOpen ? ' idle-cursor' : ''}`}
+      class={`cell${sc.audio ? ' sound' : ''}${showingRz ? ' rz' : ''}${hover && !recent && !menuOpen ? ' idle-cursor' : ''}${fullscreen ? ' focused' : ''}${hiddenByFullscreen ? ' behind' : ''}`}
+      onDblClick={(e) => {
+        // Double-click the picture (not a button, menu or card) toggles this screen's fullscreen.
+        if (!canFullscreen || (e.target as HTMLElement).closest('button, input, .menu, .box, .head')) return;
+        void post('/api/view', { fullscreen: fullscreen ? 0 : sc.id });
+      }}
       onMouseMove={() => {
         setLastMove(Date.now());
         if (!hover) {
@@ -106,7 +117,6 @@ export function Screen({ st, sc, games, now, menuOpen, setMenuOpen, onHover, onE
                 <span class="accent" style={{ background: `linear-gradient(${teamColor(home.away)}, ${teamColor(home.home)})` }} />
                 <span class="sport-chip" title={home.sportShort}>
                   <SportIcon family={home.family} />
-                  {home.sportShort}
                 </span>
                 <span class="teams">
                   <Logo team={home.away} />
@@ -115,6 +125,7 @@ export function Screen({ st, sc, games, now, menuOpen, setMenuOpen, onHover, onE
                 </span>
                 <span class="meta">
                   {gameClock(home)} · {network(home)}
+                  {home.family === 'tennis' && home.channel?.regional === 'unconfirmed' ? ' · may show another court' : ''}
                 </span>
               </>
             ) : (
@@ -122,7 +133,7 @@ export function Screen({ st, sc, games, now, menuOpen, setMenuOpen, onHover, onE
             )}
             <span class="caret">▼</span>
           </button>
-          <span class={`badge ${badge.tone}`}>{badge.text}</span>
+          {badge.tone !== 'live' && <span class={`badge ${badge.tone}`}>{badge.text}</span>}
           <span class="grow" />
           {onOther && (
             <button class="btn primary" onClick={() => run(act('goHome', sc.id))} title="Go back to this screen's game now">
@@ -135,6 +146,11 @@ export function Screen({ st, sc, games, now, menuOpen, setMenuOpen, onHover, onE
           <button class={`btn sq${sc.audio ? ' sound-on' : ''}`} onClick={() => run(post('/api/audio', { screen: sc.audio ? 0 : sc.id }))} title={sc.audio ? 'Mute' : 'Sound from this screen (mutes the others)'}>
             <SoundIcon on={sc.audio} />
           </button>
+          {canFullscreen && (
+            <button class={`btn sq${fullscreen ? ' on' : ''}`} onClick={() => run(post('/api/view', { fullscreen: fullscreen ? 0 : sc.id }))} title={fullscreen ? 'Back to the grid (Esc)' : `Fullscreen this screen (${sc.id})`}>
+              <FullscreenIcon on={fullscreen} />
+            </button>
+          )}
         </div>
         {reason && (
           <div class="reason">
@@ -223,10 +239,11 @@ function GameRow({ g, current, tag, onPick, disabledReason }: { g: GameDTO; curr
         ))}
       </span>
       <span class="info">
+        {g.tennis && <span class="tline">{tennisLine(g)}</span>}
         <b>{gameClock(g)}</b>
         <span>{g.channel ? network(g) : (g.unavailable ?? 'Not available')}</span>
         <span>
-          {g.hot && <span class="rzpill">{g.hot.toUpperCase()}</span>} {g.channel?.regional === 'unconfirmed' && <span class="regpill" title="Several NFL games share this channel's window; your local station shows one of them">REGIONAL</span>} {tag && <span class="onpill">{tag}</span>}
+          {g.hot && <span class="rzpill">{g.hot.toUpperCase()}</span>} {sharedPill(g) && <span class="regpill" title={sharedPill(g)!.title}>{sharedPill(g)!.text}</span>} {g.tennis?.grandSlam && <span class="onpill">GS</span>} {tag && <span class="onpill">{tag}</span>}
         </span>
       </span>
     </button>

@@ -34,6 +34,13 @@ export interface BreakSpec {
   ignore?(p: { kind: PlayKind; typeText: string }): boolean;
   /** Default model file, relative to the project root. */
   modelFile: string;
+  /**
+   * A break ends when its forecast runs out, not only on a new play (tennis: nothing in ESPN's data
+   * says play resumed until the next game ends).
+   */
+  timedResume?: boolean;
+  /** Categories that don't start a break while another live game of this sport is on the same channel (tennis: the producer cuts to the other court). */
+  sharedChannelExclude?: readonly string[];
 }
 
 export interface SportPreset {
@@ -86,8 +93,19 @@ export interface SportModule {
   level: 'pro' | 'college';
   family: SportFamily;
   espn: { path: string; groups?: string };
+  /** ESPN has no summary (play-by-play) endpoint for this sport: never ask for one (tennis). */
+  noSummary?: boolean;
 
   // ---- parsing ESPN JSON into the common model ----------------------------------------------
+  /**
+   * The scoreboard's games as events with one competition each, when ESPN nests them differently
+   * (tennis: tournaments → draws → matches). Default: `body.events`.
+   */
+  scoreboardEvents?(body: Json): Json[];
+  /** Fields a sport adds to every snapshot of a game (tennis: sets, server, tournament). */
+  snapshotExtra?(ev: Json, comp: Json): Partial<GameSnapshot>;
+  /** What of a scoreboard response is worth recording (tennis: today's singles, not the whole draw). */
+  trimScoreboard?(body: Json): Json;
   phaseOf(statusName: string, state: string | null, detail: string, period: number | null): Phase;
   /** Between periods while ESPN still says in progress ("End of 3rd"). */
   endOfPeriod(phase: Phase, statusName: string, detail: string): boolean;

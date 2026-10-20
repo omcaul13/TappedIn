@@ -10,6 +10,8 @@ export interface AudioState {
   focus: number;
   lastChangeAt: number;
   pinnedUntil: number;
+  /** Per-screen fullscreen: sound follows that screen, and this is the choice to go back to. */
+  held?: { screen: number; mode: 'manual' | 'auto'; focus: number } | null;
 }
 
 export interface AudioDecision {
@@ -53,6 +55,7 @@ export function excitement(sc: ScreenState, views: Map<string, GameView>): { sco
 
 export function audioStep(prev: AudioState, screens: ScreenState[], views: Map<string, GameView>, now: number, cfg: AudioConfig): { state: AudioState; decision: AudioDecision | null } {
   const state = { ...prev, mode: prev.mode };
+  if (state.held) return { state, decision: null }; // a screen is fullscreen: sound stays with it
   if (state.mode !== 'auto' || now < state.pinnedUntil || now - state.lastChangeAt < cfg.autoDwellSeconds * 1000) return { state, decision: null };
   const scored = screens.map((sc) => ({ id: sc.id, ...excitement(sc, views) }));
   const current = scored.find((x) => x.id === state.focus);
@@ -73,4 +76,26 @@ export function setAudioFocus(prev: AudioState, screen: number, now: number, cfg
 
 export function setAudioMode(prev: AudioState, mode: 'manual' | 'auto'): AudioState {
   return { ...prev, mode, pinnedUntil: 0 };
+}
+
+/**
+ * A screen went fullscreen: sound moves to it (auto mode stops moving it) until releaseAudio. The
+ * choice from before is kept, also when another screen goes fullscreen in between.
+ */
+export function holdAudio(prev: AudioState, screen: number, now: number): { state: AudioState; decision: AudioDecision | null } {
+  const saved = prev.held ? { mode: prev.held.mode, focus: prev.held.focus } : { mode: prev.mode, focus: prev.focus };
+  const state: AudioState = { ...prev, focus: screen, held: { screen, ...saved } };
+  if (prev.focus === screen) return { state, decision: null };
+  state.lastChangeAt = now;
+  return { state, decision: { at: now, from: prev.focus, to: screen, mode: prev.mode, reason: `screen ${screen} is fullscreen` } };
+}
+
+/** Back to the grid: sound and mode go back to what they were before fullscreen. */
+export function releaseAudio(prev: AudioState, now: number): { state: AudioState; decision: AudioDecision | null } {
+  if (!prev.held) return { state: prev, decision: null };
+  const { mode, focus } = prev.held;
+  const state: AudioState = { ...prev, mode, focus, held: null, pinnedUntil: 0 };
+  if (prev.focus === focus) return { state, decision: null };
+  state.lastChangeAt = now;
+  return { state, decision: { at: now, from: prev.focus, to: focus, mode, reason: 'back to the grid: sound as before fullscreen' } };
 }

@@ -3,6 +3,7 @@ import { enabledSports, type Config } from '../config';
 import type { GameSnapshot, PlaySnap, SportId } from '../engine/types';
 import { SPORT_IDS, sportOf } from '../sports';
 import { EspnClient } from './client';
+import { RankCache, recordableScoreboard } from './rankings';
 import { appendRecord, mergeByTime, recordingFiles, streamRecords, trimSummary, type RecordLine } from './recording';
 
 // Where game data comes from. The engine only sees "here is a scoreboard / play-by-play at time t",
@@ -28,6 +29,8 @@ export interface LiveSourceOptions {
   onScreen?: () => string[];
   /** Also record every response, so a live session can be replayed later. */
   recordDir?: string | null;
+  /** Sports you don't follow that something else wants (a ticker set to "all sports"): polled at the idle rate, never for play-by-play. */
+  alsoPoll?: () => readonly SportId[];
 }
 
 export class LiveSource {
@@ -45,6 +48,7 @@ export class LiveSource {
     return enabledSports(this.cfg).every((s) => this.polled.has(s));
   }
   private timers: NodeJS.Timeout[] = [];
+  private readonly ranks: RankCache;
 
   constructor(
     private cfg: Config,
@@ -52,6 +56,7 @@ export class LiveSource {
     private readonly opts: LiveSourceOptions,
   ) {
     this.client = new EspnClient(cfg.espn);
+    this.ranks = new RankCache(this.client);
   }
 
   setConfig(cfg: Config): void {
@@ -98,13 +103,27 @@ export class LiveSource {
     await this.sleep(SPORT_IDS.indexOf(sport) * 700);
     while (!this.stopped) {
       let base = this.cfg.espn.scoreboardIdleSeconds;
-      if (!enabledSports(this.cfg).includes(sport)) {
-        this.liveSports.delete(sport);
+      const followed = enabledSports(this.cfg).includes(sport);
+      if (!followed) this.liveSports.delete(sport);
+      if (!followed && !this.opts.alsoPoll?.().includes(sport)) {
         await this.sleep(30_000);
+        continue;
+      }
+      if (!followed) {
+        // Only for the ticker: the scores, at the idle rate, nothing else.
+        try {
+          const res = await this.client.scoreboard(this.opts.date, sportOf(sport).espn);
+          await this.ranks.attach(sport, this.opts.date, res.body);
+          this.sink.scoreboard(res.body, Date.parse(res.fetchedAt), sport);
+        } catch (err) {
+          this.sink.error?.(`${sportOf(sport).short} scoreboard (ticker)`, err);
+        }
+        await this.sleep(Math.max(60, this.cfg.espn.scoreboardIdleSeconds) * 1000 + this.jitter());
         continue;
       }
       try {
         const res = await this.client.scoreboard(this.opts.date, sportOf(sport).espn);
+        await this.ranks.attach(sport, this.opts.date, res.body);
         const at = Date.parse(res.fetchedAt);
         const snaps = this.sink.scoreboard(res.body, at, sport) ?? [];
         for (const g of snaps) this.sportOfGame.set(g.id, sport);
@@ -116,7 +135,7 @@ export class LiveSource {
         const onScreen = new Set(this.opts.onScreen?.() ?? []);
         const watched = snaps.some((g) => onScreen.has(g.id));
         base = live || watched ? this.cfg.espn.scoreboardLiveSeconds : snaps.some((g) => g.phase === 'PRE') ? this.cfg.espn.scoreboardIdleSeconds : this.cfg.espn.scoreboardEmptySeconds;
-        this.record({ t: res.fetchedAt, kind: 'scoreboard', url: res.url, status: res.status, body: res.body, sport }, 'scoreboard');
+        this.record({ t: res.fetchedAt, kind: 'scoreboard', url: res.url, status: res.status, body: recordableScoreboard(sport, res.body), sport }, 'scoreboard');
       } catch (err) {
         this.sink.error?.(`${sportOf(sport).short} scoreboard`, err);
       }
@@ -131,6 +150,7 @@ export class LiveSource {
       const ids = this.anyLive ? games() : [];
       for (const id of ids) {
         if (this.stopped) return;
+        if (sportOf(this.sportOfGame.get(id) ?? 'cfb').noSummary) continue; // tennis: no play-by-play exists
         try {
           const sport = this.sportOfGame.get(id) ?? 'cfb';
           const res = await this.client.summary(id, sportOf(sport).espn);

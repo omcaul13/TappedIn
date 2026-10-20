@@ -92,7 +92,9 @@ export function autoHomes(views: Map<string, GameView>, now: number, count = 4, 
   return picked.map((v) => v.game.id);
 }
 
-export type Feed = AsyncGenerator<{ at: number; apply: (e: Engine) => void }>;
+/** What a feed item is applied to: the engine, or something standing in front of it (the app also keeps unfollowed sports for the tickers). */
+export type FeedTarget = Pick<Engine, 'ingestScoreboard' | 'ingestSummary' | 'ingestSnapshots' | 'ingestPlays'>;
+export type Feed = AsyncGenerator<{ at: number; apply: (e: FeedTarget) => void }>;
 
 export async function* recordedFeed(dir: string, toMs?: number): Feed {
   for await (const rec of replayRecords({ dir, toMs })) {

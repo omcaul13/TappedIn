@@ -27,6 +27,7 @@
     "analyze-log": "tsx scripts/analyze-log.ts",
     "switch-stats": "tsx scripts/switch-stats.ts",
     "build-break-model": "tsx scripts/build-break-model.ts",
+    "build-tennis-model": "tsx scripts/build-tennis-model.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
