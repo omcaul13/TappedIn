@@ -26,7 +26,8 @@ export interface ScreenState {
   lastSwitchAt: number;
   halftimeSince: number | null;
   gameOver: { since: number; autoPickAt: number | null } | null;
-  error: { detail: string; since: number } | null;
+  /** `mode`: what the screen was doing before the problem (a lock or game-over pop-up survives it). */
+  error: { detail: string; since: number; mode?: ScreenMode } | null;
   /** Last "waiting" note logged (dwell / no candidate), so it's logged once, not every tick. */
   lastNote: string | null;
 }
@@ -483,14 +484,15 @@ export function applyAction(prev: DirectorState, action: UserAction, views: Map<
       }
       break;
     case 'streamError':
+      sc.error = { detail: action.detail, since: now, mode: sc.mode === 'ERROR' ? sc.error?.mode : sc.mode };
       sc.mode = 'ERROR';
-      sc.error = { detail: action.detail, since: now };
       record('STREAM_ERROR', false, [action.detail]);
       break;
     case 'streamOk':
       if (sc.mode === 'ERROR') {
+        const before = sc.error?.mode;
         sc.error = null;
-        sc.mode = modeForShowing();
+        sc.mode = before === 'LOCKED' || before === 'GAME_OVER' ? before : modeForShowing();
         record('STREAM_RECOVERED', false, ['stream playing again']);
       }
       break;
