@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Entitlements for TappedIn.app, its Electron helpers and runtime/node (build-mac.sh signs them all with
+  this file). They only matter under the hardened runtime (Mode B, Developer ID).
+  - allow-jit, allow-unsigned-executable-memory: V8 (Electron and Node) compiles JavaScript at run time.
+  - disable-library-validation: castLabs' Widevine CDM is downloaded at run time and signed by Google, not
+    by our team, so library validation would refuse to load it and video would not play.
+  Not sandboxed (not for the Mac App Store): the app runs its own Node process and a local server.
+-->
+<plist version="1.0">
+<dict>
+  <key>com.apple.security.cs.allow-jit</key>
+  <true/>
+  <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+  <true/>
+  <key>com.apple.security.cs.disable-library-validation</key>
+  <true/>
+</dict>
+</plist>

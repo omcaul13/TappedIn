@@ -1,0 +1,10 @@
+{
+  "name": "tappedin-mac-build",
+  "private": true,
+  "type": "module",
+  "description": "Tools for the Mac build only (installer/mac/build-mac.sh). Kept out of the app's package.json so the Windows installer's node_modules stay the same.",
+  "dependencies": {
+    "@electron/osx-sign": "2.7.1",
+    "@electron/universal": "3.0.6"
+  }
+}
