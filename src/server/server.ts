@@ -44,12 +44,12 @@ function readBody(req: IncomingMessage, limit = 16_384): Promise<string> {
 export function startServer(port: number, handlers: ServerHandlers): Promise<LocalServer> {
   const origins = new Set([`http://localhost:${port}`, `http://127.0.0.1:${port}`]);
   const streams = new Set<ServerResponse>();
-  const server: Server = createServer(async (req, res) => {
-    const url = new URL(req.url ?? '/', 'http://localhost');
+  const handle = async (req: IncomingMessage, res: ServerResponse) => {
     const send = (status: number, type: string, body: string | Buffer) => {
       res.writeHead(status, { 'content-type': type, 'cache-control': 'no-store' });
       res.end(body);
     };
+    const url = new URL(req.url ?? '/', 'http://localhost'); // throws for paths like "//"
     const html = (body: string) => send(200, 'text/html; charset=utf-8', body);
 
     if (req.method === 'POST') {
@@ -94,7 +94,15 @@ export function startServer(port: number, handlers: ServerHandlers): Promise<Loc
     if (url.pathname.startsWith('/picker/') && screen) return html(pickerPage(screen));
     if (url.pathname.startsWith('/idle/') && screen) return html(idlePage(screen, url.searchParams.get('note') ?? 'Waiting for a home game. Pick one from this screen\'s game list.'));
     send(404, 'text/plain', 'not found');
-  });
+  };
+  // A request that throws gets an error back; unhandled, it would end the whole app.
+  const server: Server = createServer((req, res) =>
+    void handle(req, res).catch((err) => {
+      if (res.headersSent) return void res.end();
+      res.writeHead(500, { 'content-type': 'text/plain', 'cache-control': 'no-store' });
+      res.end(`server error: ${String(err)}`);
+    }),
+  );
   return new Promise((resolve, reject) => {
     server.once('error', reject);
     server.listen(port, '127.0.0.1', () =>
