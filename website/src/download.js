@@ -1,5 +1,5 @@
-// Download buttons: shows the block for the visitor's platform (CSS keys off <html data-platform>), fills in the
-// latest version, and gives phones a link to send themselves instead of a download they can't use.
+// Download buttons: shows the main button for the visitor's platform (CSS keys off <html data-platform>), fills in the
+// latest Windows and Mac versions, and gives phones a link to send themselves instead of a download they can't use.
 
 /** 'windows' | 'mac' | 'mobile' | 'other', from the browser's own platform hints. */
 export function pickPlatform({ userAgent = '', platform = '', maxTouchPoints = 0, mobile = false } = {}) {
@@ -23,6 +23,20 @@ export function metaLine(latest) {
   return `Version ${latest.version} · ${formatDate(latest.date)} · ${formatSize(latest.size)}`;
 }
 
+/** What the Mac link says before latest-mac.json loads, or when it doesn't look right. */
+export const MAC_FALLBACK = 'Requires macOS 13 or later, Apple Silicon or Intel';
+
+/** The line by the Mac link, from latest-mac.json; MAC_FALLBACK when it doesn't look right. */
+export function macMetaLine(latest) {
+  if (!latest || typeof latest.version !== 'string' || !Number.isFinite(latest.size) || !/^\d+(\.\d+)*$/.test(latest.minimumSystemVersion ?? '')) return MAC_FALLBACK;
+  return `Version ${latest.version} · ${formatSize(latest.size)} · Requires macOS ${latest.minimumSystemVersion} or later, Apple Silicon or Intel`;
+}
+
+const getJson = (url) =>
+  fetch(url)
+    .then((r) => (r.ok ? r.json() : null))
+    .catch(() => null);
+
 function init() {
   const nav = navigator;
   const platform = pickPlatform({
@@ -32,11 +46,12 @@ function init() {
     mobile: nav.userAgentData?.mobile,
   });
   document.documentElement.dataset.platform = platform;
-  if (platform !== 'windows') for (const a of document.querySelectorAll('[data-nav-download]')) a.href = '/#download';
+  const navHref = { windows: '/download/windows', mac: '/download/mac' }[platform] ?? '/#download';
+  for (const a of document.querySelectorAll('[data-nav-download]')) a.href = navHref;
 
   const link = `${location.origin}/`;
   for (const a of document.querySelectorAll('[data-email]')) {
-    a.href = `mailto:?subject=${encodeURIComponent('TappedIn download link')}&body=${encodeURIComponent(`Open this on your Windows PC to download TappedIn:\n${link}`)}`;
+    a.href = `mailto:?subject=${encodeURIComponent('TappedIn download link')}&body=${encodeURIComponent(`Open this on your computer (Windows or Mac) to download TappedIn:\n${link}`)}`;
   }
   for (const el of document.querySelectorAll('[data-link-text]')) el.textContent = link.replace(/^https?:\/\//, '').replace(/\/$/, '');
   for (const b of document.querySelectorAll('[data-copy]')) {
@@ -52,26 +67,26 @@ function init() {
   if (navigator.share) {
     for (const b of document.querySelectorAll('[data-share]')) {
       b.hidden = false;
-      b.addEventListener('click', () => navigator.share({ title: 'TappedIn', text: 'Download TappedIn on your Windows PC', url: link }).catch(() => {}));
+      b.addEventListener('click', () => navigator.share({ title: 'TappedIn', text: 'Download TappedIn on your computer (Windows or Mac)', url: link }).catch(() => {}));
     }
   }
 
-  fetch('/api/latest')
-    .then((r) => (r.ok ? r.json() : null))
-    .then((latest) => {
-      const line = metaLine(latest);
-      if (!line) return;
-      for (const el of document.querySelectorAll('[data-latest]')) el.textContent = line;
-      const notes = Array.isArray(latest.notes) ? latest.notes.filter((n) => typeof n === 'string').slice(0, 40) : [];
-      for (const d of document.querySelectorAll('[data-notes]')) {
-        if (!notes.length) continue;
-        d.querySelector('[data-notes-version]').textContent = latest.version;
-        const ul = d.querySelector('ul');
-        for (const n of notes) ul.appendChild(document.createElement('li')).textContent = n;
-        d.hidden = false;
-      }
-    })
-    .catch(() => {});
+  getJson('/api/latest?platform=mac').then((latest) => {
+    for (const el of document.querySelectorAll('[data-latest-mac]')) el.textContent = macMetaLine(latest);
+  });
+  getJson('/api/latest').then((latest) => {
+    const line = metaLine(latest);
+    if (!line) return;
+    for (const el of document.querySelectorAll('[data-latest]')) el.textContent = line;
+    const notes = Array.isArray(latest.notes) ? latest.notes.filter((n) => typeof n === 'string').slice(0, 40) : [];
+    for (const d of document.querySelectorAll('[data-notes]')) {
+      if (!notes.length) continue;
+      d.querySelector('[data-notes-version]').textContent = latest.version;
+      const ul = d.querySelector('ul');
+      for (const n of notes) ul.appendChild(document.createElement('li')).textContent = n;
+      d.hidden = false;
+    }
+  });
 }
 
 if (typeof document !== 'undefined') init();

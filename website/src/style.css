@@ -95,11 +95,13 @@ p { margin: 0 0 1em; }
 .dl { margin: 26px 0 8px; }
 .for-windows, .for-mac, .for-mobile { display: none; }
 html[data-platform='windows'] .for-windows,
+html[data-platform='other'] .for-windows,
 html[data-platform='mac'] .for-mac,
-html[data-platform='other'] .for-mac,
 html[data-platform='mobile'] .for-mobile { display: block; }
+html[data-platform='mobile'] .no-mobile { display: none; }
+.dl-platforms { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 4px; color: var(--dim); font-size: 0.92rem; }
+.dl-platforms a { font-weight: 600; }
 .dl-meta { margin: 12px 0 0; color: var(--dim); font-size: 0.92rem; }
-.dl-alt { margin: 6px 0 0; color: var(--dim); font-size: 0.88rem; }
 .dl-note { background: var(--panel); border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 14px 16px; margin: 0 0 12px; }
 .dl-note strong { display: block; font-size: 1.1rem; }
 .share { display: flex; flex-wrap: wrap; gap: 10px; }
