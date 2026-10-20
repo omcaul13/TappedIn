@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { directorSettings } from '../../src/config';
+import { Engine } from '../../src/engine/engine';
+import { rankCandidates } from '../../src/engine/ranker';
 import { mlb } from '../../src/sports/baseball';
-import { snap } from '../helpers';
+import { sec, snap, T0, testConfig } from '../helpers';
 import { breakStarts, fixtureGames } from './harness';
 
 // MLB break detector and excitement on two recorded games from 8/15/2026.
@@ -49,6 +52,22 @@ describe('MLB break detector on recorded games', () => {
       for (const s of starts.filter((x) => x.category === 'pitch')) expect(s.quietSec, s.reasons[0]).toBeGreaterThanOrEqual(45);
     });
   }
+});
+
+describe('MLB between innings at Low', () => {
+  it('stays LIVE for its own screen, but is not picked as another screen’s fill-in (it is in a commercial)', () => {
+    const cfg = testConfig();
+    const e = new Engine(cfg);
+    const live = { family: 'baseball' as const, lastPlay: null, half: 'top' as const, outs: 2, balls: 0, strikes: 0, onFirst: false, onSecond: false, onThird: false, homeHits: 5, awayHits: 5 };
+    const m = (detail: string, endOfPeriod: boolean) => snap({ id: 'm1', sport: 'mlb', period: 5, detail, endOfPeriod, networks: ['ESPN'], live: { ...live, half: endOfPeriod ? 'middle' : 'top' } });
+    e.ingestSnapshots([m('Top 5th', false)], T0);
+    e.ingestSnapshots([m('Mid 5th', true)], T0 + sec(15)); // third out
+    e.tick(T0 + sec(60));
+    const v = e.views().get('m1')!;
+    expect(v.assessment.state).toBe('LIVE'); // Low: baseball screens stay put between innings
+    const none = { exclude: new Set<string>(), shownGames: new Set<string>(), shownChannels: new Set<number>() };
+    expect(rankCandidates([v], { ...none, maxBreakRisk: directorSettings(cfg).candidateMaxBreakRisk }).ranked).toEqual([]);
+  });
 });
 
 describe('MLB excitement', () => {
