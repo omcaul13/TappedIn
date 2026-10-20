@@ -211,6 +211,12 @@ export async function startShell(cfg: Config, uiUrl: string, events: ShellEvents
     else if (msg?.type === 'reply') router.handle(msg as unknown as Reply);
     else if (msg?.type === 'log' && msg.text) events.log(`shell: ${msg.text}`);
   });
+  // Electron couldn't start (missing or quarantined exe) or a message couldn't be sent: no 'exit' follows a failed spawn.
+  child.on('error', (err) => {
+    events.log(`shell: ${err.message}`);
+    fail(err);
+    router.failAll(err);
+  });
   child.on('exit', (code) => {
     fail(new Error(`the TappedIn window closed before it was ready (exit ${code})`));
     router.failAll(new Error('the TappedIn window closed'));
