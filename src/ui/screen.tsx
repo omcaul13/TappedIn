@@ -64,9 +64,10 @@ export function Screen({ st, sc, games, now, fullscreen, hiddenByFullscreen, can
 
   const recent = Date.now() - lastMove < HIDE_MS;
   const visible = menuOpen || Date.now() < flashUntil || (hover && recent);
-  const run = async (p: Promise<{ ok: boolean; message?: string }>) => {
+  /** Show a failure's message; with `always`, a success's note too ("Only 2 NHL games free…"). */
+  const run = async (p: Promise<{ ok: boolean; message?: string }>, always = false) => {
     const r = await p;
-    if (!r.ok && r.message) onError(r.message);
+    if (r.message && (!r.ok || always)) onError(r.message);
   };
 
   // Why this screen is on another game: the tier and what makes it worth it, then the home game's break.
@@ -251,7 +252,7 @@ function GameRow({ g, current, tag, onPick, disabledReason }: { g: GameDTO; curr
 }
 
 /** Sports first, then games: the screen's sport (or one you pick) on top, other sports grouped below. */
-function GameMenu({ st, sc, games, onClose, run }: { st: AppState; sc: ScreenDTO; games: Map<string, GameDTO>; onClose(): void; run(p: Promise<{ ok: boolean; message?: string }>): void }) {
+function GameMenu({ st, sc, games, onClose, run }: { st: AppState; sc: ScreenDTO; games: Map<string, GameDTO>; onClose(): void; run(p: Promise<{ ok: boolean; message?: string }>, always?: boolean): void }) {
   const firstSport = sc.sport ?? st.sports.find((x) => x.enabled && x.live > 0)?.id ?? st.sports.find((x) => x.enabled && x.games > 0)?.id ?? null;
   const [step, setStep] = useState<'sports' | 'games'>(firstSport ? 'games' : 'sports');
   const [sport, setSport] = useState(firstSport);
@@ -278,7 +279,7 @@ function GameMenu({ st, sc, games, onClose, run }: { st: AppState; sc: ScreenDTO
   }, []);
   const choose = (x: SportDTO) => {
     if (allScreens) {
-      run(post('/api/all-screens-sport', { sport: x.id }));
+      run(post('/api/all-screens-sport', { sport: x.id }), true);
       onClose();
       return;
     }
