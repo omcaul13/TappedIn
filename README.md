@@ -355,7 +355,6 @@ Every screen is checked every 2 s: is the video advancing, is it on the right ch
 | `npm run record [-- --sports all\|cfb,nhl]` | Records a game day's ESPN data for every followed sport to `recordings/<date>/` (each record names its sport). Tennis (`--sports atp,wta`) can only be recorded live: ESPN keeps no tennis play-by-play for `fetch-day` |
 | `npm run espn:probe` | Today's slate, networks, and whether you can watch each game |
 | `npm run sign-electron` | castLabs EVS signing (see Install) |
-| `npx electron electron/spike.cjs --views 4 --overlay --hide-ui --ua-chrome` + `npx tsx scripts/spike-electron.ts ESPN ESPN2 ABC FOX` | The Electron feasibility spike |
 | `npx tsx scripts/shell-check.ts` | Starts the app window alone and prints everything it says |
 
 The old control panel still works at <http://localhost:7480/panel>.
@@ -371,7 +370,6 @@ electron/main.cjs             app window: frameless window, video views + standb
                               configure/logout/sign-in check requests from the app
 electron/layout.cjs           where each screen sits for 1-4 screens (the UI mirrors it)
 electron/ui-preload.cjs       the UI's only shell access: full screen
-electron/spike.cjs            Option A feasibility spike
 src/app.ts                    the app: ESPN data -> engine -> window controller, UI state + API, settings, labels
 src/shell.ts                  starts the app window and finds its views over the local debugging port
 src/ui/                       the window's UI (Preact, bundled on the fly by esbuild): top bar, screen overlays,

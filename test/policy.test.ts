@@ -16,7 +16,7 @@ describe('stream error advice', () => {
 
   it('sign-out and unavailable channels fail straight away with a fix', () => {
     expect(adviseOnStream('LOGIN_REQUIRED', 0, 60)).toMatchObject({ action: 'fail', retryAfterSeconds: 120 });
-    expect(adviseOnStream('LOGIN_REQUIRED', 0, 60).hint).toMatch(/npm run login/);
+    expect(adviseOnStream('LOGIN_REQUIRED', 0, 60).hint).toMatch(/Settings → TV service/);
     expect(adviseOnStream('CHANNEL_UNAVAILABLE', 0, 60)).toMatchObject({ action: 'fail', retryAfterSeconds: 300 });
   });
 

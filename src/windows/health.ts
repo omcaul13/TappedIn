@@ -9,8 +9,6 @@ import { compileRegex, type ProviderConfig } from '../providers/types';
 
 const INJECT_DIR = path.join(import.meta.dirname, 'inject');
 export const PROBE_JS = readFileSync(path.join(INJECT_DIR, 'probe.js'), 'utf8');
-export const BADGE_JS = readFileSync(path.join(INJECT_DIR, 'badge.js'), 'utf8');
-export const WIDEVINE_JS = readFileSync(path.join(INJECT_DIR, 'widevine.js'), 'utf8');
 
 export interface VideoProbe {
   rect: { x: number; y: number; w: number; h: number };

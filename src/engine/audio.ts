@@ -1,4 +1,5 @@
 import type { AudioConfig } from '../config';
+import { sportOf } from '../sports';
 import type { ScreenState } from './director';
 import type { GameView } from './ranker';
 
@@ -35,22 +36,9 @@ export function excitement(sc: ScreenState, views: Map<string, GameView>): { sco
   const v = views.get(sc.showing.gameId);
   if (!v) return { score: 0, why: 'unknown game' };
   if (v.assessment.state !== 'LIVE') return { score: 1, why: `${v.game.shortName} ${v.assessment.state.toLowerCase()}` };
-  const g = v.game;
-  const margin = Math.abs(g.home.score - g.away.score);
-  const late = (g.period ?? 0) >= 4;
-  let score = Math.max(0, 40 - margin * 2);
-  const why: string[] = [];
-  if (g.situation?.isRedZone) {
-    score += 100;
-    why.push('red zone');
-  }
-  if (late && margin <= 8) {
-    score += 60;
-    why.push('one-score game in the 4th');
-  }
-  score += (g.period ?? 0) * 2;
-  why.push(`margin ${margin}`);
-  return { score, why: `${g.shortName}: ${why.join(', ')}` };
+  // The sport's own normalized score, so a screen of one sport compares fairly with another's.
+  const x = sportOf(v.game.sport).excitement(v.game);
+  return { score: x.score, why: `${v.game.shortName}: ${x.why}` };
 }
 
 export function audioStep(prev: AudioState, screens: ScreenState[], views: Map<string, GameView>, now: number, cfg: AudioConfig): { state: AudioState; decision: AudioDecision | null } {

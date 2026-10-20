@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, watch, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, renameSync, watch, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import JSON5 from 'json5';
 import { z } from 'zod';
@@ -474,17 +474,31 @@ export function parseOverrides(raw: unknown): SettingsOverrides {
   return r.data;
 }
 
-export function loadOverrides(file = SETTINGS_FILE): SettingsOverrides {
+export function loadOverrides(file = SETTINGS_FILE, warn: (msg: string) => void = console.warn): SettingsOverrides {
+  let raw: unknown;
   try {
-    return OverridesSchema.parse(JSON.parse(readFileSync(file, 'utf8')));
-  } catch {
+    raw = JSON.parse(readFileSync(file, 'utf8'));
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== 'ENOENT') warn(`${file} is unreadable, using the config file only: ${String(err)}`);
     return {};
   }
+  const all = OverridesSchema.safeParse(raw);
+  if (all.success) return all.data;
+  // One bad or retired key must not wipe the rest (the TV service choice included): keep each setting that still validates.
+  const kept: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(raw && typeof raw === 'object' ? raw : {})) {
+    const one = OverridesSchema.shape[key as keyof typeof OverridesSchema.shape]?.safeParse(value);
+    if (one?.success) kept[key] = one.data;
+    else warn(`${file}: ignoring "${key}"`);
+  }
+  return kept as SettingsOverrides;
 }
 
 export function saveOverrides(o: SettingsOverrides, file = SETTINGS_FILE): void {
   mkdirSync(path.dirname(file), { recursive: true });
-  writeFileSync(file, JSON.stringify(o, null, 2));
+  // Write then rename, so a crash mid-write never leaves half a file.
+  writeFileSync(`${file}.tmp`, JSON.stringify(o, null, 2));
+  renameSync(`${file}.tmp`, file);
 }
 
 export function withOverrides(cfg: Config, o: SettingsOverrides): Config {

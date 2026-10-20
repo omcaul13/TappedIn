@@ -16,7 +16,7 @@ function world(stepCfg: DirectorStepConfig = cfg) {
     c1: snap({ id: 'c1', shortName: 'CLOSE', home: { id: 'x', abbr: 'X', name: 'X', score: 7 }, away: { id: 'y', abbr: 'Y', name: 'Y', score: 7 } }),
     c2: snap({ id: 'c2', shortName: 'BLOWOUT', home: { id: 'x', abbr: 'X', name: 'X', score: 42 }, away: { id: 'y', abbr: 'Y', name: 'Y', score: 0 } }),
   };
-  const channels: Record<string, number> = { h1: 849, h2: 850, c1: 805, c2: 806 };
+  const channels: Record<string, number | null> = { h1: 849, h2: 850, c1: 805, c2: 806 };
   const states: Record<string, BreakState> = { h1: 'LIVE', h2: 'LIVE', c1: 'LIVE', c2: 'LIVE' };
   const since: Record<string, number> = {};
   const extra: Record<string, Partial<Assessment>> = {};
@@ -41,6 +41,10 @@ function world(stepCfg: DirectorStepConfig = cfg) {
       state = r.state;
       log.push(...r.decisions.map((d) => d.rule));
       return r;
+    },
+    /** The game's network drops out of the lineup (a rescan or mapping edit mid-session). */
+    dropChannel(id: keyof typeof games) {
+      channels[id] = null;
     },
     screen(n: number) {
       return state.screens[n - 1];
@@ -146,6 +150,26 @@ describe('director', () => {
     w.set('h2', 'BREAK', T0 + sec(70));
     expect(w.step(T0 + sec(70)).decisions[0].rule).toBe('RETURN_HOME');
     expect(w.showing(1)).toBe('h1');
+  });
+
+  it('home game no longer in the lineup: stays put instead of crashing', () => {
+    const w = world();
+    w.act({ type: 'setHome', screen: 1, gameId: 'h1' }, T0);
+    w.set('h1', 'BREAK', T0 + sec(20));
+    w.step(T0 + sec(20));
+    expect(w.showing(1)).toBe('c1');
+    w.dropChannel('h1');
+    for (const id of ['c1', 'c2', 'h2'] as const) w.set(id, 'BREAK', T0 + sec(70));
+    expect(w.step(T0 + sec(70)).decisions[0].rule).toBe('NO_CANDIDATE');
+    expect(w.showing(1)).toBe('c1');
+
+    const h = world();
+    h.act({ type: 'setHome', screen: 1, gameId: 'h1' }, T0);
+    h.set('h1', 'HALFTIME', T0 + sec(30));
+    h.step(T0 + sec(30));
+    h.dropChannel('h1');
+    expect(h.step(T0 + sec(30 + cfg.halftimeMaxSeconds + 1)).decisions[0].rule).toBe('NO_CANDIDATE');
+    expect(h.screen(1).mode).toBe('HALFTIME_REEL');
   });
 
   it('upgrades a fill-in to a red-zone game (after dwell)', () => {

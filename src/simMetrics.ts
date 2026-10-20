@@ -54,7 +54,9 @@ export function loadFinalPlays(dir: string): Map<string, FinalPlays> {
 
 export function computeMetrics(label: string, res: SimResult, finals: Map<string, FinalPlays>, cfg: Config, longBreakSec = 90, shortSec = 45, sport?: SportId): SimMetrics {
   const delay = cfg.breakDetector.streamDelaySeconds * 1000;
-  const sportOfGame = (id: string | null) => (id ? (finals.get(id)?.sport ?? 'cfb') : null);
+  // Games without finals (tennis has no play-by-play) take their sport from the timeline.
+  const timelineSport = new Map(res.timeline.flatMap((p) => p.screens.flatMap((s) => (s.home && s.sport ? [[s.home, s.sport] as const] : []))));
+  const sportOfGame = (id: string | null) => (id ? (finals.get(id)?.sport ?? timelineSport.get(id) ?? 'cfb') : null);
   const resumes = (id: string) => sportOf(sportOfGame(id)).breaks.resumes as ReadonlySet<string>;
   /** Period ends that don't start a forecastable stoppage (halftime, end of game) aren't breaks to catch. */
   const isHalftime = (id: string, p: PlaySnap) => p.kind === 'endPeriod' && sportOf(sportOfGame(id)).breaks.categorize(p) === null;

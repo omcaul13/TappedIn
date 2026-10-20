@@ -4,7 +4,7 @@
 //   npm run inspect -- --match guide   # only links/buttons whose text or href matches
 import { loadConfig } from '../src/config';
 import { connect, debugEndpoint } from '../src/windows/chrome';
-import { parseFlags } from './spike-lib';
+import { parseFlags } from '../src/cli';
 
 const cfg = loadConfig();
 const { flags } = parseFlags(process.argv.slice(2));

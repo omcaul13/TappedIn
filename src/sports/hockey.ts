@@ -10,7 +10,6 @@
 //    moment is a one-goal game in the last minutes, when teams pull the goalie;
 //  - play clocks count up from 0:00; the scoreboard counts down.
 
-import type { RankedCandidate } from '../engine/ranker';
 import type { GameSnapshot, LiveDetail, Phase, PlayKind, PlaySnap } from '../engine/types';
 import { basePhase, num, str, type Json } from '../espn/json';
 import { basketballCompare, periodBreaksFromScoreboard, preset, topLevelPlays } from './basketball';
@@ -145,7 +144,7 @@ export const nhl: SportModule = {
   halftimeMaxSeconds: 1500,
   progressSeconds: hockeyProgressSeconds,
   excitement: hockeyExcitement,
-  compare: (a: RankedCandidate, b: RankedCandidate) => basketballCompare(a, b),
+  compare: basketballCompare,
   synth: clockSynth({
     plays: hockeySummaryPlays,
     periodName: (p) => (p === 5 ? 'SO' : ordinalPeriod(p, 3)),

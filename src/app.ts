@@ -1,4 +1,4 @@
-import { appendFileSync, mkdirSync } from 'node:fs';
+import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { resolveChannel } from './channels';
 import { loadOverrides, parseOverrides, PROJECT_ROOT, saveOverrides, SETTINGS_FILE, watchConfig, withOverrides, type Config, type SettingsOverrides } from './config';
@@ -12,12 +12,9 @@ import { YouTubeClient } from './highlights/youtube';
 import { LiveSource, recordingDir } from './espn/source';
 import { clock as fmtClock, dailyLogFile, DecisionLog, type LogEntry } from './log';
 import { startServer, type LocalServer, type PostResult } from './server/server';
-import { effectiveChannels, upgradeLineup } from './providers/lineup';
+import { effectiveChannels, lineupFile, upgradeLineup } from './providers/lineup';
 import { isSportId, SPORTS, sportOf } from './sports';
 import type { GameSnapshot, SportId } from './engine/types';
-import { mkdirSync as mkdirp, writeFileSync } from 'node:fs';
-import { lineupFile } from './providers/lineup';
-import { listProviders } from './providers/registry';
 import type { DiscoveredChannel } from './providers/types';
 import { demoDeps } from './setup/demo';
 import { applyMapping, lineupFromScan, mappingRows } from './setup/lineupEdit';
@@ -26,9 +23,8 @@ import { DIAG_STEPS, fieldsFor, getPath, HIDE_PROBE_JS, runStep, type DiagResult
 import { buildExport, writeExport } from './setup/export';
 import { compileRegex } from './providers/types';
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
 import { loadSetup, migrateOwner, needsSetup, saveSetup, type SetupState } from './setup/state';
-import { createAdapter, previewOverride, readOverrideFile, saveOverride, STATE_DIR } from './providers/registry';
+import { createAdapter, listProviders, previewOverride, readOverrideFile, saveOverride, STATE_DIR } from './providers/registry';
 import type { ProviderAdapter } from './providers/types';
 import { gameDTO, type AppState, type FeedItem, type PickerDTO, type ScreenDTO } from './server/state';
 import { attachShell, effectiveStandby, startShell, type Shell, type SigninStatus } from './shell';
@@ -796,7 +792,7 @@ export class App {
 
   private writeLineup(lineup: Config['channels']): void {
     const file = lineupFile(this.adapter.config.id, STATE_DIR);
-    mkdirp(path.dirname(file), { recursive: true });
+    mkdirSync(path.dirname(file), { recursive: true });
     writeFileSync(file, JSON.stringify(lineup, null, 2));
   }
 

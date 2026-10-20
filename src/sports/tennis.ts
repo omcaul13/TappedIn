@@ -15,7 +15,6 @@
 //    assumed to be on `sports.tennis.assumedNetwork` (Tennis Channel) and never auto-picked.
 //  - Medical timeouts never appear.
 
-import type { RankedCandidate } from '../engine/ranker';
 import type { GameSnapshot, Phase, PlayKind, SportId, TennisInfo, TennisSet } from '../engine/types';
 import { espnDateKey } from '../espn/client';
 import { basePhase, num, str, type Json } from '../espn/json';
@@ -389,7 +388,7 @@ export function tennisTour(t: { id: Extract<SportId, 'atp' | 'wta'>; name: strin
     presets: { low: { ...low, excludeCategories: ['changeover'] }, medium: preset(60, 0.72, 90, false), high: preset(45, 0.65, 60, true) },
     progressSeconds: tennisProgressSeconds,
     excitement: tennisExcitement,
-    compare: (a: RankedCandidate, b: RankedCandidate) => basketballCompare(a, b),
+    compare: basketballCompare,
   };
 }
 

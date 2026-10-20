@@ -1,5 +1,4 @@
 import { sportOf } from '../sports';
-import { footballProgressSeconds } from '../sports/football';
 import type { Excitement, HotMoment } from '../sports/types';
 import type { Assessment, GameSnapshot, SportId } from './types';
 
@@ -54,9 +53,6 @@ export interface RankOptions {
   otherSports?: ReadonlySet<SportId>;
 }
 
-/** Football's game clock math (kept for callers that predate src/sports/). */
-export const progressSeconds = footballProgressSeconds;
-
 export function describeGame(g: GameSnapshot): string {
   const score = `${g.away.abbr} ${g.away.score}-${g.home.score} ${g.home.abbr}`;
   const s = g.situation;
@@ -64,7 +60,7 @@ export function describeGame(g: GameSnapshot): string {
   return `${score} ${g.detail}${where}`;
 }
 
-export const TIER_LABEL: Record<Tier, string> = { 1: 'Same sport', 2: "Other screen's sport", 3: 'Other sport' };
+const TIER_LABEL: Record<Tier, string> = { 1: 'Same sport', 2: "Other screen's sport", 3: 'Other sport' };
 
 /** "Same sport", "Other screen's sport (NHL)", "Other sport (NBA)". */
 export function tierLabel(c: Pick<RankedCandidate, 'tier' | 'sport'>): string {
