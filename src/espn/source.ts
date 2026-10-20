@@ -47,7 +47,8 @@ export class LiveSource {
   firstRoundDone(): boolean {
     return enabledSports(this.cfg).every((s) => this.polled.has(s));
   }
-  private timers: NodeJS.Timeout[] = [];
+  /** Pending sleeps only: each removes itself when it fires. */
+  private timers = new Set<NodeJS.Timeout>();
   private readonly ranks: RankCache;
 
   constructor(
@@ -87,7 +88,13 @@ export class LiveSource {
   }
 
   private sleep(ms: number): Promise<void> {
-    return new Promise((r) => this.timers.push(setTimeout(r, ms)));
+    return new Promise((r) => {
+      const t = setTimeout(() => {
+        this.timers.delete(t);
+        r();
+      }, ms);
+      this.timers.add(t);
+    });
   }
 
   private jitter(): number {
