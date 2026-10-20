@@ -1,0 +1,54 @@
+[
+  {
+    "family": "Football",
+    "leagues": [
+      { "id": "cfb", "name": "College football" },
+      { "id": "nfl", "name": "NFL" }
+    ],
+    "switches": "Ends of quarters, kickoffs after scores, injuries, the NFL's two-minute warning, and timeouts once the quiet shows a TV break.",
+    "hot": "Red zone, two-minute drill, overtime"
+  },
+  {
+    "family": "Basketball",
+    "leagues": [
+      { "id": "mcbb", "name": "Men's college basketball" },
+      { "id": "wcbb", "name": "Women's college basketball" },
+      { "id": "nba", "name": "NBA" },
+      { "id": "wnba", "name": "WNBA" }
+    ],
+    "switches": "Official TV timeouts and full timeouts, ends of quarters. Never fouls, free throws or baskets.",
+    "hot": "Crunch time and clutch time, overtime"
+  },
+  {
+    "family": "Hockey",
+    "leagues": [{ "id": "nhl", "name": "NHL" }],
+    "switches": "TV timeouts and the end of regulation. Intermissions get the highlights reel.",
+    "hot": "Power play, a one-goal game late, overtime and shootouts"
+  },
+  {
+    "family": "Baseball",
+    "leagues": [{ "id": "mlb", "name": "MLB" }],
+    "switches": "Between innings, at Medium or High sensitivity. At Low, baseball screens stay put.",
+    "hot": "No-hitter in the 6th or later, bases loaded, extra innings"
+  },
+  {
+    "family": "Soccer",
+    "leagues": [
+      { "id": "mls", "name": "MLS" },
+      { "id": "epl", "name": "Premier League" },
+      { "id": "ucl", "name": "Champions League" },
+      { "id": "laliga", "name": "La Liga" }
+    ],
+    "switches": "Never while the ball is in play (soccer has no commercials then). Halftime gets the reel. Soccer makes a great fill-in for other sports' breaks.",
+    "hot": "Close game from 75', stoppage time, extra time, shootouts"
+  },
+  {
+    "family": "Tennis",
+    "leagues": [
+      { "id": "atp", "name": "ATP" },
+      { "id": "wta", "name": "WTA" }
+    ],
+    "switches": "Set breaks, plus changeovers at Medium or High. Rain delays and suspensions at every level.",
+    "hot": "Match point, set point, break point, tiebreaks, deciding sets"
+  }
+]
