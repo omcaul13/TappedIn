@@ -1,4 +1,4 @@
-# Updates RedZone (run by "Update RedZone.cmd"). Windows PowerShell 5.1.
+# Updates TappedIn (run by "Update TappedIn.cmd"). Windows PowerShell 5.1.
 # Gets the newest version, reinstalls dependencies when they changed, offers to sign Electron again only
 # when it changed, then checks the install.
 #   -CheckOnly   report each step's status and change nothing (no fetch, no install, no signing)
@@ -7,23 +7,23 @@ param([switch]$CheckOnly)
 . (Join-Path $PSScriptRoot 'install-common.ps1')
 Set-Location -LiteralPath $Root
 
-Write-Host 'RedZone update' -ForegroundColor Cyan
+Write-Host 'TappedIn update' -ForegroundColor Cyan
 if ($CheckOnly) { Write-Host 'Check only: nothing will be downloaded or changed.' }
 
 if (-not (Get-NodeVersion)) {
-    Stop-WithFix 'Node.js is not installed, so RedZone was never set up on this PC.' 'Double-click Setup RedZone.cmd instead.'
+    Stop-WithFix 'Node.js is not installed, so TappedIn was never set up on this PC.' 'Double-click Setup TappedIn.cmd instead.'
 }
 
 # 1. Newest version ----------------------------------------------------------------------------------
 Write-Step '1/4  Newest version'
 if (-not (Test-Path -LiteralPath (Join-Path $Root '.git'))) {
     Write-Info 'This copy was downloaded as a zip, so it cannot download updates itself. To update:'
-    Write-Info '  1. Download the newest RedZone zip from where you got this one.'
+    Write-Info '  1. Download the newest TappedIn zip from where you got this one.'
     Write-Info '  2. Unzip it over this folder (your settings in the .state folder are kept).'
-    Write-Info '  3. Double-click Update RedZone.cmd again; it finishes the rest (the steps below).'
+    Write-Info '  3. Double-click Update TappedIn.cmd again; it finishes the rest (the steps below).'
 } elseif (-not (Get-Command git -ErrorAction SilentlyContinue)) {
     if ($CheckOnly) { Write-Todo 'Git is not installed, so update cannot pull the newest version.' }
-    else { Stop-WithFix 'This copy came from git, but Git is not installed.' 'Install Git from https://git-scm.com/download/win, then run Update RedZone.cmd again.' }
+    else { Stop-WithFix 'This copy came from git, but Git is not installed.' 'Install Git from https://git-scm.com/download/win, then run Update TappedIn.cmd again.' }
 } else {
     # --no-optional-locks: read-only git commands never rewrite .git/index.
     $branch = & git --no-optional-locks rev-parse --abbrev-ref HEAD 2>$null
@@ -39,7 +39,7 @@ if (-not (Test-Path -LiteralPath (Join-Path $Root '.git'))) {
     } else {
         $code = Invoke-Interactive 'git' @('pull', '--ff-only')
         if ($code -ne 0) {
-            Stop-WithFix 'git could not apply the update.' "Run git status in this folder to see the files you changed, undo or move those changes (settings belong in .state\settings.json), then run Update RedZone.cmd again."
+            Stop-WithFix 'git could not apply the update.' "Run git status in this folder to see the files you changed, undo or move those changes (settings belong in .state\settings.json), then run Update TappedIn.cmd again."
         }
         Write-Ok "Up to date with $upstream."
     }
@@ -75,7 +75,7 @@ if (Test-SignatureFresh) {
         Invoke-SignElectron
         Write-Ok 'Signed: electron.exe.sig is present.'
     } else {
-        Write-Todo 'Video will not play until Electron is signed: run Update RedZone.cmd again, or npm run sign-electron.'
+        Write-Todo 'Video will not play until Electron is signed: run Update TappedIn.cmd again, or npm run sign-electron.'
     }
 }
 
@@ -90,7 +90,7 @@ if (Invoke-Doctor) {
 Write-Host ''
 if ($script:Todo -eq 0) {
     if ($CheckOnly) { Write-Host 'Nothing to do right now (beyond git pull, which only a real update checks).' -ForegroundColor Green }
-    else { Write-Host 'RedZone is up to date.' -ForegroundColor Green }
+    else { Write-Host 'TappedIn is up to date.' -ForegroundColor Green }
     exit 0
 }
 Write-Host "$($script:Todo) item(s) still to do (above)." -ForegroundColor Yellow

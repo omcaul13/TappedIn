@@ -26,8 +26,8 @@
     "startUrl": null,
     "checkUrl": "https://watch.spectrum.net/guide",
     "signedOutPattern": "/\\bSign In\\b/",
-    "windowTitle": "RedZone: sign in to Spectrum TV",
-    "instructions": "Sign in with your Spectrum username in the window that opened. RedZone continues once the guide appears"
+    "windowTitle": "TappedIn: sign in to Spectrum TV",
+    "instructions": "Sign in with your Spectrum username in the window that opened. TappedIn continues once the guide appears"
   },
   "errors": {
     "probePatterns": [

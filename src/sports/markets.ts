@@ -2,7 +2,7 @@ import type { SportId } from '../engine/types';
 
 // TV markets → the teams whose regional broadcasts they get. Sunday-afternoon NFL games on CBS and
 // FOX are regional: three or four air at once and your local station shows one, usually your market's
-// team. ESPN marks them all "national", so the market is how RedZone knows which one your CBS shows.
+// team. ESPN marks them all "national", so the market is how TappedIn knows which one your CBS shows.
 // Abbreviations are ESPN's.
 
 export const MARKETS: Record<string, Partial<Record<SportId, string[]>>> = {

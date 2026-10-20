@@ -1,8 +1,8 @@
-# RedZone Director: multi-sport plan
+# TappedIn: multi-sport plan
 
 ## Context
 
-RedZone Director only handles college football. The sport is fixed by `cfg.espn.sport`/`groups`, and football rules run through the whole stack: the normalizer, `gameStore` inference, the forecast categories, the ranker (red zone, 15-minute quarters), the director's red-zone upgrade, synth, sim metrics, the network list (hard-coded in 4+ places), highlights and the UI.
+TappedIn only handles college football. The sport is fixed by `cfg.espn.sport`/`groups`, and football rules run through the whole stack: the normalizer, `gameStore` inference, the forecast categories, the ranker (red zone, 15-minute quarters), the director's red-zone upgrade, synth, sim metrics, the network list (hard-coded in 4+ places), highlights and the UI.
 
 The goal is a multi-sport director:
 - **Sport modules:** each sport and level (NFL ≠ CFB, NBA ≠ men's college ≠ women's college ≠ WNBA, NHL, MLB, soccer) has its own module with its own break detector and excitement scorer.
@@ -202,7 +202,7 @@ Every sport's model is built from real gaps (§4). The numbers below are startin
 - **Persistence:** each screen's sport and the per-sport overrides persist in `.state/settings.json`.
 - **Startup:** each screen's remembered sport (default CFB) runs today's `autoHomes` within that sport, falling back across sports by normalized score.
 
-### 8. Config (`src/config.ts` + `config/redzone.config.json5`)
+### 8. Config (`src/config.ts` + `config/tappedin.config.json5`)
 
 ```json5
 sports: {
@@ -280,7 +280,7 @@ I'll also run the multi-sport recorder in the background tonight (SNF + NHL + ML
   - server and highlights: `src/server/{state,pages}.ts`, `src/highlights/*`
   - UI: `src/ui/{screen,main,settings,util,icons,onboarding,diagnostics}.tsx|ts`
   - scripts: `scripts/{record,fetch-day,build-break-model,sim}.ts`
-  - `test/helpers.ts`, `config/redzone.config.json5`, `README.md`
+  - `test/helpers.ts`, `config/tappedin.config.json5`, `README.md`
 - **Reused, not rewritten:**
   - `forecast.ts` survival/`forecastBreak` (generalized category keys)
   - `statusOutcome`

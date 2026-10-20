@@ -6,11 +6,11 @@ import type { SportId } from './engine/types';
 import { SPORT_IDS, sportOf } from './sports';
 import type { SportPreset } from './sports/types';
 
-// One editable file: config/redzone.config.json5. Every knob has a default here, so the file only
+// One editable file: config/tappedin.config.json5. Every knob has a default here, so the file only
 // needs what you want to change. Thresholds hot-reload while the app runs (see watchConfig).
 
 export const PROJECT_ROOT = path.resolve(import.meta.dirname, '..');
-export const CONFIG_PATH = path.join(PROJECT_ROOT, 'config', 'redzone.config.json5');
+export const CONFIG_PATH = path.join(PROJECT_ROOT, 'config', 'tappedin.config.json5');
 
 const signal = (weight: number, windowSeconds: number) =>
   z
@@ -111,7 +111,7 @@ export const ConfigSchema = z.object({
   chrome: z
     .object({
       executablePath: z.string().default('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'),
-      profileDir: z.string().default('%LOCALAPPDATA%\\RedZone\\chrome-profile'),
+      profileDir: z.string().default('%LOCALAPPDATA%\\TappedIn\\chrome-profile'),
       debugPort: z.number().int().default(9333),
       xfinityStartUrl: z.string().default('https://www.xfinityoncampus.com/'),
     })
@@ -121,7 +121,7 @@ export const ConfigSchema = z.object({
   electron: z
     .object({
       /** Electron's own data (keeps your Xfinity On Campus sign-in). */
-      userDataDir: z.string().default('%LOCALAPPDATA%\\RedZone\\electron'),
+      userDataDir: z.string().default('%LOCALAPPDATA%\\TappedIn\\electron'),
       /** Local debugging port the app drives the Xfinity views through (localhost only). */
       debugPort: z.number().int().default(9335),
       /** On this laptop (Intel Arc + NVIDIA) Windows' DirectComposition video path left some tiles black. */

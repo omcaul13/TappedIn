@@ -160,7 +160,7 @@ export class WindowController {
     const pages: Page[] = [];
     for (let i = 0; i < count; i++) {
       const reuse = saved.targets[i] ? byTarget.get(saved.targets[i]) : undefined;
-      pages.push(reuse ?? (await openWindow(this.cfg, this.browser, this.context, `RedZone screen ${i + 1}`, this.cfg.windows.appMode)));
+      pages.push(reuse ?? (await openWindow(this.cfg, this.browser, this.context, `TappedIn screen ${i + 1}`, this.cfg.windows.appMode)));
     }
     const area = await workArea(pages[0]);
     const tiles = gridBounds(area);
@@ -174,7 +174,7 @@ export class WindowController {
     }
 
     // Control panel: a 5th app window centred over the grid; Alt+P hides/shows it.
-    this.panel = (saved.panel ? byTarget.get(saved.panel) : undefined) ?? (await openWindow(this.cfg, this.browser, this.context, 'RedZone panel', this.cfg.windows.appMode));
+    this.panel = (saved.panel ? byTarget.get(saved.panel) : undefined) ?? (await openWindow(this.cfg, this.browser, this.context, 'TappedIn panel', this.cfg.windows.appMode));
     await this.panel.exposeBinding('rzCall', (_s, msg: BridgeMessage) => this.events.bridge(0, msg)).catch(() => {});
     await this.panel.goto(`${this.opts.serverUrl}/panel`, { waitUntil: 'domcontentloaded' });
     const w = Math.min(1060, area.width - 60);
@@ -306,7 +306,7 @@ export class WindowController {
   }
 
   async close(): Promise<void> {
-    await Promise.all(this.screens.map((s) => s.page.goto(markerUrl(`RedZone screen ${s.id} (stopped)`)).catch(() => {})));
+    await Promise.all(this.screens.map((s) => s.page.goto(markerUrl(`TappedIn screen ${s.id} (stopped)`)).catch(() => {})));
   }
 
   // -------------------------------------------------------------------------------------------

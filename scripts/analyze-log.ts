@@ -35,7 +35,7 @@ const labels = readJsonl<LabelEntry>(labelsFile).filter((l) => typeof flags.log 
 const r = analyze(labels, log, loadConfig());
 
 const p = (x: number | null) => (x === null ? 'n/a' : `${Math.round(x * 100)}%`);
-console.log(`RedZone break-detector report for ${day}`);
+console.log(`TappedIn break-detector report for ${day}`);
 console.log(`  decision log: ${existsSync(logFile) ? logFile : `${logFile} (not found)`}`);
 console.log(`  labels:       ${r.labels.total} (${r.labels.breaks} "break", ${r.labels.live} "live") from ${labelsFile}\n`);
 if (r.labels.total) {

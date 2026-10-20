@@ -13,7 +13,7 @@ const CLIENT_JS = `
   const esc=(s)=>String(s??'').replace(/[&<>"]/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
   const TONE={LIVE:'var(--live)',BREAK:'var(--brk)',HALFTIME:'var(--half)',FINAL:'var(--fin)',PRE:'var(--fin)',UNKNOWN:'var(--fin)'};
   const stateLabel=(s)=>s==='BREAK'?'BREAK?':s;
-  async function post(path,body){try{const r=await fetch(path,{method:'POST',headers:{'content-type':'application/json','x-redzone':'1'},body:JSON.stringify(body)});return await r.json();}catch(e){return{ok:false,message:String(e)}}}
+  async function post(path,body){try{const r=await fetch(path,{method:'POST',headers:{'content-type':'application/json','x-tappedin':'1'},body:JSON.stringify(body)});return await r.json();}catch(e){return{ok:false,message:String(e)}}}
   const mmss=(sec)=>Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');
   function pickerHTML(p,left){
     const row=(g)=>'<button class="pk" data-pick="'+esc(g.id)+'"><b>'+esc(g.label)+'</b><span>'+esc(g.detail)+'</span></button>';
@@ -38,7 +38,7 @@ const PICKER_CSS = `
 `;
 
 export function tilePage(screen: number): string {
-  return `<!doctype html><html><head><meta charset="utf-8"><title>RedZone S${screen}</title><style>${BASE_CSS}${PICKER_CSS}
+  return `<!doctype html><html><head><meta charset="utf-8"><title>TappedIn S${screen}</title><style>${BASE_CSS}${PICKER_CSS}
   body{display:flex;flex-direction:column;padding:14px 18px;gap:10px}
   .top{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--dim)}
   .teams{flex:1;display:grid;grid-template-rows:1fr 1fr;gap:6px}
@@ -54,7 +54,7 @@ export function tilePage(screen: number): string {
   .empty{flex:1;display:grid;place-items:center;color:var(--dim);font-size:20px;text-align:center}
   .redzone{animation:pulse 1.4s infinite}@keyframes pulse{50%{box-shadow:0 0 0 4px rgba(239,68,68,.45)}}
   #pop{position:fixed;inset:30px 16px 12px;background:rgba(11,15,20,.97);border:1px solid #334155;border-radius:12px;display:none;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.7)}
-  </style></head><body><div id="root" class="empty">RedZone screen ${screen}</div><div id="pop"></div><script>${CLIENT_JS}
+  </style></head><body><div id="root" class="empty">TappedIn screen ${screen}</div><div id="pop"></div><script>${CLIENT_JS}
   const N=${screen};wirePicker(document.getElementById('pop'),N);let popKey='';
   async function tick(){try{const st=await (await fetch('/api/state')).json();const sc=st.screens.find((s)=>s.id===N);
     const pop=document.getElementById('pop');
@@ -82,7 +82,7 @@ export function tilePage(screen: number): string {
 
 /** Fallback when the game-over pop-up can't be drawn over the Xfinity player. */
 export function pickerPage(screen: number): string {
-  return `<!doctype html><html><head><meta charset="utf-8"><title>RedZone S${screen}: pick a game</title><style>${BASE_CSS}${PICKER_CSS}
+  return `<!doctype html><html><head><meta charset="utf-8"><title>TappedIn S${screen}: pick a game</title><style>${BASE_CSS}${PICKER_CSS}
   body{display:flex;flex-direction:column}#p{flex:1;display:flex;flex-direction:column}</style></head><body><div id="p"></div><script>${CLIENT_JS}
   const N=${screen};const el=document.getElementById('p');wirePicker(el,N);let key='';
   async function tick(){try{const st=await (await fetch('/api/state')).json();const sc=st.screens.find((s)=>s.id===N);if(!sc||!sc.picker)return;
@@ -95,7 +95,7 @@ export function pickerPage(screen: number): string {
  * every few clips (or on its own when there's nothing to play). Sound follows the screen's audio focus.
  */
 export function halftimePage(screen: number, cardSeconds = 8): string {
-  return `<!doctype html><html><head><meta charset="utf-8"><title>RedZone halftime S${screen}</title><style>${BASE_CSS}
+  return `<!doctype html><html><head><meta charset="utf-8"><title>TappedIn halftime S${screen}</title><style>${BASE_CSS}
   body{position:relative;overflow:hidden;background:#000}
   #v,#yt,#card{position:absolute;inset:0;width:100%;height:100%;display:none}#v{object-fit:contain;background:#000}
   #card{background:var(--bg);padding:42px 16px 12px;overflow:hidden}
@@ -147,13 +147,13 @@ export function halftimePage(screen: number, cardSeconds = 8): string {
 }
 
 export function idlePage(screen: number, note: string): string {
-  return `<!doctype html><html><head><meta charset="utf-8"><title>RedZone S${screen}</title><style>${BASE_CSS}
+  return `<!doctype html><html><head><meta charset="utf-8"><title>TappedIn S${screen}</title><style>${BASE_CSS}
   body{display:grid;place-items:center;text-align:center}div{color:var(--dim)}b{display:block;font-size:28px;color:var(--text);margin-bottom:6px}
   </style></head><body><div><b>Screen ${screen}</b>${note.replace(/[<>&]/g, '')}</div></body></html>`;
 }
 
 export function panelPage(): string {
-  return `<!doctype html><html><head><meta charset="utf-8"><title>RedZone control panel</title><style>${BASE_CSS}
+  return `<!doctype html><html><head><meta charset="utf-8"><title>TappedIn control panel</title><style>${BASE_CSS}
   body{display:flex;flex-direction:column;font-size:13px;overflow:hidden}
   header{display:flex;align-items:center;gap:14px;padding:8px 12px;border-bottom:1px solid var(--line);background:var(--panel)}
   header h1{font-size:15px;margin:0}header .sp{flex:1}.dim{color:var(--dim)}
@@ -184,7 +184,7 @@ export function panelPage(): string {
   .set button.home{background:#14532d;border-color:var(--live)}
   .keys{font-size:11px}
   </style></head><body>
-  <header><h1>RedZone</h1><span id="mode" class="dim"></span><span class="sp"></span>
+  <header><h1>TappedIn</h1><span id="mode" class="dim"></span><span class="sp"></span>
     <span class="dim">Sound</span><span class="seg" id="audio"><button data-am="manual">Manual</button><button data-am="auto">Auto</button></span>
     <span id="meta" class="dim"></span></header>
   <main><div class="left"><div class="cards" id="cards"></div><div class="feed" id="feed"></div>

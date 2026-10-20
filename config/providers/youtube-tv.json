@@ -18,7 +18,7 @@
   "defaults": {
     "standbyViews": 0
   },
-  "notes": "Each channel has a stable URL (tv.youtube.com/watch/<id>) read from the /live guide (not virtualized). 3 streams per account (unlimited at home with 4K Plus). Away from your home area you get local channels for where you are. Google may refuse sign-in inside embedded or automated browsers (\"This browser or app may not be secure\"); if it does, this service is marked unsupported. RedZone never works around that. Untested.",
+  "notes": "Each channel has a stable URL (tv.youtube.com/watch/<id>) read from the /live guide (not virtualized). 3 streams per account (unlimited at home with 4K Plus). Away from your home area you get local channels for where you are. Google may refuse sign-in inside embedded or automated browsers (\"This browser or app may not be secure\"); if it does, this service is marked unsupported. TappedIn never works around that. Untested.",
   "shell": {
     "partition": "persist:youtube-tv",
     "userAgent": "default",
@@ -32,8 +32,8 @@
     "startUrl": null,
     "checkUrl": "https://tv.youtube.com/live",
     "signedOutPattern": "/\\bSign in\\b/",
-    "instructions": "Sign in with your Google account in the window that opened. RedZone continues once the YouTube TV guide appears",
-    "windowTitle": "RedZone: sign in to YouTube TV"
+    "instructions": "Sign in with your Google account in the window that opened. TappedIn continues once the YouTube TV guide appears",
+    "windowTitle": "TappedIn: sign in to YouTube TV"
   },
   "errors": {
     "probePatterns": [

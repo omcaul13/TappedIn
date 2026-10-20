@@ -84,3 +84,12 @@ export const SportIcon = ({ family }: { family: string }) => (
     )}
   </svg>
 );
+
+// Placeholder TappedIn logo (a signal: a dot and two waves), drawn white on the .mark gradient tile.
+// Swap this glyph (and installer/tappedin.ico) for the real logo when it's ready.
+export const BrandGlyph = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width={2.6} stroke-linecap="round" aria-hidden="true">
+    <circle cx="7" cy="17" r="2.2" fill="#fff" stroke="none" />
+    <path d="M7 10.5a6.5 6.5 0 0 1 6.5 6.5M7 5a12 12 0 0 1 12 12" />
+  </svg>
+);

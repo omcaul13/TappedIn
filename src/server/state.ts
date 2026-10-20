@@ -160,7 +160,7 @@ export interface AppState {
   shell: 'electron' | 'chrome';
   /** First-run setup in progress (the UI shows it instead of the screens), else null. */
   setup: SetupView | null;
-  /** Every service RedZone has an adapter for (the picker lists them). */
+  /** Every service TappedIn has an adapter for (the picker lists them). */
   providers: ProviderSummary[];
   /** The settings page's "TV service" tab. */
   service: ServiceDTO;

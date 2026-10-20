@@ -1,11 +1,11 @@
-// RedZone app window (castLabs Electron with Widevine): one frameless window, a 2x2 grid of video
-// views showing the TV service's web player, and the RedZone UI drawn on top in a transparent view.
+// TappedIn app window (castLabs Electron with Widevine): one frameless window, a 2x2 grid of video
+// views showing the TV service's web player, and the TappedIn UI drawn on top in a transparent view.
 //
 // The shell only lays things out and signs the service in. The app (npm start) runs the engine and
 // drives the views over the local debugging port with the same tuning and stream-health code as the
 // Chrome tiles. Nothing here bypasses DRM or login: Widevine is castLabs' licensed CDM, and sign-in is
 // the user's own: either they sign in themselves in a window shown for it, or (Xfinity On Campus only)
-// RedZone presses the "Watch Now" button you'd press on your own portal page.
+// TappedIn presses the "Watch Now" button you'd press on your own portal page.
 // Everything about the service (URLs, partition, sign-in rules) comes from the --provider file that
 // src/shell.ts writes from config/providers/<id>.json.
 //
@@ -59,8 +59,8 @@ let FOCUS = 0;
 const GAP = 2;
 const BG = '#05070a';
 
-app.setName('RedZone');
-app.setPath('userData', value('user-data', path.join(process.env.LOCALAPPDATA || app.getPath('appData'), 'RedZone', 'electron')));
+app.setName('TappedIn');
+app.setPath('userData', value('user-data', path.join(process.env.LOCALAPPDATA || app.getPath('appData'), 'TappedIn', 'electron')));
 app.commandLine.appendSwitch('remote-debugging-port', value('port', '9335'));
 app.commandLine.appendSwitch('remote-allow-origins', 'http://127.0.0.1');
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
@@ -117,7 +117,7 @@ const marker = (label) =>
 let ORIGINAL_UA = null;
 function applyUserAgent() {
   ORIGINAL_UA ??= session.defaultSession.getUserAgent();
-  const ua = SP.userAgent === 'chrome' ? ORIGINAL_UA.replace(/ Electron\/\S+/, '').replace(/ RedZone\/\S+/, '') : ORIGINAL_UA;
+  const ua = SP.userAgent === 'chrome' ? ORIGINAL_UA.replace(/ Electron\/\S+/, '').replace(/ TappedIn\/\S+/, '') : ORIGINAL_UA;
   app.userAgentFallback = ua;
   session.defaultSession.setUserAgent(ua);
   session.fromPartition(PARTITION).setUserAgent(ua);
@@ -135,7 +135,7 @@ let signingIn = null;
  *    your Xfinity On Campus sign-in does, and clicking its "Watch Now" (in a hidden window) hands it to
  *    Xfinity Stream again. If the portal itself wants a sign-in, the window is shown so you can sign in.
  *  - without one: the service's page is shown and you sign in yourself (school SSO pop-ups included);
- *    RedZone only watches for the signed-in page.
+ *    TappedIn only watches for the signed-in page.
  */
 const withTimeout = (p, ms, what) => Promise.race([p, sleep(ms).then(() => Promise.reject(new Error(`${what} took over ${ms / 1000}s`)))]);
 const BODY_TEXT_JS = `document.body ? document.body.innerText.slice(0, 4000) : ''`;
@@ -401,7 +401,7 @@ const REQUESTS = {
   configure,
   logout,
   'signin-check': signinCheck,
-  // The app checks the path is a RedZone export before asking.
+  // The app checks the path is a TappedIn export before asking.
   reveal: async (msg) => shell.showItemInFolder(String(msg.file)),
   paths: async () => ({ documents: app.getPath('documents') }),
 };
@@ -419,7 +419,8 @@ app.whenReady().then(async () => {
     width: 1600,
     height: 940,
     show: false,
-    title: 'RedZone',
+    title: 'TappedIn',
+    icon: path.join(__dirname, 'tappedin.ico'),
     backgroundColor: BG,
     titleBarStyle: 'hidden',
     titleBarOverlay: { color: '#0b0f14', symbolColor: '#cbd5e1', height: TOP_BAR },

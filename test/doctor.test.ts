@@ -44,7 +44,7 @@ describe('doctor: castLabs Electron', () => {
   it('fails when Electron is not installed', () => {
     const r = checkEcsElectron(null);
     expect(r.ok).toBe(false);
-    expect(r.fix).toMatch(/Setup RedZone\.cmd|npm ci/);
+    expect(r.fix).toMatch(/Setup TappedIn\.cmd|npm ci/);
   });
 });
 
@@ -55,6 +55,8 @@ describe('doctor: Widevine signature', () => {
     expect(signatureState({ exeMtimeMs: 1000, sigMtimeMs: 2000 })).toBe('ok');
     expect(signatureState({ exeMtimeMs: 1000, sigMtimeMs: 1000 })).toBe('ok');
     expect(signatureState({ exeMtimeMs: null, sigMtimeMs: null })).toBe('no-electron');
+    expect(signatureState({ exeMtimeMs: 1000, sigMtimeMs: 2000, development: true })).toBe('development');
+    expect(signatureState({ exeMtimeMs: 1000, sigMtimeMs: 2000, development: null })).toBe('ok');
   });
 
   it('names npm run sign-electron as the fix', () => {
@@ -128,7 +130,7 @@ describe('doctor: ESPN', () => {
 });
 
 describe('doctor: dependencies', () => {
-  const lock = (packages: Record<string, unknown>) => JSON.stringify({ lockfileVersion: 3, packages: { '': { name: 'redzone' }, ...packages } });
+  const lock = (packages: Record<string, unknown>) => JSON.stringify({ lockfileVersion: 3, packages: { '': { name: 'tappedin' }, ...packages } });
   const hidden = (packages: Record<string, unknown>) => JSON.stringify({ lockfileVersion: 3, packages });
   const zod = { version: '4.6.7', integrity: 'sha512-z' };
   const esbuildLinux = { version: '0.28.2', optional: true };
@@ -153,7 +155,7 @@ describe('doctor: command line', () => {
   // Run through a junction (a linked folder): import.meta.url is the real path, argv[1] the linked one.
   it.runIf(process.platform === 'win32')('runs when started through a linked folder', () => {
     const root = path.resolve(import.meta.dirname, '..');
-    const dir = mkdtempSync(path.join(os.tmpdir(), 'redzone-doctor-'));
+    const dir = mkdtempSync(path.join(os.tmpdir(), 'tappedin-doctor-'));
     const link = path.join(dir, 'linked');
     symlinkSync(root, link, 'junction');
     try {

@@ -5,7 +5,7 @@ import type { AppState } from './state';
 
 // Localhost-only web server: the app window's UI, pages shown inside the screens (data tile,
 // halftime reel, picker), the old control panel, and a small JSON API.
-// POSTs must carry `x-redzone: 1` and come from this origin, so other websites can't drive the app
+// POSTs must carry `x-tappedin: 1` and come from this origin, so other websites can't drive the app
 // through localhost.
 
 export interface LocalServer {
@@ -54,7 +54,7 @@ export function startServer(port: number, handlers: ServerHandlers): Promise<Loc
 
     if (req.method === 'POST') {
       const origin = req.headers.origin;
-      if (req.headers['x-redzone'] !== '1' || (origin && !origins.has(origin))) return send(403, 'text/plain', 'forbidden');
+      if (req.headers['x-tappedin'] !== '1' || (origin && !origins.has(origin))) return send(403, 'text/plain', 'forbidden');
       try {
         const body = JSON.parse((await readBody(req)) || '{}');
         const r = await handlers.post(url.pathname, body);

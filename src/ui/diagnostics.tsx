@@ -8,7 +8,7 @@ import { post, type AppState } from './util';
 // uncovered on the left so you can watch the tune, playback and hiding steps happen.
 
 const STEPS: { id: 'signin' | 'scan' | 'tune' | 'playback' | 'hide'; title: string; what: string }[] = [
-  { id: 'signin', title: 'Sign-in detection', what: 'Loads the service in a hidden window and checks that RedZone can tell you are signed in.' },
+  { id: 'signin', title: 'Sign-in detection', what: 'Loads the service in a hidden window and checks that TappedIn can tell you are signed in.' },
   { id: 'scan', title: 'Channel guide', what: 'Reads the guide and matches its channels to the sports networks.' },
   { id: 'tune', title: 'Tuning', what: 'Changes screen 1 to the first carried channel and checks it landed on it.' },
   { id: 'playback', title: 'Playback', what: 'Watches screen 1 until the video plays (or the service reports why not).' },
@@ -166,7 +166,7 @@ export function Diagnostics({ st, onError }: { st: AppState; onError(m: string):
         )}
 
         <h5>Send your fixes</h5>
-        <p class="note">Exports your fixes and these results to a file in Documents\RedZone. It has no passwords, cookies or page text, and addresses are cut to the site and page. Send it to the project owner so everyone gets the fix.</p>
+        <p class="note">Exports your fixes and these results to a file in Documents\TappedIn. It has no passwords, cookies or page text, and addresses are cut to the site and page. Send it to the project owner so everyone gets the fix.</p>
         <div class="actions">
           <button class="btn primary" onClick={() => run('/api/diag/export')}>
             Export config

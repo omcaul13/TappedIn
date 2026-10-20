@@ -12,15 +12,15 @@ const freePort = () =>
   });
 
 describe('local server', () => {
-  it('only takes POSTs that carry x-redzone and come from its own origin', async () => {
+  it('only takes POSTs that carry x-tappedin and come from its own origin', async () => {
     const posts: string[] = [];
     const port = await freePort(); // the allowed origins are built from the port, so it can't be 0
     const s = await startServer(port, { state: () => ({}) as AppState, reel: () => null, cardSeconds: () => 0, post: (p) => (posts.push(p), { ok: true }) });
     try {
       const post = (headers: Record<string, string>) => fetch(`http://127.0.0.1:${port}/api/action`, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: '{}' }).then((r) => r.status);
       expect(await post({})).toBe(403);
-      expect(await post({ 'x-redzone': '1', origin: 'https://evil.example' })).toBe(403);
-      expect(await post({ 'x-redzone': '1', origin: `http://localhost:${port}` })).toBe(200);
+      expect(await post({ 'x-tappedin': '1', origin: 'https://evil.example' })).toBe(403);
+      expect(await post({ 'x-tappedin': '1', origin: `http://localhost:${port}` })).toBe(200);
       expect(posts).toEqual(['/api/action']);
     } finally {
       await s.close();

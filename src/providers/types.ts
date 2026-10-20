@@ -50,7 +50,7 @@ const SigninSchema = z.object({
   startUrl: z.string().url().nullable().default(null),
   /** A portal whose button hands the session to the service (Xfinity On Campus "Watch Now"). */
   portalUrl: z.string().url().nullable().default(null),
-  /** The portal button RedZone presses for you. Only the user's own hand-off button, never a terms/consent control. */
+  /** The portal button TappedIn presses for you. Only the user's own hand-off button, never a terms/consent control. */
   autoClick: z.object({ selector: z.string(), text: z.string() }).nullable().default(null),
   /** Shown to the user while the sign-in window is open. */
   instructions: z.string(),

@@ -1,4 +1,4 @@
-// Open RedZone's dedicated Chrome profile so you can sign in to Xfinity Stream yourself.
+// Open TappedIn's dedicated Chrome profile so you can sign in to Xfinity Stream yourself.
 // Nothing is attached to the page while you log in; the app never sees or types your credentials.
 //   npm run login
 import { loadConfig } from '../src/config';
@@ -8,7 +8,7 @@ const cfg = loadConfig();
 const { launched, version } = await ensureChrome(cfg, [cfg.chrome.xfinityStartUrl]);
 if (!launched) await openTabNoAttach(cfg, cfg.chrome.xfinityStartUrl);
 
-console.log(`RedZone Chrome is open (${version.Browser}, profile ${cfg.chrome.profileDir}).
+console.log(`TappedIn Chrome is open (${version.Browser}, profile ${cfg.chrome.profileDir}).
 
 In that window:
   1. Sign in to Xfinity On Campus with your school account (SSO/MFA as usual).

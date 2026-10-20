@@ -9,7 +9,7 @@ $EvsScript = Join-Path $Root 'scripts\evs.py'
 $ElectronExe = Join-Path $Root 'node_modules\electron\dist\electron.exe'
 $ElectronSig = "$ElectronExe.sig"
 $SigBackupDir = Join-Path $Root '.state\installer'
-$Launcher = Join-Path $Root 'RedZone.cmd'
+$Launcher = Join-Path $Root 'TappedIn.cmd'
 $NodeLink = 'https://nodejs.org/en/download'
 $PythonLink = 'https://www.python.org/downloads/windows/ (pick Python 3.12)'
 
@@ -84,15 +84,15 @@ function Find-Python312 {
 function Install-WithWinget([string]$Name, [string]$Why, [string]$WingetId, [string]$Link) {
     Write-Info "$Name is not installed. $Why"
     if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-        Stop-WithFix "$Name is not installed." "Install it from $Link, then double-click Setup RedZone.cmd again."
+        Stop-WithFix "$Name is not installed." "Install it from $Link, then double-click Setup TappedIn.cmd again."
     }
     if (-not (Read-YesNo 'Install it with winget now?')) {
-        Stop-WithFix "$Name is not installed." "Install it from $Link, then double-click Setup RedZone.cmd again."
+        Stop-WithFix "$Name is not installed." "Install it from $Link, then double-click Setup TappedIn.cmd again."
     }
     # No --accept-* flags: winget shows its own agreement prompts and you answer them.
     $code = Invoke-Interactive 'winget' @('install', '--id', $WingetId, '--exact', '--source', 'winget')
     if ($code -ne 0) {
-        Stop-WithFix "winget could not install $Name (exit code $code)." "Install it from $Link, then double-click Setup RedZone.cmd again."
+        Stop-WithFix "winget could not install $Name (exit code $code)." "Install it from $Link, then double-click Setup TappedIn.cmd again."
     }
     Update-SessionPath
 }
@@ -114,10 +114,19 @@ function Test-DepsInSync {
     return ($LASTEXITCODE -eq 0)
 }
 
-# Same rule as the doctor: electron.exe.sig exists and is not older than electron.exe.
+# Same rule as the doctor: electron.exe.sig exists, is not older than electron.exe, and is not development-only.
 function Test-SignatureFresh {
     if (-not (Test-Path -LiteralPath $ElectronExe) -or -not (Test-Path -LiteralPath $ElectronSig)) { return $false }
-    return ((Get-Item -LiteralPath $ElectronSig).LastWriteTime -ge (Get-Item -LiteralPath $ElectronExe).LastWriteTime)
+    if ((Get-Item -LiteralPath $ElectronSig).LastWriteTime -lt (Get-Item -LiteralPath $ElectronExe).LastWriteTime) { return $false }
+    # castLabs ships electron.exe.sig signed for development only; once the signing tool is installed, ask it.
+    if (Test-Path -LiteralPath $VenvPython) { return (Test-ProductionSignature $VenvPython (Split-Path -Parent $ElectronExe)) }
+    return $true
+}
+
+# castLabs' own check (offline): true only for a streaming (production) signature, not the development one.
+function Test-ProductionSignature([string]$Python, [string]$Dist) {
+    & $Python -I $EvsScript vmp -n verify-pkg $Dist *> $null
+    return ($LASTEXITCODE -eq 0)
 }
 
 # npm ci deletes node_modules, signature included. Keep a copy of a good signature with the hash of the
@@ -148,11 +157,16 @@ function Restore-ElectronSignature {
 # npm ci, keeping the Widevine signature when electron.exe didn't change. Returns Restore-ElectronSignature's result.
 function Invoke-NpmCi {
     Save-ElectronSignature
-    $env:REDZONE_INSTALLER = '1'
+    $env:TAPPEDIN_INSTALLER = '1'
     $code = Invoke-Interactive 'npm.cmd' @('ci')
-    Remove-Item Env:\REDZONE_INSTALLER -ErrorAction SilentlyContinue
+    Remove-Item Env:\TAPPEDIN_INSTALLER -ErrorAction SilentlyContinue
     if ($code -ne 0) {
-        Stop-WithFix "npm ci failed (exit code $code)." 'Close RedZone if it is open (its files are in use), check your internet connection, and run this again.'
+        Stop-WithFix "npm ci failed (exit code $code)." 'Close TappedIn if it is open (its files are in use), check your internet connection, and run this again.'
+    }
+    # castLabs Electron downloads electron.exe on first use, not during npm ci (same step as build-installer.ps1).
+    $code = Invoke-Interactive 'node' @('node_modules\electron\install.js')
+    if ($code -ne 0 -or -not (Test-Path -LiteralPath $ElectronExe)) {
+        Stop-WithFix "Downloading castLabs Electron failed (exit code $code)." 'Check your internet connection and run this again.'
     }
     return (Restore-ElectronSignature)
 }
@@ -161,7 +175,7 @@ function Invoke-SignElectron {
     Write-Info "Signing uploads electron.exe to castLabs' free EVS service and saves electron.exe.sig next to it."
     $code = Invoke-Interactive 'npm.cmd' @('run', 'sign-electron')
     if ($code -ne 0 -or -not (Test-SignatureFresh)) {
-        Stop-WithFix 'Signing Electron did not finish.' 'Read the castLabs message above. If your EVS login expired, run Setup RedZone.cmd again; if it says CERTIFICATE_VERIFY_FAILED, see "Norton or other antivirus" in README.md.'
+        Stop-WithFix 'Signing Electron did not finish.' 'Read the castLabs message above. If your EVS login expired, run Setup TappedIn.cmd again; if it says CERTIFICATE_VERIFY_FAILED, see "Norton or other antivirus" in README.md.'
     }
 }
 

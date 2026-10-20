@@ -17,7 +17,7 @@ const [cmd, args] = existsSync(venvPython)
 
 const r = spawnSync(cmd, args, { cwd: root, stdio: 'inherit' });
 if (r.error) {
-  console.error(`Could not run ${cmd}: ${r.error.message}. Double-click "Setup RedZone.cmd" to set up signing.`);
+  console.error(`Could not run ${cmd}: ${r.error.message}. Double-click "Setup TappedIn.cmd" to set up signing.`);
   process.exitCode = 1;
 } else {
   process.exitCode = r.status ?? 1;

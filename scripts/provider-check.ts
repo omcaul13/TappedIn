@@ -1,6 +1,6 @@
 // Try one TV service's adapter on its own, without the engine or ESPN:
 //   npm run provider-check -- [<provider id>] [--scan [--save]] [--tune ESPN,FS1,...] [--views N] [--watch S]
-// It opens the RedZone window (signing the service in the usual way), then:
+// It opens the TappedIn window (signing the service in the usual way), then:
 //   --scan   reads the service's guide and shows which college-football networks it found
 //            (--save writes them to .state/lineups/<id>.json, which the app then uses)
 //   --tune   tunes the channels one by one, spread over the first N views (default 1), and reports

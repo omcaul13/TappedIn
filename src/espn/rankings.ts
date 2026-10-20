@@ -4,8 +4,8 @@ import type { EspnClient } from './client';
 import type { Json } from './json';
 
 // World rankings for sports whose scoreboard doesn't carry them (tennis: it has only tournament seeds).
-// Fetched once per sport per day and attached to each scoreboard body as `redzoneRanks` (athlete id →
-// rank), with the day asked for as `redzoneDay` (a dated tennis scoreboard has no `day` of its own), so
+// Fetched once per sport per day and attached to each scoreboard body as `tappedinRanks` (athlete id →
+// rank), with the day asked for as `tappedinDay` (a dated tennis scoreboard has no `day` of its own), so
 // recordings carry both and replays see the same thing.
 
 const RANKED: ReadonlySet<SportId> = new Set(['atp', 'wta']);
@@ -52,8 +52,8 @@ export class RankCache {
   async attach(sport: SportId, day: string, body: unknown): Promise<void> {
     if (!RANKED.has(sport) || !body || typeof body !== 'object') return;
     const b = body as Json;
-    b.redzoneRanks = await this.get(sport, day);
-    if (/^\d{8}$/.test(day)) b.redzoneDay = `${day.slice(0, 4)}-${day.slice(4, 6)}-${day.slice(6, 8)}`;
+    b.tappedinRanks = await this.get(sport, day);
+    if (/^\d{8}$/.test(day)) b.tappedinDay = `${day.slice(0, 4)}-${day.slice(4, 6)}-${day.slice(6, 8)}`;
   }
 }
 

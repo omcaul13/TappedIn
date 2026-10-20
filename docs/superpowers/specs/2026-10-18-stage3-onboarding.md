@@ -44,14 +44,14 @@ A student who has never used a terminal can download the source, double-click on
 
 ### Installer (approved decision 4: source-only, as close to one step as possible)
 
-- `Setup RedZone.cmd`:
+- `Setup TappedIn.cmd`:
   - checks for Node and Python, and offers to install them (only with the user's yes);
   - installs dependencies;
   - runs castLabs' own EVS sign-up and signing;
   - checks everything;
   - adds Start-menu and desktop shortcuts, then opens the app into onboarding.
 - `npm run doctor` checks the install and names a one-line fix for each problem.
-- `Update RedZone.cmd` updates the app and re-signs only when Electron changed.
+- `Update TappedIn.cmd` updates the app and re-signs only when Electron changed.
 - An antivirus HTTPS inspector must not break EVS signing (the Norton case in the README).
 
 ### Docs

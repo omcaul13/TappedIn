@@ -1,4 +1,4 @@
-// Captured by `npm run capture-channels`. Copy each url into config/redzone.config.json5 → channels.
+// Captured by `npm run capture-channels`. Copy each url into config/tappedin.config.json5 → channels.
 [
   {
     n: 1,
