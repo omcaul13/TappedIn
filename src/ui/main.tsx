@@ -9,7 +9,7 @@ import { Screen } from './screen';
 import { Diagnostics } from './diagnostics';
 import { Onboarding } from './onboarding';
 import { Settings } from './settings';
-import { act, post, type AppState, type GameDTO } from './util';
+import { act, post, typingIn, type AppState, type GameDTO } from './util';
 
 // The TappedIn app window's UI: top bar, four screen overlays, settings drawer. State arrives as
 // server-sent events from the app (on every tick and right after every action).
@@ -74,7 +74,7 @@ function App() {
   // S settings, F window full screen (F11 is handled by the window).
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.altKey || e.metaKey || (e.target as HTMLElement).tagName === 'INPUT') return;
+      if (e.ctrlKey || e.altKey || e.metaKey || typingIn(e.target)) return;
       const k = e.key.toLowerCase();
       const digit = /^Digit([0-4])$/.exec(e.code)?.[1] ?? (/^[0-4]$/.test(k) ? k : null);
       const fs = st?.view.fullscreen ?? 0;
