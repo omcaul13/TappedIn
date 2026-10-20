@@ -123,8 +123,8 @@ export class Engine {
     const out = new Map<string, GameView>();
     for (const g of this.store.all()) {
       const a = this.assessments.get(g.id);
-      // Hockey's power play comes from play-by-play, not the scoreboard.
-      const game = g.playsLive && g.snap.phase === 'LIVE' && !g.snap.live ? { ...g.snap, live: g.playsLive } : g.snap;
+      // Hockey's power play comes from play-by-play: the scoreboard's situation has only the last play.
+      const game = g.playsLive && g.snap.phase === 'LIVE' ? { ...g.snap, live: g.playsLive } : g.snap;
       if (a) out.set(g.id, { game, assessment: a, channel: this.channelFor(g.snap) });
     }
     // NFL Sunday windows: several games on CBS/FOX at once, and your station shows one.
