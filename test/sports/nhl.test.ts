@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { Engine } from '../../src/engine/engine';
 import { nhl } from '../../src/sports/hockey';
-import { snap } from '../helpers';
+import { play, snap, T0, testConfig } from '../helpers';
 import { breakStarts, fixtureGames } from './harness';
 
 // NHL break detector and excitement on three recorded games from 10/13/2026 (Low sensitivity).
@@ -57,5 +58,14 @@ describe('NHL excitement', () => {
   it('the power play comes from the latest play strength', () => {
     const live = nhl.liveFromPlays!([{ id: '1', seq: 1, typeText: 'Shot', text: '', kind: 'snap', period: 2, displayClock: '5:00', wallclock: 1, scoringPlay: false, scoreValue: 0, awayScore: 1, homeScore: 2, isTurnover: false, teamId: 'a', endYardsToEndzone: null, endTeamId: null, strength: 'Shorthanded' }], g({}));
     expect(live).toMatchObject({ strength: 'pp', advantageTeamId: 'h' });
+  });
+  it('live: the power play from play-by-play reaches the game even though the scoreboard has a situation', () => {
+    // ESPN's live NHL scoreboard always has `situation` (last play only, no strength).
+    const e = new Engine(testConfig());
+    const lastPlay = { id: '2', typeText: 'Shot', text: 'Shot saved', scoreValue: 0 };
+    e.ingestSnapshots([g({ id: 'n1', period: 2, clockSec: 600, live: { family: 'hockey', lastPlay, strength: null, advantageTeamId: null } })], T0);
+    e.ingestPlays('n1', [play('snap', T0 - 60_000, { id: '1', typeText: 'Hooking', teamId: 'a' }), play('snap', T0 - 30_000, { id: '2', typeText: 'Shot', teamId: 'h', strength: 'Power Play' })], T0);
+    e.tick(T0);
+    expect(nhl.excitement(e.views().get('n1')!.game).hot?.label).toBe('BOS power play');
   });
 });
