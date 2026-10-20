@@ -258,6 +258,11 @@ function GameMenu({ st, sc, games, onClose, run }: { st: AppState; sc: ScreenDTO
   const [allScreens, setAllScreens] = useState(false);
   const [q, setQ] = useState('');
   const ref = useRef<HTMLDivElement>(null);
+  // Preact's autoFocus only works on page load: focus the search box whenever the game list appears.
+  const search = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    search.current?.focus();
+  }, [step]);
   useEffect(() => {
     const down = (e: MouseEvent) => {
       const t = e.target as HTMLElement;
@@ -336,7 +341,7 @@ function GameMenu({ st, sc, games, onClose, run }: { st: AppState; sc: ScreenDTO
           </span>
         )}
       </div>
-      <input autoFocus placeholder="Search teams, networks or sports" value={q} onInput={(e) => setQ((e.target as HTMLInputElement).value)} />
+      <input ref={search} placeholder="Search teams, networks or sports" value={q} onInput={(e) => setQ((e.target as HTMLInputElement).value)} />
       <div class="list">
         {liveOf(mine).length > 0 && <h4>Live now</h4>}
         {rows(liveOf(mine))}
