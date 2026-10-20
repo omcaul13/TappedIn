@@ -1,7 +1,7 @@
 import { render } from 'preact';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import css from './style.css';
-import { FullscreenIcon, GearIcon, LockIcon, TickerIcon } from './icons';
+import { BrandGlyph, FullscreenIcon, GearIcon, LockIcon, TickerIcon } from './icons';
 import { BigTicker } from './ticker/BigTicker';
 import { MiniTicker } from './ticker/MiniTicker';
 import { TickerAlerts, tickerGames, tickerVisibility, type TickerAlert } from './ticker/model';
@@ -119,7 +119,7 @@ function App() {
       {ticker.big && !st.setup && <BigTicker st={st} alerts={alerts.current} now={now} osFullscreen={fullscreen} settingsOpen={settings} onSettings={() => setSettings(!settings)} />}
       <header class="topbar" style={ticker.big && !st.setup ? { display: 'none' } : undefined}>
         <div class="brand">
-          <span class="mark">TI</span>
+          <span class="mark" title="TappedIn"><BrandGlyph /></span>
           <span class="word">
             Tapped<span>In</span>
           </span>

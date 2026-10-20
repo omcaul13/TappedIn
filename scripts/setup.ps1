@@ -167,7 +167,7 @@ foreach ($lnkPath in $shortcuts) {
         $lnk.WorkingDirectory = $Root
         $lnk.WindowStyle = 7
         $lnk.Description = 'TappedIn'
-        if (Test-Path -LiteralPath $ElectronExe) { $lnk.IconLocation = "$ElectronExe,0" }
+        $lnk.IconLocation = (Join-Path $Root 'electron\tappedin.ico')
         $lnk.Save()
         Write-Ok "Created $lnkPath"
     }

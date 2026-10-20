@@ -3,6 +3,7 @@ import schools from '../../config/schools.json';
 import type { ProviderSummary } from '../providers/types';
 import type { SetupView } from '../setup/runner';
 import { post, type AppState } from './util';
+import { BrandGlyph } from './icons';
 
 // First-run setup, drawn over the whole window: welcome → pick your service → sign in → channels →
 // playback → streams → done. The steps run in the app (src/setup/runner.ts); this only shows them.
@@ -115,12 +116,12 @@ function Welcome() {
   return (
     <>
       <div class="setup-hero">
-        <span class="mark big">TI</span>
+        <span class="mark big"><BrandGlyph /></span>
         <h1>
           Welcome to Tapped<span>In</span>
         </h1>
       </div>
-      <p class="lede">Four college football games at once, from the TV service you already have. TappedIn watches live game data and switches a screen to the best other game when its game goes to a long commercial break.</p>
+      <p class="lede">Up to four games at once, across every sport TappedIn follows, from the TV service you already have. TappedIn watches live game data and switches a screen to the best other game when its game goes to a long commercial break.</p>
       <ul class="ticks">
         <li>You sign in on your service's own page. TappedIn never sees or stores your password.</li>
         <li>Everything runs on this computer. Nothing is sent anywhere except to your TV service and ESPN's public scores.</li>
