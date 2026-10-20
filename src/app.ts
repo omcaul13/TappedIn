@@ -820,10 +820,10 @@ export class App {
         r.retrySignin();
         return { ok: true };
       case 'scan':
-        bg(r.scan());
+        bg(r.checkAll());
         return { ok: true };
       case 'play':
-        bg(r.playTest());
+        bg(r.checkPlayback());
         return { ok: true };
       case 'streams':
         bg(r.streamTest());

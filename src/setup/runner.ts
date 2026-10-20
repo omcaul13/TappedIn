@@ -109,13 +109,24 @@ export class SetupRunner {
     this.deps.retrySignin();
   }
 
-  /** Sign-in news from the window. Success moves on by itself: read the guide, then play one channel. */
+  /** Sign-in news from the window. Success moves on by itself: read the guide, play one channel, count streams. */
   async onSignin(s: SigninStatus): Promise<void> {
     if (this.v.step !== 'signin') return;
     this.set({ signin: s, error: s.state === 'failed' ? s.detail : null });
     if (s.state !== 'ok') return;
+    await this.checkAll();
+  }
+
+  /** Every check in a row: channels, then playback and streams if channels were found. */
+  async checkAll(): Promise<void> {
     await this.scan();
-    if (this.v.scan) await this.playTest();
+    if (this.v.scan) await this.checkPlayback();
+  }
+
+  /** The playback test, then (when it played) the stream test, with no click in between. */
+  async checkPlayback(): Promise<void> {
+    await this.playTest();
+    if (this.v.playback?.state === 'PLAYING') await this.streamTest();
   }
 
   async scan(): Promise<void> {

@@ -9,6 +9,7 @@ import { Screen } from './screen';
 import { Diagnostics } from './diagnostics';
 import { Onboarding } from './onboarding';
 import { Settings } from './settings';
+import { FirstUseTips, tipsSeen } from './tour';
 import { act, post, typingIn, type AppState, type GameDTO } from './util';
 
 // The TappedIn app window's UI: top bar, four screen overlays, settings drawer. State arrives as
@@ -46,6 +47,7 @@ function App() {
   const { st, connected, appNow } = useAppState();
   const [menuFor, setMenuFor] = useState<number | null>(null);
   const [settings, setSettings] = useState(false);
+  const [tips, setTips] = useState(() => !tipsSeen());
   const [fullscreen, setFullscreen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [, setTick] = useState(0);
@@ -115,7 +117,7 @@ function App() {
   const canFullscreen = st.shell === 'electron';
   const ticker = tickerVisibility(st.settings.ticker);
   return (
-    <div class={`app${fullscreen ? ' fullscreen' : ''}${st.setup ? ' setup-mode' : ''}`} style={ticker.big && !st.setup ? { '--top': `${st.settings.ticker.height}px` } : undefined}>
+    <div class={`app${fullscreen ? ' fullscreen' : ''}${st.setup ? ' setup-mode' : ''}${tips && !st.setup ? ' touring' : ''}`} style={ticker.big && !st.setup ? { '--top': `${st.settings.ticker.height}px` } : undefined}>
       {ticker.big && !st.setup && <BigTicker st={st} alerts={alerts.current} now={now} osFullscreen={fullscreen} settingsOpen={settings} onSettings={() => setSettings(!settings)} />}
       <header class="topbar" style={ticker.big && !st.setup ? { display: 'none' } : undefined}>
         <div class="brand">
@@ -152,7 +154,7 @@ function App() {
         <button class="iconbtn" onClick={() => post('/api/settings', { ticker: { big: true } })} title="Big ticker (T)">
           <TickerIcon />
         </button>
-        <button class={`iconbtn${settings ? ' on' : ''}`} onClick={() => setSettings(!settings)} title="Settings (S)">
+        <button class={`iconbtn${settings ? ' on' : ''}`} onClick={() => setSettings(!settings)} title="Settings (S)" data-tour="settings">
           <GearIcon />
         </button>
         <button class="iconbtn" onClick={() => void window.rzShell?.toggleFullscreen()} title="Full screen (F11)">
@@ -183,7 +185,18 @@ function App() {
         ))}
       </main>
 
-      {settings && <Settings st={st} onClose={() => setSettings(false)} onError={setToast} />}
+      {settings && (
+        <Settings
+          st={st}
+          onClose={() => setSettings(false)}
+          onError={setToast}
+          onTips={() => {
+            setSettings(false);
+            setTips(true);
+          }}
+        />
+      )}
+      {tips && !st.setup && !st.diag && <FirstUseTips onDone={() => setTips(false)} />}
       {!connected && <div class="banner bad">Lost contact with the TappedIn app. Reconnecting…</div>}
       {connected && si?.state === 'needed' && <div class="banner">{si.detail.replace(/\.?$/, '.')}</div>}
       {toast && <div class="toast">{toast}</div>}

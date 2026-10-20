@@ -27,7 +27,7 @@ export function demoDeps(hooks: { onChange(): void; signin(s: SigninStatus): voi
   const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
   let channels: Config['channels'] = {};
   const screen = (i: number): SetupScreen => ({
-    tune: () => sleep(800),
+    tune: () => sleep(2500),
     health: async () => (i < 3 ? { state: 'PLAYING', detail: '+2.0s' } : { state: 'STREAM_LIMIT', detail: 'You have reached the maximum number of devices streaming' }),
     release: async () => {},
   });
@@ -40,7 +40,7 @@ export function demoDeps(hooks: { onChange(): void; signin(s: SigninStatus): voi
     providers: () => listProviders(),
     useProvider: async () => signIn(),
     retrySignin: signIn,
-    discover: async () => (await sleep(1500), DEMO_ROWS),
+    discover: async () => (await sleep(4000), DEMO_ROWS),
     screens: () => [0, 1, 2, 3].map(screen),
     channels: () => channels,
     saveLineup: (lineup) => {

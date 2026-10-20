@@ -63,16 +63,26 @@ describe('first-run setup', () => {
     expect(runner.view()).toMatchObject({ step: 'signin', error: 'the sign-in window was closed' });
   });
 
-  it('sign-in success scans the channels and tests playback on its own', async () => {
+  it('sign-in success scans the channels, tests playback and counts streams on its own', async () => {
     const { runner, tuned } = setup();
     await runner.choose('xfinity-on-campus');
     await runner.onSignin({ state: 'ok', detail: '' });
     const v = runner.view();
-    expect(v.step).toBe('playback');
+    expect(v.step).toBe('streams');
     expect(v.scan?.found).toEqual(expect.arrayContaining(['ESPN', 'ESPN2', 'FS1', 'ABC', 'CBS']));
     expect(v.scan?.missing).toContain('Big Ten Network');
     expect(v.playback).toMatchObject({ channel: 'ESPN', state: 'PLAYING' });
-    expect(tuned).toEqual([{ screen: 1, ch: 'ESPN' }]);
+    expect(v.streams?.measured).toBe(4);
+    expect(tuned[0]).toEqual({ screen: 1, ch: 'ESPN' });
+  });
+
+  it("a failed playback test stops before the stream test, so its error stays on screen", async () => {
+    const { runner, tuned } = setup({ outcomes: ['STALLED', 'PLAYING', 'PLAYING', 'PLAYING'] });
+    await runner.choose('xfinity-on-campus');
+    await runner.onSignin({ state: 'ok', detail: '' });
+    expect(runner.view().step).toBe('playback');
+    expect(runner.view().error).toMatch(/didn't play/);
+    expect(tuned).toHaveLength(1);
   });
 
   it('scan saves the lineup only when it found sports networks', async () => {

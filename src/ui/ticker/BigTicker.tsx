@@ -281,7 +281,7 @@ export function BigTicker({ st, alerts, now, osFullscreen, settingsOpen, onSetti
           <button class="iconbtn on" onClick={() => post('/api/settings', { ticker: { big: false } })} title="Big ticker off (T)">
             <TickerIcon />
           </button>
-          <button class={`iconbtn${settingsOpen ? ' on' : ''}`} onClick={onSettings} title="Settings (S)">
+          <button class={`iconbtn${settingsOpen ? ' on' : ''}`} onClick={onSettings} title="Settings (S)" data-tour="settings">
             <GearIcon />
           </button>
           <button class="iconbtn" onClick={() => void window.rzShell?.toggleFullscreen()} title="Window full screen (F11)">

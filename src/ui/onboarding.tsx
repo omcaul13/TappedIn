@@ -4,10 +4,12 @@ import type { ProviderSummary } from '../providers/types';
 import type { SetupView } from '../setup/runner';
 import { post, type AppState } from './util';
 import { BrandGlyph } from './icons';
+import { TipCarousel } from './tour';
 
-// First-run setup, drawn over the whole window: welcome → pick your service → sign in → channels →
-// playback → streams → done. The steps run in the app (src/setup/runner.ts); this only shows them.
-// While a stream is being tested, the screen it plays on is left uncovered so you see the real video.
+// First-run setup, drawn over the whole window: welcome → pick your service → sign in → checks
+// (channels, playback, streams) → how many screens → done. The steps run in the app
+// (src/setup/runner.ts); this only shows them. While the checks run, a checklist says how far along
+// they are and a slideshow teaches the basics; their details only show when something fails.
 
 interface School {
   name: string;
@@ -42,65 +44,45 @@ export function Onboarding({ st, onError }: { st: AppState; onError(m: string): 
     const r = await p;
     if (!r.ok) onError(r.message ?? 'that didn\'t work');
   };
-  const reveal = s.step === 'playback' ? [1] : s.step === 'streams' ? (s.streams?.perScreen ?? []).filter((x) => x.state === 'PLAYING').map((x) => x.screen) : [];
+  const checking = isChecking(s);
   return (
-    <div class={`setup${reveal.length ? ' see-through' : ''}`}>
-      {reveal.length > 0 && <Cells reveal={reveal} labels={s.streams?.perScreen ?? (s.playback ? [{ screen: 1, channel: s.playback.channel, state: s.playback.state }] : [])} />}
-      <Progress step={s.step} />
-      <div class={`setup-card${reveal.length ? (s.step === 'playback' ? ' side' : ' bottom') : ''}`}>
+    <div class="setup">
+      <Progress s={s} />
+      <div class="setup-card">
         {s.step === 'welcome' && <Welcome />}
         {s.step === 'service' && <Picker providers={st.providers} run={run} />}
         {s.step === 'signin' && <Signin s={s} run={run} />}
-        {s.step === 'channels' && <Channels s={s} run={run} />}
-        {s.step === 'playback' && <Playback s={s} run={run} />}
-        {s.step === 'streams' && <Streams s={s} run={run} />}
+        {checking && <Checking s={s} />}
+        {!checking && s.step === 'channels' && <Channels s={s} run={run} />}
+        {!checking && s.step === 'playback' && <Playback s={s} run={run} />}
+        {!checking && s.step === 'streams' && <Streams s={s} run={run} />}
         {s.step === 'done' && <Busy text={s.busy ?? 'Starting TappedIn…'} />}
       </div>
     </div>
   );
 }
 
-const STEPS: { id: SetupView['step']; label: string }[] = [
-  { id: 'service', label: 'Service' },
-  { id: 'signin', label: 'Sign in' },
-  { id: 'channels', label: 'Channels' },
-  { id: 'playback', label: 'Playback' },
-  { id: 'streams', label: 'Streams' },
-];
+/** The checks are running (or between two of them): channels, then playback, then streams. */
+function isChecking(s: SetupView): boolean {
+  if (s.error) return false;
+  if (s.step === 'channels' || s.step === 'playback') return true;
+  return s.step === 'streams' && !s.streams;
+}
 
-function Progress({ step }: { step: SetupView['step'] }) {
-  if (step === 'welcome' || step === 'done') return null;
-  const at = STEPS.findIndex((x) => x.id === step);
+const STEPS = ['Service', 'Sign in', 'Checks', 'Screens'];
+
+function Progress({ s }: { s: SetupView }) {
+  if (s.step === 'welcome' || s.step === 'done') return null;
+  const at = s.step === 'service' ? 0 : s.step === 'signin' ? 1 : s.step === 'streams' && s.streams ? 3 : 2;
   return (
     <ol class="setup-steps">
-      {STEPS.map((x, i) => (
+      {STEPS.map((label, i) => (
         <li class={i < at ? 'done' : i === at ? 'on' : ''}>
           <span>{i < at ? '✓' : i + 1}</span>
-          {x.label}
+          {label}
         </li>
       ))}
     </ol>
-  );
-}
-
-/** Covers every screen except the ones being shown, so the real video shows through. */
-function Cells({ reveal, labels }: { reveal: number[]; labels: { screen: number; channel: string; state: string }[] }) {
-  return (
-    <div class="setup-cells">
-      {[1, 2, 3, 4].map((n) => {
-        const l = labels.find((x) => x.screen === n);
-        return reveal.includes(n) ? (
-          <div class="hole">
-            <span class="hole-tag">
-              Screen {n}
-              {l ? ` · ${l.channel}` : ''}
-            </span>
-          </div>
-        ) : (
-          <div class="cover" />
-        );
-      })}
-    </div>
   );
 }
 
@@ -109,6 +91,33 @@ function Busy({ text }: { text: string }) {
     <div class="busy">
       <span class="spinner" /> {text}
     </div>
+  );
+}
+
+const CHECKS = [
+  { step: 'channels', text: 'Finding your sports channels' },
+  { step: 'playback', text: 'Making sure video plays' },
+  { step: 'streams', text: 'Counting how many screens your plan can show' },
+];
+
+/** The checks in progress, plainly, and the tips while you wait. */
+function Checking({ s }: { s: SetupView }) {
+  const at = CHECKS.findIndex((c) => c.step === s.step);
+  return (
+    <>
+      <h2>Getting TappedIn ready</h2>
+      <p class="lede small">This takes a minute or two. Nothing to do: TappedIn checks your service by itself.</p>
+      <ul class="checks">
+        {CHECKS.map((c, i) => (
+          <li class={i < at ? 'done' : i === at ? 'on' : ''}>
+            <span class="mk">{i < at ? '✓' : i === at ? <span class="spinner" /> : ''}</span>
+            {c.text}
+          </li>
+        ))}
+      </ul>
+      <h5>While you wait: the basics</h5>
+      <TipCarousel />
+    </>
   );
 }
 
@@ -237,75 +246,34 @@ function Signin({ s, run }: { s: SetupView; run(p: Promise<{ ok: boolean; messag
   );
 }
 
-/** The networks found (✓) and the national ones the lineup lacks (✗), in catalog order. */
-function NetworkGrid({ found, missing }: { found: string[]; missing: string[] }) {
-  return (
-    <div class="nets">
-      {found.map((n) => (
-        <span class="yes">✓ {n}</span>
-      ))}
-      {missing.map((n) => (
-        <span class="no">✗ {n}</span>
-      ))}
-    </div>
-  );
-}
-
+/** Only shown when the channel check failed. */
 function Channels({ s, run }: { s: SetupView; run(p: Promise<{ ok: boolean; message?: string }>): void }) {
   return (
     <>
-      <h2>Your sports channels</h2>
-      {s.busy && <Busy text={s.busy} />}
-      {s.scan && (
-        <>
-          <p class="lede">
-            Found {s.scan.found.length} sports networks. Games on networks you don't get are greyed out and never picked.
-          </p>
-          <NetworkGrid found={s.scan.found} missing={s.scan.missing} />
-        </>
-      )}
-      {s.error && (
-        <div class="callout bad">
-          <b>No channels found.</b>
-          <span>{s.error}</span>
-        </div>
-      )}
+      <h2>No sports channels found</h2>
+      <div class="callout bad">
+        <span>{s.error}</span>
+      </div>
       <div class="actions">
         <span class="grow" />
-        {s.error && (
-          <>
-            <button class="btn" onClick={() => run(post('/api/diag/open', {}))}>
-              Diagnostics
-            </button>
-            <button class="btn primary" onClick={() => run(post('/api/setup/scan', {}))}>
-              Scan again
-            </button>
-          </>
-        )}
+        <button class="btn" onClick={() => run(post('/api/diag/open', {}))}>
+          Diagnostics
+        </button>
+        <button class="btn primary" onClick={() => run(post('/api/setup/scan', {}))}>
+          Scan again
+        </button>
       </div>
     </>
   );
 }
 
+/** Only shown when the playback check failed (a passing one goes straight on to the stream check). */
 function Playback({ s, run }: { s: SetupView; run(p: Promise<{ ok: boolean; message?: string }>): void }) {
-  const ok = s.playback?.state === 'PLAYING';
   return (
     <>
-      <h2>Playback test</h2>
-      {s.scan && (
-        <p class="lede small">
-          {s.scan.found.length} sports networks found: {s.scan.found.slice(0, 6).join(', ')}
-          {s.scan.found.length > 6 ? '…' : ''}
-        </p>
-      )}
+      <h2>Video didn't play</h2>
       {s.busy && <Busy text={s.busy} />}
-      {ok && (
-        <div class="callout good">
-          <b>✓ {s.playback!.channel} is playing on screen 1.</b>
-          <span>Next, TappedIn finds out how many streams your plan plays at once (about 30 seconds).</span>
-        </div>
-      )}
-      {!ok && s.error && (
+      {s.error && (
         <div class="callout bad">
           <b>That didn't play.</b>
           <span>{s.error}</span>
@@ -314,20 +282,15 @@ function Playback({ s, run }: { s: SetupView; run(p: Promise<{ ok: boolean; mess
       )}
       <div class="actions">
         <span class="grow" />
-        {!ok && !s.busy && (
+        {!s.busy && (
           <>
             <button class="btn" onClick={() => run(post('/api/diag/open', {}))}>
               Diagnostics
             </button>
-            <button class="btn" onClick={() => run(post('/api/setup/play', {}))}>
+            <button class="btn primary" onClick={() => run(post('/api/setup/play', {}))}>
               Try again
             </button>
           </>
-        )}
-        {ok && (
-          <button class="btn primary" onClick={() => run(post('/api/setup/streams', {}))}>
-            Test streams
-          </button>
         )}
       </div>
     </>
@@ -353,7 +316,6 @@ function Streams({ s, run }: { s: SetupView; run(p: Promise<{ ok: boolean; messa
   return (
     <>
       <h2>How many screens?</h2>
-      {s.busy && <Busy text={s.busy} />}
       {s.streams && (
         <>
           <p class={`lede${measured === 0 ? ' warn' : ''}`}>{s.streams.message}</p>
