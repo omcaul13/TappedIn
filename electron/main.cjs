@@ -420,6 +420,7 @@ app.whenReady().then(async () => {
     height: 940,
     show: false,
     title: 'TappedIn',
+    icon: path.join(__dirname, 'tappedin.ico'),
     backgroundColor: BG,
     titleBarStyle: 'hidden',
     titleBarOverlay: { color: '#0b0f14', symbolColor: '#cbd5e1', height: TOP_BAR },

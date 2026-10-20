@@ -8,7 +8,7 @@
 #ifndef Stage
   #define Stage "..\build\stage"
 #endif
-#define Electron "{app}\node_modules\electron\dist\electron.exe"
+#define Icon "{app}\electron\tappedin.ico"
 
 [Setup]
 ; Never change AppId: it is how a newer installer finds and upgrades an existing install.
@@ -25,7 +25,8 @@ OutputBaseFilename=TappedIn-Setup-{#AppVersion}
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
-UninstallDisplayIcon={#Electron}
+UninstallDisplayIcon={#Icon}
+SetupIconFile={#Stage}\electron\tappedin.ico
 UninstallDisplayName=TappedIn
 
 [Tasks]
@@ -45,8 +46,8 @@ Source: "{app}\config\tappedin.config.json5"; DestDir: "{app}\config"; DestName:
 Source: "{#Stage}\*"; DestDir: "{app}"; Excludes: "\test,\docs,\.github,\installer,\Setup TappedIn.cmd,\Update TappedIn.cmd"; Flags: recursesubdirs createallsubdirs ignoreversion
 
 [Icons]
-Name: "{autoprograms}\TappedIn"; Filename: "{app}\TappedIn.cmd"; WorkingDir: "{app}"; IconFilename: "{#Electron}"; Flags: runminimized
-Name: "{autodesktop}\TappedIn"; Filename: "{app}\TappedIn.cmd"; WorkingDir: "{app}"; IconFilename: "{#Electron}"; Flags: runminimized; Tasks: desktopicon
+Name: "{autoprograms}\TappedIn"; Filename: "{app}\TappedIn.cmd"; WorkingDir: "{app}"; IconFilename: "{#Icon}"; Flags: runminimized
+Name: "{autodesktop}\TappedIn"; Filename: "{app}\TappedIn.cmd"; WorkingDir: "{app}"; IconFilename: "{#Icon}"; Flags: runminimized; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\TappedIn.cmd"; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,TappedIn}"; Flags: nowait postinstall skipifsilent runminimized
