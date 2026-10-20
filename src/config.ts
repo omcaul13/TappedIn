@@ -459,6 +459,8 @@ const OverridesSchema = z
     summarySeconds: z.number().min(5).max(60).optional(),
     hotSummarySeconds: z.number().min(3).max(30).optional(),
     allowDuplicates: z.boolean().optional(),
+    /** Sound: you pick (manual) or it follows the action (auto). */
+    audioMode: z.enum(['manual', 'auto']).optional(),
     provider: z.string().regex(/^[a-z0-9-]+$/).optional(),
     standbyViews: z.number().int().min(0).max(4).optional(),
     /** Ticker switches and choices (merged one key at a time). */
@@ -501,6 +503,7 @@ export function withOverrides(cfg: Config, o: SettingsOverrides): Config {
   if (o.summarySeconds !== undefined) c.espn.summarySeconds = o.summarySeconds;
   if (o.hotSummarySeconds !== undefined) c.espn.hotSummarySeconds = o.hotSummarySeconds;
   if (o.allowDuplicates !== undefined) c.director.allowDuplicates = o.allowDuplicates;
+  if (o.audioMode) c.audio.mode = o.audioMode;
   if (o.provider) c.provider = o.provider;
   if (o.standbyViews !== undefined) c.electron.standbyViews = o.standbyViews;
   if (o.ticker) {
