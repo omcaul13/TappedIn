@@ -7,11 +7,12 @@
 //   scoreboard.ndjson.gz   every scoreboard poll per sport (12s +/- jitter while that sport has live games)
 //   summaries.ndjson.gz    live play-by-play, one game every 8s round-robin (polite: ~0.2 req/s total)
 //   finals.ndjson.gz       one full summary per game once it goes final (complete plays with wallclocks)
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { enabledSports, loadConfig, PROJECT_ROOT } from '../src/config';
 import { EspnClient, espnDateKey } from '../src/espn/client';
 import { normalizeScoreboard } from '../src/espn/normalize';
-import { appendRecord, trimSummary } from '../src/espn/recording';
+import { appendRecord, readRecords, trimSummary } from '../src/espn/recording';
 import { RankCache, recordableScoreboard } from '../src/espn/rankings';
 import type { GameSnapshot, SportId } from '../src/engine/types';
 import { isSportId, SPORT_IDS, sportOf } from '../src/sports';
@@ -43,7 +44,8 @@ const games = new Map<SportId, GameSnapshot[]>();
 const all = () => [...games.values()].flat();
 const isOver = (g: GameSnapshot) => g.phase === 'FINAL' || g.phase === 'POSTPONED' || g.phase === 'CANCELED';
 const isLive = (g: GameSnapshot) => g.phase === 'LIVE' || g.phase === 'HALFTIME' || g.phase === 'DELAYED';
-const finalsSaved = new Set<string>();
+// A restart (Ctrl+C, crash) keeps the finals already saved instead of fetching and appending them again.
+const finalsSaved = new Set<string>(existsSync(files.finals) ? readRecords(files.finals).flatMap((r) => (r.eventId ? [r.eventId] : [])) : []);
 let rr = 0;
 let bytes = 0;
 let stopping = false;
