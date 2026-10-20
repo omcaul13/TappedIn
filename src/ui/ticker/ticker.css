@@ -116,6 +116,9 @@
   border-left: 1px solid rgba(107, 107, 255, .35); -webkit-app-region: drag;
 }
 .app.fullscreen .bt .ctl { padding-top: 6px; }
+/* Mac: no window buttons above the controls; the traffic lights sit left of the label block instead. */
+.mac .bt .ctl { padding-top: 6px; }
+.mac .app:not(.fullscreen) .bt { padding-left: 78px; }
 .bt .ctl > div { display: flex; gap: 4px; align-items: center; -webkit-app-region: no-drag; }
 .bt .ctl .iconbtn { width: 26px; height: 22px; }
 .bt .ctl .btn { height: 22px; padding: 0 7px; font-size: 11px; }

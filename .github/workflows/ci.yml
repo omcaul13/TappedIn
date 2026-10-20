@@ -1,0 +1,122 @@
+# Tests, and a check that a pull request leaves the Windows installer the same.
+#   tests              typecheck + vitest on Windows (every push to a branch) and macOS (PRs only: in a
+#                      private repo GitHub bills macOS minutes at 10x)
+#   windows-installer  on PRs: builds the unsigned Windows installer from the PR's base and from the PR,
+#                      installs each silently, starts it and checks it serves the settings it was given
+#   compare            on PRs: lists every difference between the two installers in the run's summary
+name: CI
+
+on:
+  push:
+    branches-ignore: [main]
+  pull_request:
+
+jobs:
+  tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        # A PR's branch is also pushed, so the push run already covers Windows.
+        os: ${{ github.event_name == 'pull_request' && fromJSON('["macos-latest"]') || fromJSON('["windows-latest"]') }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+  windows-installer:
+    if: github.event_name == 'pull_request'
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        side: [before, after]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.side == 'before' && github.event.pull_request.base.sha || github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup -y --no-progress
+      - name: Build the unsigned installer
+        shell: pwsh
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-installer.ps1 -Unsigned
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: List what the installer carries
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP 'report'
+          New-Item -ItemType Directory -Force $out | Out-Null
+          $exe = Get-Item dist/*.exe | Select-Object -First 1
+          @{ name = $exe.Name; size = $exe.Length; commit = (git rev-parse HEAD) } | ConvertTo-Json | Set-Content (Join-Path $out 'installer.json') -Encoding utf8NoBOM
+          $stage = (Resolve-Path build/stage).Path
+          Get-ChildItem -LiteralPath $stage -Recurse -File | Sort-Object FullName | ForEach-Object {
+            "$($_.FullName.Substring($stage.Length + 1).Replace('\', '/'))`t$($_.Length)`t$((Get-FileHash -LiteralPath $_.FullName).Hash)"
+          } | Set-Content (Join-Path $out 'manifest.tsv') -Encoding utf8NoBOM
+          Copy-Item installer/tappedin.iss, scripts/build-installer.ps1 $out
+      - name: Smoke test (install, start, settings load)
+        shell: pwsh
+        run: |
+          $exe = Get-Item dist/*.exe | Select-Object -First 1
+          $dir = Join-Path $env:RUNNER_TEMP 'TappedIn'
+          $p = Start-Process $exe.FullName -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CURRENTUSER', "/DIR=`"$dir`"" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "The installer exited with $($p.ExitCode)" }
+          # A setting the app must load from .state\settings.json (it wins over the config file).
+          New-Item -ItemType Directory -Force (Join-Path $dir '.state') | Out-Null
+          Set-Content (Join-Path $dir '.state\settings.json') '{"dwellSeconds":47}' -Encoding ascii
+          # What the Start menu shortcut runs.
+          $app = Start-Process (Join-Path $dir 'node_modules\electron\dist\electron.exe') -ArgumentList "`"$(Join-Path $dir 'electron\launcher.cjs')`"" -WorkingDirectory $dir -PassThru
+          $state = $null
+          for ($i = 0; $i -lt 60 -and -not $state; $i++) {
+            Start-Sleep 2
+            try { $state = Invoke-RestMethod http://localhost:7480/api/state -TimeoutSec 3 } catch {}
+          }
+          $log = Join-Path $dir 'logs\launcher.log'
+          if (-not $state) { if (Test-Path $log) { Get-Content $log -Tail 60 }; throw 'TappedIn did not start (no answer on localhost:7480 within 2 minutes)' }
+          if ($state.settings.dwellSeconds -ne 47) { Get-Content $log -Tail 60; throw "Settings did not load: dwellSeconds is $($state.settings.dwellSeconds), expected 47" }
+          "Started; settings loaded (dwellSeconds 47, overridden: $($state.settings.overridden -join ', '))." | Tee-Object -Append $env:GITHUB_STEP_SUMMARY
+          Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue
+          Get-Process node, electron -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer-${{ matrix.side }}
+          path: ${{ runner.temp }}/report
+
+  compare:
+    needs: windows-installer
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: windows-installer-*
+      - name: Report the differences
+        run: |
+          b=windows-installer-before a=windows-installer-after
+          {
+            echo "## Windows installer: base vs this PR"
+            echo
+            echo "| | before | after |"
+            echo "|---|---|---|"
+            echo "| file | $(jq -r .name $b/installer.json) | $(jq -r .name $a/installer.json) |"
+            echo "| size (bytes) | $(jq -r .size $b/installer.json) | $(jq -r .size $a/installer.json) |"
+            echo "| commit | $(jq -r .commit $b/installer.json) | $(jq -r .commit $a/installer.json) |"
+            echo
+            for f in tappedin.iss build-installer.ps1; do
+              if cmp -s $b/$f $a/$f; then echo "- \`$f\`: unchanged"; else echo "- \`$f\`: **changed**"; fi
+            done
+            echo
+            echo "### Installed files that differ (path, size, sha256)"
+            echo '```diff'
+            diff <(sort $b/manifest.tsv) <(sort $a/manifest.tsv) | grep '^[<>]' | sed 's/^</-/; s/^>/+/' || echo "(none)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          cat "$GITHUB_STEP_SUMMARY"

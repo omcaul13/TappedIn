@@ -2,7 +2,7 @@ import type { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { SportIcon } from './icons';
 import { ServicePanel } from './service';
-import { post, type AppState } from './util';
+import { FULLSCREEN_KEY, IS_MAC, post, type AppState } from './util';
 
 // Settings drawer. Basic: the few things most people change (how eagerly screens switch, sound, which
 // sports, the tickers, the TV service). Advanced, behind its own button: per-sport levels, timing,
@@ -270,6 +270,12 @@ function Advanced({ st, set, onTips }: { st: AppState; set: Set; onTips(): void 
           <span>Back to that screen's game</span>
           <span class="k">
             <kbd>S</kbd>
+            {IS_MAC && (
+              <>
+                {' '}
+                <kbd>⌘,</kbd>
+              </>
+            )}
           </span>
           <span>Settings</span>
           <span class="k">
@@ -282,7 +288,7 @@ function Advanced({ st, set, onTips }: { st: AppState; set: Set; onTips(): void 
           </span>
           <span>Over the big ticker: pause, speed</span>
           <span class="k">
-            <kbd>F</kbd> <kbd>F11</kbd>
+            <kbd>F</kbd> <kbd>{FULLSCREEN_KEY}</kbd>
           </span>
           <span>Window full screen (the whole monitor)</span>
         </div>

@@ -10,20 +10,22 @@ import { Diagnostics } from './diagnostics';
 import { Onboarding } from './onboarding';
 import { Settings } from './settings';
 import { FirstUseTips, tipsSeen } from './tour';
-import { act, post, typingIn, type AppState, type GameDTO } from './util';
+import { act, FULLSCREEN_KEY, IS_MAC, post, typingIn, type AppState, type GameDTO } from './util';
 
 // The TappedIn app window's UI: top bar, four screen overlays, settings drawer. State arrives as
 // server-sent events from the app (on every tick and right after every action).
 
 declare global {
   interface Window {
-    rzShell?: { toggleFullscreen(): Promise<boolean>; onFullscreen(cb: (on: boolean) => void): void };
+    /** onOpenSettings: the Mac menu's TappedIn → Settings… (⌘,). */
+    rzShell?: { toggleFullscreen(): Promise<boolean>; onFullscreen(cb: (on: boolean) => void): void; onOpenSettings?(cb: () => void): void };
   }
 }
 
 const style = document.createElement('style');
 style.textContent = css;
 document.head.appendChild(style);
+if (IS_MAC) document.documentElement.classList.add('mac');
 
 function useAppState() {
   const [st, setSt] = useState<AppState | null>(null);
@@ -63,6 +65,7 @@ function App() {
 
   useEffect(() => {
     window.rzShell?.onFullscreen(setFullscreen);
+    window.rzShell?.onOpenSettings?.(() => setSettings(true));
     const t = setInterval(() => setTick((x) => x + 1), 1000);
     return () => clearInterval(t);
   }, []);
@@ -157,7 +160,7 @@ function App() {
         <button class={`iconbtn${settings ? ' on' : ''}`} onClick={() => setSettings(!settings)} title="Settings (S)" data-tour="settings">
           <GearIcon />
         </button>
-        <button class="iconbtn" onClick={() => void window.rzShell?.toggleFullscreen()} title="Full screen (F11)">
+        <button class="iconbtn" onClick={() => void window.rzShell?.toggleFullscreen()} title={`Full screen (${FULLSCREEN_KEY})`}>
           <FullscreenIcon on={fullscreen} />
         </button>
       </header>

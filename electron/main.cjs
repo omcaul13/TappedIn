@@ -58,6 +58,7 @@ let TOP = TOP_BAR;
 let FOCUS = 0;
 const GAP = 2;
 const BG = '#05070a';
+const MAC = process.platform === 'darwin';
 
 app.setName('TappedIn');
 app.setPath('userData', value('user-data', path.join(process.env.LOCALAPPDATA || app.getPath('appData'), 'TappedIn', 'electron')));
@@ -410,12 +411,57 @@ function toggleFullscreen() {
   if (win) win.setFullScreen(!win.isFullScreen());
 }
 
+/**
+ * The Mac menu bar: without one, ⌘C/⌘V/⌘Q do nothing (sign-in windows included). Settings… opens the
+ * UI's settings drawer, and Toggle Full Screen is the native one (its own Space), like the green button.
+ */
+function macMenu() {
+  const { SITE_URL } = require('./mac-updates.cjs');
+  app.setAboutPanelOptions({ applicationName: 'TappedIn', applicationVersion: app.getVersion(), version: '' });
+  return Menu.buildFromTemplate([
+    {
+      role: 'appMenu',
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        { label: 'Settings…', accelerator: 'Cmd+,', click: () => ui && ui.webContents.send('rz:open-settings') },
+        { type: 'separator' },
+        { role: 'services' },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' },
+      ],
+    },
+    { role: 'editMenu' },
+    {
+      label: 'View',
+      submenu: [
+        { label: 'Reload Controls', accelerator: 'Cmd+R', click: () => ui && ui.webContents.reload() },
+        { type: 'separator' },
+        { label: 'Toggle Full Screen', accelerator: 'Ctrl+Cmd+F', click: toggleFullscreen },
+      ],
+    },
+    { role: 'windowMenu' },
+    {
+      role: 'help',
+      submenu: [
+        { label: 'TappedIn Website', click: () => shell.openExternal(SITE_URL) },
+        { label: 'Install Guide', click: () => shell.openExternal(`${SITE_URL}/install`) },
+        { label: 'Report a Problem…', click: () => shell.openExternal('mailto:tappedinsupport@gmail.com?subject=TappedIn%20for%20Mac') },
+      ],
+    },
+  ]);
+}
+
 app.whenReady().then(async () => {
-  Menu.setApplicationMenu(null);
+  Menu.setApplicationMenu(MAC ? macMenu() : null);
   await components.whenReady();
   applyUserAgent();
 
-  win = new BrowserWindow({
+  const winOptions = {
     width: 1600,
     height: 940,
     show: false,
@@ -424,7 +470,14 @@ app.whenReady().then(async () => {
     backgroundColor: BG,
     titleBarStyle: 'hidden',
     titleBarOverlay: { color: '#0b0f14', symbolColor: '#cbd5e1', height: TOP_BAR },
-  });
+  };
+  if (MAC) {
+    // The bundle carries the icon; the traffic lights sit centered in the top bar's left end (the UI leaves room).
+    delete winOptions.icon;
+    delete winOptions.titleBarOverlay;
+    winOptions.trafficLightPosition = { x: 14, y: Math.round((TOP_BAR - 12) / 2) };
+  }
+  win = new BrowserWindow(winOptions);
   win.maximize();
   win.show();
 
@@ -460,6 +513,14 @@ app.whenReady().then(async () => {
   if (value('signin', 'now') !== 'defer') await handoff();
   createViews();
   send({ type: 'ready', screens: SCREENS, spares: SPARES });
+
+  const macUpdates = MAC && (require('../package.json').tappedin || {}).macUpdates;
+  if (macUpdates) {
+    const { startUpdates } = require('./mac-updates.cjs');
+    const log = (text) => send({ type: 'log', text });
+    // After start-up has settled (sign-in, first tunes), so a dialog doesn't land in the middle of it.
+    setTimeout(() => startUpdates({ mode: macUpdates, version: app.getVersion(), win, log }).catch((err) => log(`update: ${err.message}`)), 30_000);
+  }
 });
 
 process.on('message', (msg) => {

@@ -8,16 +8,25 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.join(__dirname, '..');
-const bundled = path.join(root, 'runtime', 'node.exe');
+// The Mac app (TappedIn.app) is read-only: its data goes to ~/Library/Application Support/TappedIn.
+const mac = process.platform === 'darwin';
+const dataDir = mac ? path.join(app.getPath('appData'), 'TappedIn') : root;
+const bundled = path.join(root, 'runtime', mac ? 'node' : 'node.exe');
 // The installer ships its own Node in runtime\; a source checkout uses the one on PATH.
 const node = fs.existsSync(bundled) ? bundled : 'node';
-const logDir = path.join(root, 'logs');
+const logDir = path.join(dataDir, 'logs');
 const logFile = path.join(logDir, 'launcher.log');
 
+if (mac) {
+  // Only the window's process (the same app, started by the Node process) belongs in the Dock.
+  app.dock.hide();
+  app.setPath('userData', path.join(dataDir, 'launcher'));
+}
 fs.mkdirSync(logDir, { recursive: true });
 const out = fs.openSync(logFile, 'w');
 const args = [path.join(root, 'node_modules', 'tsx', 'dist', 'cli.mjs'), path.join(root, 'scripts', 'start.ts'), ...process.argv.slice(2)];
-const child = spawn(node, args, { cwd: root, stdio: ['ignore', out, out], windowsHide: true });
+const env = mac ? { ...process.env, TAPPEDIN_DATA_DIR: dataDir, TAPPEDIN_ELECTRON: process.execPath } : process.env;
+const child = spawn(node, args, { cwd: root, env, stdio: ['ignore', out, out], windowsHide: true });
 
 function fail(text) {
   const tail = (() => {
@@ -31,7 +40,9 @@ function fail(text) {
     type: 'error',
     title: 'TappedIn',
     message: text,
-    detail: `${tail ? `${tail}\n\n` : ''}If you installed it with TappedIn-Setup.exe, run that installer again. Otherwise run "npm run doctor" in ${root}.\n\nFull log: ${logFile}`,
+    detail: mac
+      ? `${tail ? `${tail}\n\n` : ''}Download TappedIn again and drag it into Applications, replacing the old copy. Your settings are kept.\n\nFull log: ${logFile}`
+      : `${tail ? `${tail}\n\n` : ''}If you installed it with TappedIn-Setup.exe, run that installer again. Otherwise run "npm run doctor" in ${root}.\n\nFull log: ${logFile}`,
   });
 }
 

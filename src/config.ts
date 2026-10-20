@@ -1,4 +1,5 @@
 import { mkdirSync, readFileSync, renameSync, watch, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import path from 'node:path';
 import JSON5 from 'json5';
 import { z } from 'zod';
@@ -11,6 +12,8 @@ import type { SportPreset } from './sports/types';
 
 export const PROJECT_ROOT = path.resolve(import.meta.dirname, '..');
 export const CONFIG_PATH = path.join(PROJECT_ROOT, 'config', 'tappedin.config.json5');
+/** Where settings, sign-ins, logs and recordings are written: the app folder, except in the Mac app, whose bundle is read-only (its launcher sets TAPPEDIN_DATA_DIR). */
+export const DATA_ROOT = process.env.TAPPEDIN_DATA_DIR || PROJECT_ROOT;
 
 const signal = (weight: number, windowSeconds: number) =>
   z
@@ -408,8 +411,9 @@ export function parseConfig(raw: unknown): Config {
   const result = ConfigSchema.safeParse(raw ?? {});
   if (!result.success) throw new Error(`Invalid config:\n${z.prettifyError(result.error)}`);
   const cfg = result.data;
-  cfg.chrome.profileDir = path.resolve(PROJECT_ROOT, expandEnv(cfg.chrome.profileDir));
-  cfg.electron.userDataDir = path.resolve(PROJECT_ROOT, expandEnv(cfg.electron.userDataDir));
+  cfg.chrome.profileDir = path.resolve(PROJECT_ROOT, osPath(cfg.chrome.profileDir));
+  cfg.electron.userDataDir = path.resolve(PROJECT_ROOT, osPath(cfg.electron.userDataDir));
+  if (process.platform === 'darwin' && /^[a-z]:\\/i.test(cfg.chrome.executablePath)) cfg.chrome.executablePath = MAC_CHROME;
   return cfg;
 }
 
@@ -443,7 +447,7 @@ export function watchConfig(onChange: (cfg: Config) => void, onError: (msg: stri
 // The settings drawer saves here instead of rewriting the commented config file; these win over the
 // file until you press "Reset to config file".
 
-export const SETTINGS_FILE = path.join(PROJECT_ROOT, '.state', 'settings.json');
+export const SETTINGS_FILE = path.join(DATA_ROOT, '.state', 'settings.json');
 
 const OverridesSchema = z
   .object({
@@ -528,6 +532,14 @@ export function withOverrides(cfg: Config, o: SettingsOverrides): Config {
 }
 
 /** Expand Windows-style %VAR% references. */
-function expandEnv(p: string): string {
-  return p.replace(/%([^%]+)%/g, (whole, name: string) => process.env[name] ?? whole);
+function expandEnv(p: string, env: NodeJS.ProcessEnv = process.env): string {
+  return p.replace(/%([^%]+)%/g, (whole, name: string) => env[name] ?? whole);
+}
+
+const MAC_CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+
+/** A config file path for this OS. The file's paths are Windows ones; on a Mac %LOCALAPPDATA% is ~/Library/Application Support and backslashes are slashes. */
+export function osPath(p: string, platform: NodeJS.Platform = process.platform, env: NodeJS.ProcessEnv = process.env, home = homedir()): string {
+  if (platform !== 'darwin') return expandEnv(p, env);
+  return expandEnv(p, { LOCALAPPDATA: path.posix.join(home, 'Library', 'Application Support'), ...env }).replaceAll('\\', '/');
 }
