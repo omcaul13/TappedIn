@@ -60,6 +60,21 @@ describe('provider config', () => {
     expect(all).toMatch(/timing/);
   });
 
+  it("a tuning or family override the adapter can't use is dropped, so the app still starts", () => {
+    const warnings: string[] = [];
+    const opts = {
+      stateDir: stateDirWith('xfinity-on-campus', { tuning: { inAppTimeoutMs: 'slow' }, family: 'url', timing: { loadGapMs: 4000 } }),
+      onWarning: (m: string) => warnings.push(m),
+    };
+    const adapter = createAdapter('xfinity-on-campus', opts);
+    expect(adapter.config.family).toBe('comcast');
+    expect(adapter.config.tuning.inAppTimeoutMs).toBe(8000);
+    expect(adapter.config.timing.loadGapMs).toBe(4000); // the good section still applies
+    const all = warnings.join('\n');
+    expect(all).toMatch(/"tuning"/);
+    expect(all).toMatch(/"family"/);
+  });
+
   it('unreadable override JSON is reported and ignored', () => {
     const dir = mkdtempSync(path.join(tmpdir(), 'rz-providers-'));
     mkdirSync(path.join(dir, 'providers'), { recursive: true });
