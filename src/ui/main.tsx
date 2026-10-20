@@ -119,9 +119,9 @@ function App() {
       {ticker.big && !st.setup && <BigTicker st={st} alerts={alerts.current} now={now} osFullscreen={fullscreen} settingsOpen={settings} onSettings={() => setSettings(!settings)} />}
       <header class="topbar" style={ticker.big && !st.setup ? { display: 'none' } : undefined}>
         <div class="brand">
-          <span class="mark">RZ</span>
+          <span class="mark">TI</span>
           <span class="word">
-            Red<span>Zone</span>
+            Tapped<span>In</span>
           </span>
         </div>
         <span class="chip">

@@ -115,9 +115,9 @@ function Welcome() {
   return (
     <>
       <div class="setup-hero">
-        <span class="mark big">RZ</span>
+        <span class="mark big">TI</span>
         <h1>
-          Welcome to Red<span>Zone</span>
+          Welcome to Tapped<span>In</span>
         </h1>
       </div>
       <p class="lede">Four college football games at once, from the TV service you already have. TappedIn watches live game data and switches a screen to the best other game when its game goes to a long commercial break.</p>
