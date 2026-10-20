@@ -154,7 +154,9 @@ export class HealthTracker {
 
     if (video) {
       this.history.push({ t: now, ct: video.currentTime });
-      this.history = this.history.filter((h) => now - h.t <= 4000);
+      // Last 4 s, but always the previous check too: checks spaced over 4 s apart would leave only this one, and a playing video would read as stalled.
+      const first = this.history.findIndex((h) => now - h.t <= 4000);
+      this.history = this.history.slice(Math.min(first, this.history.length - 2));
     }
     const oldest = this.history[0];
     const advanced = video && oldest && now - oldest.t >= 1500 ? video.currentTime - oldest.ct : 0;
