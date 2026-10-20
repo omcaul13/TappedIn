@@ -6,3 +6,5 @@ spike-report/
 .state/
 .env
 .venv-evs/
+build/
+dist/

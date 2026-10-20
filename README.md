@@ -87,16 +87,17 @@ The usual rules still hold: no game on two screens unless it's the only option, 
 
 ## Install (Windows)
 
-1. Download this project (green **Code** button → **Download ZIP**, then unzip it, or `git clone` it).
-2. Double-click **`Setup TappedIn.cmd`**. It:
-   - checks for Node.js and Python, and offers to install them (only if you type **Y**);
-   - installs TappedIn's parts;
-   - walks you through castLabs' free EVS sign-up (castLabs' own prompts: TappedIn never sees what you type);
-   - signs the video player, then checks everything;
-   - adds a **TappedIn** shortcut to the Start menu and desktop, and opens the app.
+1. Download **`TappedIn-Setup-<version>.exe`** from the [Releases](../../releases) page.
+2. Run it and click through: pick the folder (default `%LOCALAPPDATA%\Programs\TappedIn`, no admin rights needed), choose whether you want a desktop shortcut, and leave **Launch TappedIn** ticked on the last page.
+   - Windows may say "Windows protected your PC" because the installer isn't code-signed with a paid certificate: click **More info** → **Run anyway**.
+   - Everything is included (its own Node and the video player, already signed for Widevine). You don't need Node, Python or a castLabs account.
 3. The first start opens **setup**: pick your service, sign in, and TappedIn checks your channels and how many streams your plan plays at once (about two minutes).
 
-Run **`Update TappedIn.cmd`** to update; it re-signs the player only when it changed. `npm run doctor` checks an install and says how to fix anything wrong.
+To update, run a newer `TappedIn-Setup` the same way; your settings and sign-ins are kept. Uninstall from Windows Settings → Apps (it keeps the `.state` folder with your settings). If you edited `config	appedin.config.json5`, an update saves your copy as `tappedin.config.json5.bak` next to it.
+
+**From source instead** (the zip or `git clone`): double-click **`Setup TappedIn.cmd`**. It installs Node.js and Python (only if you type **Y**), installs TappedIn's parts, walks you through castLabs' free EVS sign-up to sign the video player, checks everything, and adds Start menu and desktop shortcuts. Run **`Update TappedIn.cmd`** to update; it re-signs the player only when it changed. `npm run doctor` checks an install and says how to fix anything wrong.
+
+**Building the installer** (maintainers): `powershell -ExecutionPolicy Bypass -File scriptsuild-installer.ps1` (needs [Inno Setup 6](https://jrsoftware.org/isdl.php) and a signed checkout or a saved EVS login; `-Unsigned` makes a test build where video won't play). Pushing a `v*` tag builds a signed installer in GitHub Actions and attaches it to that release; it needs the `EVS_ACCOUNT_NAME` and `EVS_PASSWD` repo secrets. Keep the tag in step with `version` in package.json, which names the file.
 
 <details>
 <summary>Doing it by hand (developers)</summary>

@@ -7,7 +7,7 @@
 //   options: --homes id,id,id,id   --no-auto (start with no home games; pick them per screen)
 //            --audio auto|manual   --no-record   --chrome
 // Old control panel (both shells): http://localhost:7480/panel
-import { existsSync } from 'node:fs';
+import { existsSync, renameSync } from 'node:fs';
 import path from 'node:path';
 import { parseFlags } from '../src/cli';
 import { loadConfig, PROJECT_ROOT } from '../src/config';
@@ -17,6 +17,16 @@ import { etTime } from '../src/sim';
 // Secrets (YT_API_KEY for YouTube highlights) live in .env, never in the config file.
 const envFile = path.join(PROJECT_ROOT, '.env');
 if (existsSync(envFile)) process.loadEnvFile(envFile);
+
+// The app was called RedZone: move its data folder (service sign-ins, Chrome profile) once, so nobody is signed out.
+const localData = process.env.LOCALAPPDATA;
+if (localData && existsSync(path.join(localData, 'RedZone')) && !existsSync(path.join(localData, 'TappedIn'))) {
+  try {
+    renameSync(path.join(localData, 'RedZone'), path.join(localData, 'TappedIn'));
+  } catch (err) {
+    console.warn(`Could not move ${path.join(localData, 'RedZone')} to TappedIn (${err instanceof Error ? err.message : err}); you may need to sign in again.`);
+  }
+}
 
 const { flags } = parseFlags(process.argv.slice(2));
 const replayDate = typeof flags.replay === 'string' ? flags.replay : null;

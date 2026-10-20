@@ -1,0 +1,69 @@
+# Builds TappedIn-Setup-<version>.exe and attaches it to a GitHub Release.
+#   Push a tag like v0.2.0  -> a signed installer on the v0.2.0 release (needs the EVS secrets below).
+#   Run it by hand          -> an unsigned test installer as a workflow artifact (video won't play).
+# Repo secrets for signing (Settings -> Secrets and variables -> Actions): EVS_ACCOUNT_NAME and
+# EVS_PASSWD, the castLabs EVS account that signs the video player for Widevine.
+name: Release installer
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      SIGNED: ${{ github.event_name == 'push' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - uses: actions/setup-python@v5
+        if: env.SIGNED == 'true'
+        with:
+          python-version: '3.12'
+
+      - name: Install the signing tool and Inno Setup
+        shell: pwsh
+        run: |
+          if ($env:SIGNED -eq 'true') { python -m pip install --disable-pip-version-check castlabs-evs==1.3.2 truststore==0.10.5 }
+          choco install innosetup -y --no-progress
+
+      - name: Build the installer
+        shell: pwsh
+        env:
+          EVS_ACCOUNT_NAME: ${{ secrets.EVS_ACCOUNT_NAME }}
+          EVS_PASSWD: ${{ secrets.EVS_PASSWD }}
+          EVS_NO_ASK: '1'
+        run: |
+          if ($env:SIGNED -eq 'true') {
+            if (-not $env:EVS_ACCOUNT_NAME -or -not $env:EVS_PASSWD) { throw 'Set the EVS_ACCOUNT_NAME and EVS_PASSWD repo secrets to build a signed release.' }
+            powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-installer.ps1
+          } else {
+            powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-installer.ps1 -Unsigned
+          }
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Attach to the release
+        if: env.SIGNED == 'true'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = '${{ github.ref_name }}'
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -eq 0) { gh release upload $tag (Get-Item dist/*.exe) --clobber } else { gh release create $tag (Get-Item dist/*.exe) --generate-notes }
+
+      - name: Upload the test installer
+        if: env.SIGNED != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: TappedIn-Setup-unsigned
+          path: dist/*.exe
