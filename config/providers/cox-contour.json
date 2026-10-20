@@ -13,7 +13,7 @@
   "defaults": {
     "standbyViews": 0
   },
-  "notes": "Cox runs the same Comcast TV-APP as Xfinity (PrismCast drives both with one code path), but its guide is watchtv.cox.com/listings. UNVERIFIED: the live-player path (\"/live/\") and whether guide clicks change the URL at all (PrismCast says Cox has no cacheable watch URL). Some entertainment channels open on a \"Watch Now\" play button, which RedZone presses. Fix these in diagnostics if tuning fails.",
+  "notes": "Cox runs the same Comcast TV-APP as Xfinity (PrismCast drives both with one code path), but its guide is watchtv.cox.com/listings. UNVERIFIED: the live-player path (\"/live/\") and whether guide clicks change the URL at all (PrismCast says Cox has no cacheable watch URL). Some entertainment channels open on a \"Watch Now\" play button, which TappedIn presses. Fix these in diagnostics if tuning fails.",
   "shell": {
     "partition": "persist:cox-contour",
     "userAgent": "chrome",
@@ -27,8 +27,8 @@
     "startUrl": null,
     "checkUrl": "https://watchtv.cox.com/listings",
     "signedOutPattern": "/\\b(Sign In|Log In)\\b/",
-    "instructions": "Sign in to Cox Contour in the window that opened. RedZone continues once the Contour guide appears",
-    "windowTitle": "RedZone: sign in to Cox Contour"
+    "instructions": "Sign in to Cox Contour in the window that opened. TappedIn continues once the Contour guide appears",
+    "windowTitle": "TappedIn: sign in to Cox Contour"
   },
   "errors": {
     "probePatterns": [

@@ -1,5 +1,5 @@
-// RedZone Director.
-//   npm start                                   live: one RedZone window, ESPN + Xfinity video in a 2x2 grid
+// TappedIn.
+//   npm start                                   live: one TappedIn window, ESPN + Xfinity video in a 2x2 grid
 //   npm run start:chrome                        the original four Chrome tile windows + control panel
 //   npm start -- --dry-run                      live ESPN data, data tiles instead of video (uses no streams)
 //   npm start -- --replay 20261017 --from 19:30 --speed 10     a recorded night, sped up (data tiles)
@@ -44,6 +44,6 @@ process.on('SIGINT', () => {
 try {
   await app.start();
 } catch (err) {
-  console.error(`RedZone failed to start: ${err instanceof Error ? err.message : err}`);
+  console.error(`TappedIn failed to start: ${err instanceof Error ? err.message : err}`);
   process.exit(1);
 }

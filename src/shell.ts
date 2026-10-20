@@ -56,7 +56,7 @@ export interface Shell {
   logout(): Promise<void>;
   /** Load the service's check page in a hidden window and report what sign-in detection sees. */
   signinCheck(): Promise<{ url: string; isApp: boolean; signedOut: boolean }>;
-  /** Show a file in Explorer (only RedZone exports and .state files). */
+  /** Show a file in Explorer (only TappedIn exports and .state files). */
   reveal(file: string): Promise<void>;
   /** Folders Electron knows (Documents may be redirected to OneDrive). */
   paths(): Promise<{ documents: string }>;
@@ -70,10 +70,10 @@ export function markerTitle(kind: 'SCREEN' | 'SPARE', n: number, generation: num
   return `RZ-${kind}-${n}${generation ? `-g${generation}` : ''}`;
 }
 
-/** Explorer may only be pointed at RedZone's exports folder (Documents\RedZone) or .state. */
+/** Explorer may only be pointed at TappedIn's exports folder (Documents\TappedIn) or .state. */
 export function revealAllowed(file: string, documents: string, stateDir: string): boolean {
   const target = path.win32.resolve(file).toLowerCase();
-  return [path.win32.join(documents, 'RedZone'), stateDir].some((dir) => {
+  return [path.win32.join(documents, 'TappedIn'), stateDir].some((dir) => {
     const d = path.win32.resolve(dir).toLowerCase();
     return target.startsWith(d + '\\');
   });
@@ -99,7 +99,7 @@ export class ReplyRouter {
     return new Promise<T>((resolve, reject) => {
       const timer = setTimeout(() => {
         this.pending.delete(id);
-        reject(new Error(`no reply from the RedZone window to "${type}" within ${Math.round(timeoutMs / 1000)}s`));
+        reject(new Error(`no reply from the TappedIn window to "${type}" within ${Math.round(timeoutMs / 1000)}s`));
       }, timeoutMs);
       timer.unref?.();
       this.pending.set(id, { resolve: resolve as (v: unknown) => void, reject, timer });
@@ -113,7 +113,7 @@ export class ReplyRouter {
     this.pending.delete(msg.id);
     clearTimeout(p.timer);
     if (msg.ok) p.resolve(msg.data);
-    else p.reject(new Error(msg.error ?? 'the RedZone window refused'));
+    else p.reject(new Error(msg.error ?? 'the TappedIn window refused'));
   }
 
   failAll(err: Error): void {
@@ -171,7 +171,7 @@ export function effectiveStandby(cfg: Config, provider: ProviderConfig): number 
 
 export async function startShell(cfg: Config, uiUrl: string, events: ShellEvents, opts: ShellOptions): Promise<Shell> {
   if (await debugPortOpen(cfg.electron.debugPort)) {
-    throw new Error(`Something already uses port ${cfg.electron.debugPort} (an open RedZone window?). Close it and start again.`);
+    throw new Error(`Something already uses port ${cfg.electron.debugPort} (an open TappedIn window?). Close it and start again.`);
   }
   const electronPath = require('electron') as string;
   // Always --name=value: Electron exits at once on some space-separated values ("--screens 4").
@@ -212,8 +212,8 @@ export async function startShell(cfg: Config, uiUrl: string, events: ShellEvents
     else if (msg?.type === 'log' && msg.text) events.log(`shell: ${msg.text}`);
   });
   child.on('exit', (code) => {
-    fail(new Error(`the RedZone window closed before it was ready (exit ${code})`));
-    router.failAll(new Error('the RedZone window closed'));
+    fail(new Error(`the TappedIn window closed before it was ready (exit ${code})`));
+    router.failAll(new Error('the TappedIn window closed'));
     events.exit(code);
   });
   let layout: ShellLayout = { screens: clampScreens(opts.screens), spares: clampSpares(opts.spares), generation: 0 };
@@ -236,7 +236,7 @@ export async function startShell(cfg: Config, uiUrl: string, events: ShellEvents
     paths,
     reveal: async (file) => {
       const { documents } = await paths();
-      if (!revealAllowed(file, documents, path.join(PROJECT_ROOT, '.state'))) throw new Error(`won't open ${file}: only RedZone exports can be shown`);
+      if (!revealAllowed(file, documents, path.join(PROJECT_ROOT, '.state'))) throw new Error(`won't open ${file}: only TappedIn exports can be shown`);
       await router.request('reveal', { file: path.win32.resolve(file) }, 5000);
     },
     quit: () => {
@@ -267,7 +267,7 @@ export async function attachShell(cfg: Config, layout: ShellLayout, timeoutMs = 
     if ([...screens, ...spares].every((v) => v.page)) return { browser, screens: screens as ShellView[], spares: spares as ShellView[] };
     await new Promise((r) => setTimeout(r, 300));
   }
-  throw new Error('could not find the RedZone window\'s video views');
+  throw new Error('could not find the TappedIn window\'s video views');
 }
 
 async function debugPortOpen(port: number): Promise<boolean> {

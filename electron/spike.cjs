@@ -15,8 +15,8 @@ const value = (name, d) => {
 const VIEWS = Math.max(1, Math.min(6, Number(value('views', '1'))));
 const PARTITION = 'persist:xfinity';
 
-app.setName('RedZone');
-app.setPath('userData', path.join(process.env.LOCALAPPDATA || app.getPath('appData'), 'RedZone', 'electron'));
+app.setName('TappedIn');
+app.setPath('userData', path.join(process.env.LOCALAPPDATA || app.getPath('appData'), 'TappedIn', 'electron'));
 app.commandLine.appendSwitch('remote-debugging-port', value('port', '9335'));
 app.commandLine.appendSwitch('remote-allow-origins', 'http://127.0.0.1');
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
@@ -60,7 +60,7 @@ const CLICK_WATCH_NOW = `(() => {
 // typed: if the portal itself wants a sign-in, the window stays open for you.
 async function handoff() {
   handingOff = true;
-  const w = new BrowserWindow({ width: 1100, height: 760, title: 'RedZone sign-in', webPreferences: { partition: PARTITION } });
+  const w = new BrowserWindow({ width: 1100, height: 760, title: 'TappedIn sign-in', webPreferences: { partition: PARTITION } });
   const stream = new Promise((resolve) => {
     const watch = (wc) => wc.on('did-finish-load', () => {
       if (/xfinity\.com\/stream(\/|$|\?)/.test(wc.getURL())) resolve(wc);
@@ -74,13 +74,13 @@ async function handoff() {
     clicked = await w.webContents.executeJavaScript(CLICK_WATCH_NOW).catch(() => false);
     if (!clicked) await sleep(500);
   }
-  console.log(clicked ? '[spike] clicked Watch Now on Xfinity On Campus' : '[spike] no Watch Now button: sign in to Xfinity On Campus in the "RedZone sign-in" window and click Watch Now');
+  console.log(clicked ? '[spike] clicked Watch Now on Xfinity On Campus' : '[spike] no Watch Now button: sign in to Xfinity On Campus in the "TappedIn sign-in" window and click Watch Now');
   const wc = await Promise.race([stream, sleep(clicked ? 60_000 : 300_000).then(() => null)]);
   if (!wc) throw new Error('Xfinity Stream never opened after Watch Now');
   await sleep(6000); // let Xfinity Stream finish setting its session
   const signedIn = await wc.executeJavaScript(`!/\\bSign In\\b/.test(document.body.innerText.slice(0, 4000))`).catch(() => null);
   console.log(`[spike] Xfinity Stream opened: ${wc.getURL()} signed in: ${signedIn}`);
-  for (const bw of BrowserWindow.getAllWindows()) if (bw.title !== 'RedZone spike') bw.destroy();
+  for (const bw of BrowserWindow.getAllWindows()) if (bw.title !== 'TappedIn spike') bw.destroy();
   if (!w.isDestroyed()) w.destroy();
 }
 
@@ -100,21 +100,21 @@ app.whenReady().then(async () => {
   if (flag('ua-chrome')) {
     // Xfinity sends Electron's identifier to an "Update your browser" page; present the matching Chrome one.
     // Set for the session AND as the app-wide fallback so the Watch Now popup gets it too.
-    const ua = ses.getUserAgent().replace(/ Electron\/\S+/, '').replace(/ RedZone\/\S+/, '');
+    const ua = ses.getUserAgent().replace(/ Electron\/\S+/, '').replace(/ TappedIn\/\S+/, '');
     app.userAgentFallback = ua;
     ses.setUserAgent(ua);
     console.log('[spike] user agent:', ua);
   } else console.log('[spike] user agent:', ses.getUserAgent());
 
   if (flag('login')) {
-    const lw = new BrowserWindow({ width: 1536, height: 900, title: 'RedZone sign-in', webPreferences: { partition: PARTITION } });
+    const lw = new BrowserWindow({ width: 1536, height: 900, title: 'TappedIn sign-in', webPreferences: { partition: PARTITION } });
     await lw.loadURL(value('url', 'https://www.xfinityoncampus.com/login'));
-    console.log('[spike] sign in to Xfinity On Campus if asked, click Watch Now, wait until Xfinity Stream shows your signed-in home page (not "Sign In"), then close every RedZone window.');
+    console.log('[spike] sign in to Xfinity On Campus if asked, click Watch Now, wait until Xfinity Stream shows your signed-in home page (not "Sign In"), then close every TappedIn window.');
     return;
   }
   if (!flag('no-handoff')) await handoff();
 
-  const win = new BrowserWindow({ width: 1536, height: 900, backgroundColor: '#05070a', title: 'RedZone spike', webPreferences: { partition: PARTITION } });
+  const win = new BrowserWindow({ width: 1536, height: 900, backgroundColor: '#05070a', title: 'TappedIn spike', webPreferences: { partition: PARTITION } });
   handingOff = false;
   win.maximize();
 

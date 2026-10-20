@@ -186,7 +186,7 @@ export class SetupRunner {
     const measured = this.v.streams?.measured ?? 0;
     const n = Math.max(1, Math.min(Math.round(screens) || 1, Math.max(1, measured), 4));
     this.deps.saveSetup({ provider: this.v.provider?.id ?? null, completed: true, screens: n, measuredStreams: measured });
-    this.set({ step: 'done', busy: 'Starting RedZone…' });
+    this.set({ step: 'done', busy: 'Starting TappedIn…' });
     await this.deps.finished(n);
     this.set({ busy: null });
   }
@@ -225,8 +225,8 @@ export class SetupRunner {
 export function streamsMessage(measured: number, documented: number | null, service: string, stopReason: string): string {
   if (measured === 0) return `No video played: ${stopReason}. Campus services usually need the campus network; if you're on it, open Diagnostics.`;
   const doc = documented ? ` (${service} documents ${documented})` : '';
-  if (measured >= 4) return `All 4 streams played at once${doc}. RedZone will use 4 screens.`;
-  return `Your plan played ${plural(measured, 'stream')} at once${doc}. RedZone will use ${plural(measured, 'screen')}${stopReason ? `; the next one stopped because ${stopReason}` : ''}.`;
+  if (measured >= 4) return `All 4 streams played at once${doc}. TappedIn will use 4 screens.`;
+  return `Your plan played ${plural(measured, 'stream')} at once${doc}. TappedIn will use ${plural(measured, 'screen')}${stopReason ? `; the next one stopped because ${stopReason}` : ''}.`;
 }
 
 function message(err: unknown): string {

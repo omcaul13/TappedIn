@@ -3,7 +3,7 @@
 //   npm run director                                 # auto-pick 4 home games
 //   npm run director -- --homes 401856700,401856701,401856702,401856703
 //   npm run director -- --audio auto                 # also show auto-audio moves
-// Edit config/redzone.config.json5 while it runs: thresholds apply on the next tick.
+// Edit config/tappedin.config.json5 while it runs: thresholds apply on the next tick.
 import { loadConfig, PROJECT_ROOT, watchConfig } from '../src/config';
 import { parseFlags } from '../src/cli';
 import { espnDateKey } from '../src/espn/client';

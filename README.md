@@ -1,18 +1,18 @@
-# RedZone Director
+# TappedIn
 
-A "RedZone" for college football, the NFL, college and pro basketball, the NHL, MLB, soccer and tennis, on the TV service you already have. One app window shows up to four channels in a grid, each screen on its own sport. A director watches ESPN's live game data and changes each screen's channel:
+A multi-game "red zone" channel for college football, the NFL, college and pro basketball, the NHL, MLB, soccer and tennis, on the TV service you already have. One app window shows up to four channels in a grid, each screen on its own sport. A director watches ESPN's live game data and changes each screen's channel:
 
 - **Long commercial break on a screen's game:** the screen fills in with the best live game: the same sport first (red zone, power play, clutch time…), then a sport another screen is watching, then any sport.
 - **Play resumes:** the screen goes back to its game.
 - **Halftime (or a hockey intermission):** the screen plays a highlights reel, same sport first.
 - **Game ends:** a game picker appears in that screen.
 
-RedZone plays your service's own web player in castLabs' Widevine-licensed Electron and changes channels the way you would: by its channel addresses or by clicking its guide.
+TappedIn plays your service's own web player in castLabs' Widevine-licensed Electron and changes channels the way you would: by its channel addresses or by clicking its guide.
 - It never extracts or redistributes streams and never touches DRM.
-- You sign in on the service's real page. RedZone never sees, stores or sends your password.
+- You sign in on the service's real page. TappedIn never sees, stores or sends your password.
 - Everything runs on your computer. Nothing is sent anywhere except to your TV service and ESPN's public scores.
 
-RedZone isn't affiliated with or endorsed by any TV service, school, league or network, and each service's terms of use apply to your account.
+TappedIn isn't affiliated with or endorsed by any TV service, school, league or network, and each service's terms of use apply to your account.
 
 | Phase | What | Status |
 |---|---|---|
@@ -88,15 +88,15 @@ The usual rules still hold: no game on two screens unless it's the only option, 
 ## Install (Windows)
 
 1. Download this project (green **Code** button → **Download ZIP**, then unzip it, or `git clone` it).
-2. Double-click **`Setup RedZone.cmd`**. It:
+2. Double-click **`Setup TappedIn.cmd`**. It:
    - checks for Node.js and Python, and offers to install them (only if you type **Y**);
-   - installs RedZone's parts;
-   - walks you through castLabs' free EVS sign-up (castLabs' own prompts: RedZone never sees what you type);
+   - installs TappedIn's parts;
+   - walks you through castLabs' free EVS sign-up (castLabs' own prompts: TappedIn never sees what you type);
    - signs the video player, then checks everything;
-   - adds a **RedZone** shortcut to the Start menu and desktop, and opens the app.
-3. The first start opens **setup**: pick your service, sign in, and RedZone checks your channels and how many streams your plan plays at once (about two minutes).
+   - adds a **TappedIn** shortcut to the Start menu and desktop, and opens the app.
+3. The first start opens **setup**: pick your service, sign in, and TappedIn checks your channels and how many streams your plan plays at once (about two minutes).
 
-Run **`Update RedZone.cmd`** to update; it re-signs the player only when it changed. `npm run doctor` checks an install and says how to fix anything wrong.
+Run **`Update TappedIn.cmd`** to update; it re-signs the player only when it changed. `npm run doctor` checks an install and says how to fix anything wrong.
 
 <details>
 <summary>Doing it by hand (developers)</summary>
@@ -115,28 +115,28 @@ npm test
 1. `pip install castlabs-evs`, then create a free account: `python -m castlabs_evs.account signup` (you type your details; it emails a code).
 2. Sign: `npm run sign-electron`. It uploads the Electron binary to castLabs and writes `electron.exe.sig`; the signature lasts about 3.7 years.
 
-**Norton or another antivirus "web shield":** if Python reports `CERTIFICATE_VERIFY_FAILED`, the antivirus is re-signing HTTPS. The setup file handles this by having Python trust Windows' certificate store (the `truststore` package). By hand, point Python at a certificate bundle that includes the antivirus root: set `$env:AWS_CA_BUNDLE` and `$env:REQUESTS_CA_BUNDLE` to `%LOCALAPPDATA%\RedZone\ca-bundle.pem`, which is Python's `certifi` bundle plus the antivirus root exported from Windows' certificate store.
+**Norton or another antivirus "web shield":** if Python reports `CERTIFICATE_VERIFY_FAILED`, the antivirus is re-signing HTTPS. The setup file handles this by having Python trust Windows' certificate store (the `truststore` package). By hand, point Python at a certificate bundle that includes the antivirus root: set `$env:AWS_CA_BUNDLE` and `$env:REQUESTS_CA_BUNDLE` to `%LOCALAPPDATA%\TappedIn\ca-bundle.pem`, which is Python's `certifi` bundle plus the antivirus root exported from Windows' certificate store.
 
 </details>
 
 ## First-run setup
 
-`npm start` (or the RedZone shortcut) opens setup the first time, and again whenever you switch services:
+`npm start` (or the TappedIn shortcut) opens setup the first time, and again whenever you switch services:
 
 1. **Welcome**, then **pick your service.**
    - Campus TV comes with your housing.
    - The search box also finds your school ("Northeastern" → Xfinity On Campus).
-2. **Sign in** on the service's own page, in a window RedZone opens.
+2. **Sign in** on the service's own page, in a window TappedIn opens.
    - School sign-in (SSO, Duo) works there as usual.
-   - Accepting a service's terms (such as Xfinity's Terms of Activation) is your call; RedZone never clicks them.
+   - Accepting a service's terms (such as Xfinity's Terms of Activation) is your call; TappedIn never clicks them.
    - Only the browser's normal session cookies are kept, on this computer, separately for each service.
-3. **Channels.** RedZone reads the service's guide and shows which college-football networks you get. Games on networks you don't get are greyed out and never picked.
+3. **Channels.** TappedIn reads the service's guide and shows which college-football networks you get. Games on networks you don't get are greyed out and never picked.
 4. **Playback.** One channel plays on screen 1.
 5. **Streams.**
-   - RedZone adds screens one at a time until one won't play.
-   - Then it sizes the grid (1, 2, 3 or 4 screens) and explains any limit, e.g. "Your plan played 2 streams at once (Xfinity documents 1). RedZone will use 2 screens."
+   - TappedIn adds screens one at a time until one won't play.
+   - Then it sizes the grid (1, 2, 3 or 4 screens) and explains any limit, e.g. "Your plan played 2 streams at once (Xfinity documents 1). TappedIn will use 2 screens."
 
-Xfinity On Campus signs itself in at every later start. Its On Campus sign-in persists, and RedZone presses the **Watch Now** button on your On Campus page in a hidden window, exactly what you'd click. Xfinity rejects Electron's browser identifier ("update your browser"), so the app presents the matching Chrome identifier.
+Xfinity On Campus signs itself in at every later start. Its On Campus sign-in persists, and TappedIn presses the **Watch Now** button on your On Campus page in a hidden window, exactly what you'd click. Xfinity rejects Electron's browser identifier ("update your browser"), so the app presents the matching Chrome identifier.
 
 ## Settings → TV service
 
@@ -159,7 +159,7 @@ For a service that doesn't work right (most likely an experimental one), from se
 
 **Fixing a step.** When a step fails, the settings it depends on (page addresses, selectors, patterns) appear right there. Change them and press **Save & retry**. Fixes are checked before saving and kept in `.state/providers/<id>.json`, on top of the built-in `config/providers/<id>.json`.
 
-**Sharing the fix.** **Export config** writes your fixes and the results to `Documents\RedZone`. The file has no passwords, cookies or page text, and addresses are cut to the site and page. Send it in so everyone gets the fix ([CONTRIBUTING.md](CONTRIBUTING.md)).
+**Sharing the fix.** **Export config** writes your fixes and the results to `Documents\TappedIn`. The file has no passwords, cookies or page text, and addresses are cut to the site and page. Send it in so everyone gets the fix ([CONTRIBUTING.md](CONTRIBUTING.md)).
 
 ## Running it
 
@@ -167,7 +167,7 @@ For a service that doesn't work right (most likely an experimental one), from se
 npm start
 ```
 
-One RedZone window opens maximized: a slim top bar and your screens (four, or what setup found your plan plays) edge to edge. **F11** toggles full screen. It picks four watchable home games to start; change them from each screen's game list. Close the window (or Ctrl+C in the terminal) to stop.
+One TappedIn window opens maximized: a slim top bar and your screens (four, or what setup found your plan plays) edge to edge. **F11** toggles full screen. It picks four watchable home games to start; change them from each screen's game list. Close the window (or Ctrl+C in the terminal) to stop.
 
 | Mode | Command | What you see |
 |---|---|---|
@@ -309,7 +309,7 @@ The two standby views mean up to 6 streams at once. 6 played fine on 10/17. If X
 
 ## The config file
 
-Everything you might tune lives in **`config/redzone.config.json5`**: the lineup, switching sensitivity and presets, the sports to follow and per-sport tweaks (`sports`), polling rates, dwell time, standby views and audio. Every value is commented. Anything you leave out falls back to the default in `src/config.ts`. Most sections hot-reload.
+Everything you might tune lives in **`config/tappedin.config.json5`**: the lineup, switching sensitivity and presets, the sports to follow and per-sport tweaks (`sports`), polling rates, dwell time, standby views and audio. Every value is commented. Anything you leave out falls back to the default in `src/config.ts`. Most sections hot-reload.
 
 ### Channels
 
@@ -361,7 +361,7 @@ The old control panel still works at <http://localhost:7480/panel>.
 ## Project layout
 
 ```text
-config/redzone.config.json5   the one editable file
+config/tappedin.config.json5   the one editable file
 config/providers/<id>.json    one per TV service: URLs, selectors, timings, error text, sign-in rules
 config/schools.json           school → campus TV service, for setup's search
 config/break-models/<sport>.json  stoppage-length model per sport (npm run build-break-model)

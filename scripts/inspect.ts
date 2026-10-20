@@ -1,4 +1,4 @@
-// Debug helper: describe every page open in RedZone Chrome (URL, frames, links, videos, buttons).
+// Debug helper: describe every page open in TappedIn Chrome (URL, frames, links, videos, buttons).
 // Read-only; never clicks or types.
 //   npm run inspect                    # all pages
 //   npm run inspect -- --match guide   # only links/buttons whose text or href matches
@@ -11,7 +11,7 @@ const { flags } = parseFlags(process.argv.slice(2));
 const match = typeof flags.match === 'string' ? new RegExp(flags.match, 'i') : null;
 const limit = Number(flags.limit ?? 80);
 if (!(await debugEndpoint(cfg))) {
-  console.error('RedZone Chrome is not running.');
+  console.error('TappedIn Chrome is not running.');
   process.exit(1);
 }
 const { context } = await connect(cfg);

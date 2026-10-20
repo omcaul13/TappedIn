@@ -1,4 +1,4 @@
-/* RedZone app window UI: drawn in a transparent layer over the four Xfinity views. Dark broadcast look. */
+/* TappedIn app window UI: drawn in a transparent layer over the four Xfinity views. Dark broadcast look. */
 :root {
   --top: 36px; /* keep in sync with TOP_BAR in electron/main.cjs */
   --gap: 2px;

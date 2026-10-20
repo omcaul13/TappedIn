@@ -1,4 +1,4 @@
-// Checks a RedZone install and names a one-line fix for each problem. Read-only: it never installs,
+// Checks a TappedIn install and names a one-line fix for each problem. Read-only: it never installs,
 // signs or changes anything.
 //   npm run doctor [-- --deps]
 // Exit code 0 when every check passes, 1 otherwise. The check* functions are pure (test/doctor.test.ts);
@@ -18,7 +18,7 @@ export interface CheckResult {
   fix: string;
 }
 
-const SETUP = 'double-click "Setup RedZone.cmd"';
+const SETUP = 'double-click "Setup TappedIn.cmd"';
 
 export function nodeMajor(version: string): number | null {
   const m = /^v?(\d+)\./.exec(version.trim());
@@ -29,7 +29,7 @@ export function checkNode(version: string): CheckResult {
   const major = nodeMajor(version);
   const v = version.replace(/^v/, '');
   if (major !== null && major >= 22) return { ok: true, title: `Node ${v}`, fix: '' };
-  return { ok: false, title: `Node ${v} is too old (RedZone needs 22 or later)`, fix: `Install Node 22 or later from https://nodejs.org/ (or ${SETUP}), then try again.` };
+  return { ok: false, title: `Node ${v} is too old (TappedIn needs 22 or later)`, fix: `Install Node 22 or later from https://nodejs.org/ (or ${SETUP}), then try again.` };
 }
 
 /** `installed` is node_modules/electron/package.json's version, or null when Electron isn't installed. */
@@ -104,7 +104,7 @@ export function checkPorts(ports: { port: number; free: boolean }[]): CheckResul
   return {
     ok: false,
     title: `Port ${busy.join(' and ')} is in use`,
-    fix: 'RedZone is probably already running: close it (or end electron.exe in Task Manager) and try again. Otherwise change electron.debugPort / server.port in config/redzone.config.json5.',
+    fix: 'TappedIn is probably already running: close it (or end electron.exe in Task Manager) and try again. Otherwise change electron.debugPort / server.port in config/tappedin.config.json5.',
   };
 }
 
@@ -223,7 +223,7 @@ export async function runDoctor(root = PROJECT_ROOT): Promise<CheckResult[]> {
   try {
     cfg = withOverrides(loadConfig(), loadOverrides());
   } catch (err) {
-    results.push({ ok: false, title: 'config/redzone.config.json5 or .state/settings.json is invalid', fix: firstLine(err) });
+    results.push({ ok: false, title: 'config/tappedin.config.json5 or .state/settings.json is invalid', fix: firstLine(err) });
     cfg = parseConfig({});
   }
   results.push(checkProviderConfig(cfg.provider, (warn) => void loadProviderConfig(cfg.provider, { onWarning: warn })));

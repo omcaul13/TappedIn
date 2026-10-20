@@ -36,7 +36,7 @@ export async function uiBundle(): Promise<string> {
 }
 
 export function uiPage(): string {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>RedZone</title>
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>TappedIn</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>@font-face{font-family:'Inter';font-style:normal;font-weight:100 900;font-display:swap;src:url(/ui/inter.woff2) format('woff2')}
 ${TICKER_WEIGHTS.map((w) => `@font-face{font-family:'Barlow Condensed';font-style:normal;font-weight:${w};font-display:swap;src:url(/ui/barlow-condensed-${w}.woff2) format('woff2')}`).join('')}

@@ -2,7 +2,7 @@ import type { Config } from '../config';
 import type { SportId } from '../engine/types';
 import type { DiscoveredChannel } from './types';
 
-// The networks that carry the sports RedZone follows, with the names ESPN uses for them (`espnNames`,
+// The networks that carry the sports TappedIn follows, with the names ESPN uses for them (`espnNames`,
 // which become the lineup's `aliases`), the ways a TV guide tends to label them (`guideNames`, already
 // normalized) and the station call signs they go by (`callSigns`). A lineup scan matches every guide
 // row against this table. Call signs win over names: Comcast's channel map labels ESPN, ESPN2 and
@@ -11,7 +11,7 @@ import type { DiscoveredChannel } from './types';
 // mapped by hand in Settings → TV service → Channels).
 
 export interface Network {
-  /** Lineup key (same keys as `channels` in config/redzone.config.json5). */
+  /** Lineup key (same keys as `channels` in config/tappedin.config.json5). */
   key: string;
   espnNames: string[];
   guideNames: string[];

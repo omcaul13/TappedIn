@@ -267,7 +267,7 @@ ScreenWindow also passes `errorRules`/`probePatterns` to the health tracker and 
 
 **Interfaces:**
 - Produces:
-  - `CFB_NETWORKS: { key: string; espnNames: string[]; guideNames: string[] }[]`. Keys equal today's `config/redzone.config.json5` channel keys: ESPN, ESPN2, ESPNU, ABC, CBS, NBC, FOX, FS1, FS2, SEC Network, ACC Network, Big Ten Network, CBS Sports Network, The CW, TNT, truTV, USA Network, plus ESPNews and FS2 aliases.
+  - `CFB_NETWORKS: { key: string; espnNames: string[]; guideNames: string[] }[]`. Keys equal today's `config/tappedin.config.json5` channel keys: ESPN, ESPN2, ESPNU, ABC, CBS, NBC, FOX, FS1, FS2, SEC Network, ACC Network, Big Ten Network, CBS Sports Network, The CW, TNT, truTV, USA Network, plus ESPNews and FS2 aliases.
   - `normalizeGuideName(s: string): string`: lowercase; strip " hd", " (hd)", "east", "network" noise and punctuation.
   - `matchLineup(found: DiscoveredChannel[], localAffiliates?: Record<string, string>): Config['channels']`. Every `CFB_NETWORKS` key appears in the result; unmatched keys get `number: null`.
     - Services without channel numbers get synthetic numbers 1..N in guide order.
@@ -317,7 +317,7 @@ ScreenWindow also passes `errorRules`/`probePatterns` to the health tracker and 
   - `effective standby resolution`: `({standbyViews:2}, cfg{}, provider{0}) → 2`; `({}, cfg{standbyViews:2}, …) → 2`; `({}, cfg{}, provider{0}) → 0`.
 - [ ] **Step 2:** Run `npx vitest run test/shell-provider.test.ts`. Expected: FAIL.
 - [ ] **Step 3:** Implement.
-  - Remove `standbyViews: 2` from `config/redzone.config.json5`, keeping a commented example.
+  - Remove `standbyViews: 2` from `config/tappedin.config.json5`, keeping a commented example.
   - Write `{"standbyViews": 2}` into the owner's `.state/settings.json` (merge with existing keys).
 - [ ] **Step 4:** Run `npm test` and typecheck. Expected: PASS. Run `npx tsx scripts/shell-check.ts` (dry window, no streams). Expected: the window opens, logs `ready`, and shows no errors.
 - [ ] **Step 5:** Commit: `refactor(electron): shell reads provider config; standby default from provider`.
@@ -462,14 +462,14 @@ ScreenWindow also passes `errorRules`/`probePatterns` to the health tracker and 
 
 This is not Stage 2 work. It's recorded here so Stage 2 doesn't block it. The aim: a student downloads the source and **double-clicks one file**.
 
-1. **`Setup RedZone.cmd`** runs `scripts/setup.ps1`, which:
+1. **`Setup TappedIn.cmd`** runs `scripts/setup.ps1`, which:
    - Checks Node ≥ 22 and Python 3.12. If one is missing, it explains why and offers `winget install` (the user confirms in the window).
    - Runs `npm ci`.
    - Creates a private venv (`.venv-evs`) and installs a pinned `castlabs-evs` plus `truststore`. A tiny wrapper calls `truststore.inject_into_ssl()` so antivirus "web shields" stop breaking EVS: the current `CERTIFICATE_VERIFY_FAILED` workaround becomes automatic. Needs verifying with Norton.
-   - Runs castLabs' own interactive EVS sign-up or re-auth. The user types into castLabs' CLI; RedZone never reads it.
+   - Runs castLabs' own interactive EVS sign-up or re-auth. The user types into castLabs' CLI; TappedIn never reads it.
    - Signs the Electron binary and checks that `electron.exe.sig` exists.
-   - Adds a Start-menu and desktop shortcut "RedZone" that starts the app without a console window, then launches it straight into onboarding.
+   - Adds a Start-menu and desktop shortcut "TappedIn" that starts the app without a console window, then launches it straight into onboarding.
 2. **`npm run doctor`:** checks the signature, the Widevine CDM, the provider config and the network, with a one-line fix for each problem.
 3. **`postinstall`:** after any Electron update, says "re-sign needed" and offers to run it.
-4. **`Update RedZone.cmd`:** `git pull` when git is available, then `npm ci`, then re-sign only if Electron changed.
+4. **`Update TappedIn.cmd`:** `git pull` when git is available, then `npm ci`, then re-sign only if Electron changed.
 5. **Open question for the owner:** macOS. Many students use Macs, castLabs supports macOS VMP, and the app is Windows-only today (paths, DirectComposition flag, EVS signing order). It needs its own decision.

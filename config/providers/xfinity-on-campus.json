@@ -23,7 +23,7 @@
     "portalUrl": "https://www.xfinityoncampus.com/",
     "autoClick": { "selector": "a.watch-now-btn", "text": "watch now" },
     "instructions": "Sign in to Xfinity On Campus in the window that opened, then click Watch Now",
-    "windowTitle": "RedZone: sign in to Xfinity On Campus",
+    "windowTitle": "TappedIn: sign in to Xfinity On Campus",
     "checkTimeoutMs": 20000,
     "portalTimeoutMs": 30000,
     "checkSettleMs": 4000,

@@ -1,4 +1,4 @@
-# Streaming services for RedZone Director: research report
+# Streaming services for TappedIn: research report
 
 Researched 2026-10-18. Sources are official help and terms pages where they could be fetched, university housing and IT pages, and the code of open-source projects that already drive these web players. Anything marked **(unverified)** could not be confirmed from a primary source. Short quotes are verbatim. This is not legal advice.
 
@@ -64,7 +64,7 @@ Researched 2026-10-18. Sources are official help and terms pages where they coul
 - Usually 3 registered devices, and the 4th replaces the oldest.
 
 **Channels**
-- Vary by school. Northeastern's lineup (from `config/redzone.config.json5`) has everything except BTN.
+- Vary by school. Northeastern's lineup (from `config/tappedin.config.json5`) has everything except BTN.
 - Tennessee: ESPN family, SECN, ACCN, CBSSN, FS1/FS2, TNT, truTV. No BTN, and locals are campus-only.
 - Towson: BTN in the base package. ESPNU, SECN and ACCN are paid add-ons.
 - Off campus: Comcast says "over 90 live channels"; locals are usually campus-only.
@@ -194,7 +194,7 @@ Researched 2026-10-18. Sources are official help and terms pages where they coul
 
 **Login**
 - Google account. **Google blocks sign-in from embedded frameworks and detects automated Chrome** (Google Security Blog, April 2019; Channels DVR reports).
-- RedZone attaches to its views over the debugging port. Whether Google flags castLabs Electron is unverified, so it must be tested before anything else.
+- TappedIn attaches to its views over the debugging port. Whether Google flags castLabs Electron is unverified, so it must be tested before anything else.
 
 **Channels**
 - Base plan: all locals including CW, ESPN family, SECN, FS1/FS2, CBSSN, TNT, truTV. ACCN and BTN are marked "some regions".
@@ -237,7 +237,7 @@ Researched 2026-10-18. Sources are official help and terms pages where they coul
 
 **Changing channels**
 - **No per-channel URL.** The guide is a virtualized single-page app.
-- PrismCast rewrites Hulu's playback requests. That is too invasive for RedZone. Guide clicks are the acceptable path.
+- PrismCast rewrites Hulu's playback requests. That is too invasive for TappedIn. Guide clicks are the acceptable path.
 
 **Terms**
 - Ban "using a robot, spider, script or other automated means", also modifying, framing or embedding the service.
@@ -303,7 +303,7 @@ Researched 2026-10-18. Sources are official help and terms pages where they coul
 - No current streaming count. It was under 1M in 2023.
 
 **Web player and DRM**
-- stream.directv.com, Widevine. **Chrome or Edge 143+ recommended.** The ECS Chromium version and the user agent RedZone presents both matter here.
+- stream.directv.com, Widevine. **Chrome or Edge 143+ recommended.** The ECS Chromium version and the user agent TappedIn presents both matter here.
 
 **Login**
 - DIRECTV account.
@@ -432,7 +432,7 @@ The order weighs reach × college-football lineup × usable stream count against
 2. **Xfinity Stream (consumer)**: almost free. It shares the tuner, health checks and CSS with XOC. Only sign-in and lineup detection differ. It's the largest audience that needs no new tuning code.
 3. **Spectrum (SpectrumU + Spectrum TV)**: one adapter with two sign-in entry points. It has a clean URL per channel, a big consumer base, a solid campus footprint, and more than one stream on campus.
 4. **Cox Contour (on Campus + consumer)**: probably the Comcast TV-APP again, so the shared Xfinity code may be reused through a common "Comcast TV-APP" base. It is limited by the documented single stream on campus.
-5. **YouTube TV**: the biggest consumer service with the best lineup and stable URLs. **Start with a sign-in spike:** can a Google account sign in inside a RedZone view at all? If Google blocks it, the adapter is blocked. Don't work around that block (§6).
+5. **YouTube TV**: the biggest consumer service with the best lineup and stable URLs. **Start with a sign-in spike:** can a Google account sign in inside a TappedIn view at all? If Google blocks it, the adapter is blocked. Don't work around that block (§6).
 6. **Sling TV**: GUID URLs are workable. Orange's single stream limits it.
 
 Later, only if a tester turns up: Hulu + Live TV, Fubo, DIRECTV, Apogee Stream2 (a generic "guide-click" adapter configured through diagnostics). Skip Philo and DIRECTV campus.
@@ -449,7 +449,7 @@ Personal use keeps the risk mostly with you: your account, your terms of service
 
 - **Every terms document read bans automated access, as noted per service in §2–§3.** Most also bar modifying, framing or embedding the service and allow only personal, non-commercial use.
 - Xfinity adds: "You may not incorporate the Content into any hardware or software application." Xfinity's visitor agreement says "We do not permit framing or inline linking to our Site".
-- **There is a trend toward explicit AI-agent clauses.** Philo's 10/2026 terms add a section requiring agents to identify themselves. A tracker reports a July 2026 Comcast clause (unverified). RedZone isn't an AI agent, but the direction is clear: services are writing automation bans more explicitly.
+- **There is a trend toward explicit AI-agent clauses.** Philo's 10/2026 terms add a section requiring agents to identify themselves. A tracker reports a July 2026 Comcast clause (unverified). TappedIn isn't an AI agent, but the direction is clear: services are writing automation bans more explicitly.
 - **Who carries the risk:**
   - A terms violation is mainly a **contract matter between the user and the service**. Usually that means account suspension.
   - A distributor can still face a cease-and-desist letter and **tortious interference with contract**. In *MDY v. Blizzard* (9th Cir. 2010), that claim against a bot maker was sent to trial.
@@ -471,7 +471,7 @@ Personal use keeps the risk mostly with you: your account, your terms of service
   1. **You ship EVS-signed binaries.** You become the visible party to castLabs and Widevine. No separate EVS end-user license text was found (unverified).
   2. **Users build and EVS-sign their own copy.** This keeps you out of the signer seat. It's more friction: Python, an EVS account, and re-signing after updates. It matches what you do now.
 - **Don't bundle the CDM.** castLabs relays Widevine's warning about "legal issues with providing the Widevine CDM". ECS downloads it from Google at runtime, and that has to stay.
-- **User-agent spoofing:** RedZone presents a Chrome user agent because Xfinity rejects Electron's. castLabs issue #199 reports custom user agents breaking DRM for some services. Make the user agent an adapter setting, and avoid it where a service accepts the real one.
+- **User-agent spoofing:** TappedIn presents a Chrome user agent because Xfinity rejects Electron's. castLabs issue #199 reports custom user agents breaking DRM for some services. Make the user agent an adapter setting, and avoid it where a service accepts the real one.
 - Successful open-source precedent: **tidal-hifi** ships an ECS app openly through GitHub, Flathub and others.
 
 ### 6.3 DMCA §1201, CFAA, trademarks
@@ -497,9 +497,9 @@ Personal use keeps the risk mostly with you: your account, your terms of service
 - Community reports of throttling and blocks:
   - "You don't have permission to access" errors.
   - User-agent-based blocks.
-  - **Date-range scoreboard queries began failing around 9/15/2026.** RedZone uses single-date queries (`?dates=YYYYMMDD`), which still work.
+  - **Date-range scoreboard queries began failing around 9/15/2026.** TappedIn uses single-date queries (`?dates=YYYYMMDD`), which still work.
 - **Polling at scale:**
-  - **Per-user polling from each user's own IP**, which is what RedZone does now, spreads load and keeps any block local to that user.
+  - **Per-user polling from each user's own IP**, which is what TappedIn does now, spreads load and keeps any block local to that user.
   - **A shared proxy** would make you the one party "systematically" pulling ESPN data. That's a single point of failure and an obvious target for blocks or letters. Don't build one.
 - At scale: back off with jitter on errors and 429/403, cache, poll fast only for on-screen games (already done), and keep the honest user agent.
 - **Alternatives:**
@@ -511,7 +511,7 @@ Personal use keeps the risk mostly with you: your account, your terms of service
 
 ## 7. Safer architecture
 
-What the sources support, most of which RedZone already does:
+What the sources support, most of which TappedIn already does:
 
 1. **Everything runs locally.**
    - No shared servers, no stream proxying or relaying, and no account data leaves the machine.
@@ -656,7 +656,7 @@ These come out of the research and change what gets built.
 - https://www.peacocktv.com/help/article/how-many-streams-can-i-view-concurrently
 - https://legal.paramount.com/us/en/pplus/termsofuse
 
-**Prior-art automation projects** (they capture video, which RedZone never does; useful only as tuning references)
+**Prior-art automation projects** (they capture video, which TappedIn never does; useful only as tuning references)
 - https://github.com/hjdhjd/prismcast (`src/browser/tuning/*.ts`)
 - https://github.com/fancybits/chrome-capture-for-channels
 - https://github.com/dravenst/CH4C

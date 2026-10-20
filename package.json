@@ -1,9 +1,9 @@
 {
-  "name": "redzone",
+  "name": "tappedin",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Personal RedZone-style 4-game director for Xfinity Stream in real Chrome windows",
+  "description": "TappedIn: a multi-game, multi-sport director for the TV service you already have",
   "engines": {
     "node": ">=22"
   },

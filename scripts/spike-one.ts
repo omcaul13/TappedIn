@@ -21,7 +21,7 @@ if (!channels.length) {
   process.exit(1);
 }
 if (!(await debugEndpoint(cfg))) {
-  console.error('RedZone Chrome is not running. Run `npm run login` first and sign in.');
+  console.error('TappedIn Chrome is not running. Run `npm run login` first and sign in.');
   process.exit(1);
 }
 

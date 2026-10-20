@@ -1,4 +1,4 @@
-// RedZone Director: the one editable config file.
+// TappedIn: the one editable config file.
 // JSON5: comments and trailing commas are fine. Anything you leave out uses the default in src/config.ts.
 // director / switching / breakDetector / audio / espn values hot-reload while the app is running: edit,
 // save, and the next tick uses them (the log prints "config reloaded"). Settings you change in the app's
@@ -7,7 +7,7 @@
   // The one-window app (npm start): castLabs Electron with Widevine.
   electron: {
     // Electron's own data, including your Xfinity On Campus sign-in.
-    userDataDir: "%LOCALAPPDATA%\\RedZone\\electron",
+    userDataDir: "%LOCALAPPDATA%\\TappedIn\\electron",
     // Local debugging port the app drives the Xfinity views through (localhost only).
     debugPort: 9335,
     // On this laptop (Intel Arc + NVIDIA) Windows' DirectComposition video path left some tiles black.
@@ -26,7 +26,7 @@
     executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
     // Dedicated profile (kept outside the project so moving the project doesn't log you out).
     // %VARS% are expanded; a relative path is relative to the project folder. You log in to Xfinity here once.
-    profileDir: "%LOCALAPPDATA%\\RedZone\\chrome-profile",
+    profileDir: "%LOCALAPPDATA%\\TappedIn\\chrome-profile",
     // Remote debugging port the app attaches to (localhost only).
     debugPort: 9333,
     // Where `npm run login` sends you first.

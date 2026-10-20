@@ -89,14 +89,14 @@ function matchEvent(ev: Json, c: Json, tour: string, ranks: Record<string, numbe
     shortName: `${name('away')} vs ${name('home')}`,
     status: c?.status,
     competitions: [{ ...c, competitors }],
-    redzoneTennis: { tour, tournament: str(ev?.name) ?? str(ev?.shortName) ?? 'Tournament', major: ev?.major === true, ranks },
+    tappedinTennis: { tour, tournament: str(ev?.name) ?? str(ev?.shortName) ?? 'Tournament', major: ev?.major === true, ranks },
   };
 }
 
-/** Tournaments → singles draws → today's matches. `redzoneRanks` (athlete id → world rank) and `redzoneDay` are added by LiveSource (src/espn/rankings.ts). */
+/** Tournaments → singles draws → today's matches. `tappedinRanks` (athlete id → world rank) and `tappedinDay` are added by LiveSource (src/espn/rankings.ts). */
 export function tennisEvents(body: Json, tour: string): Json[] {
-  const day = str(body?.day?.date) ?? str(body?.redzoneDay);
-  const ranks: Record<string, number> = body?.redzoneRanks ?? {};
+  const day = str(body?.day?.date) ?? str(body?.tappedinDay);
+  const ranks: Record<string, number> = body?.tappedinRanks ?? {};
   const out: Json[] = [];
   for (const ev of body?.events ?? []) {
     for (const g of ev?.groupings ?? []) {
@@ -110,7 +110,7 @@ export function tennisEvents(body: Json, tour: string): Json[] {
 /** The scoreboard with only what tennisEvents keeps (recordings stay small on Grand Slam days). */
 export function trimTennisScoreboard(body: Json): Json {
   if (!body || typeof body !== 'object' || !Array.isArray(body.events)) return body;
-  const day = str(body?.day?.date) ?? str(body?.redzoneDay);
+  const day = str(body?.day?.date) ?? str(body?.tappedinDay);
   const events = body.events
     .map((ev: Json) => ({ ...ev, groupings: (ev?.groupings ?? []).filter(isSingles).map((g: Json) => ({ ...g, competitions: (g?.competitions ?? []).filter((c: Json) => keepMatch(c, day)) })) }))
     .filter((ev: Json) => ev.groupings.some((g: Json) => g.competitions.length));
@@ -148,7 +148,7 @@ function serveOf(comp: Json): Pick<TennisInfo, 'server' | 'points'> {
 }
 
 export function tennisInfo(ev: Json, comp: Json): TennisInfo {
-  const meta = ev?.redzoneTennis ?? {};
+  const meta = ev?.tappedinTennis ?? {};
   const seed = (ha: string) => num(sideOf(comp, ha)?.curatedRank?.current);
   const rank = (ha: string) => num(meta.ranks?.[String(sideOf(comp, ha)?.id ?? '')]);
   return {

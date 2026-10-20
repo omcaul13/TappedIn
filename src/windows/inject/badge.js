@@ -11,7 +11,7 @@
     root.innerHTML = `<style>
       .chip{font:700 13px/1 system-ui,sans-serif;letter-spacing:.04em;color:#fff;background:rgba(200,30,30,.92);
             padding:6px 10px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.5)}
-    </style><div class="chip">REDZONE TEST BADGE</div>`;
+    </style><div class="chip">TAPPEDIN TEST BADGE</div>`;
     (document.body || document.documentElement).appendChild(host);
   }
   const r = host.getBoundingClientRect();

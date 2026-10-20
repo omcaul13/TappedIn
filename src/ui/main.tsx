@@ -11,7 +11,7 @@ import { Onboarding } from './onboarding';
 import { Settings } from './settings';
 import { act, post, type AppState, type GameDTO } from './util';
 
-// The RedZone app window's UI: top bar, four screen overlays, settings drawer. State arrives as
+// The TappedIn app window's UI: top bar, four screen overlays, settings drawer. State arrives as
 // server-sent events from the app (on every tick and right after every action).
 
 declare global {
@@ -105,7 +105,7 @@ function App() {
   }, [st, settings, menuFor]);
 
   const games = useMemo(() => new Map<string, GameDTO>((st?.games ?? []).map((g) => [g.id, g])), [st]);
-  if (!st) return <div class="app"><div class="banner">Connecting to RedZone…</div></div>;
+  if (!st) return <div class="app"><div class="banner">Connecting to TappedIn…</div></div>;
 
   const now = appNow();
   const liveCount = st.games.filter((g) => g.phase === 'LIVE').length;
@@ -184,7 +184,7 @@ function App() {
       </main>
 
       {settings && <Settings st={st} onClose={() => setSettings(false)} onError={setToast} />}
-      {!connected && <div class="banner bad">Lost contact with the RedZone app. Reconnecting…</div>}
+      {!connected && <div class="banner bad">Lost contact with the TappedIn app. Reconnecting…</div>}
       {connected && si?.state === 'needed' && <div class="banner">{si.detail.replace(/\.?$/, '.')}</div>}
       {toast && <div class="toast">{toast}</div>}
     </div>
