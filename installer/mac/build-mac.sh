@@ -73,6 +73,8 @@ CHECKSUMS="$STAGE/node_modules/electron/checksums.json"
 rm -rf "$STAGE"/{test,docs,.github,installer,website} "$STAGE"/*.cmd "$STAGE/node_modules/electron/dist"
 cp "$CHECKSUMS" "$BUILD/electron-checksums.json"
 rm -rf "$STAGE/node_modules/electron"
+# Links left pointing at nothing (node_modules/.bin/electron) fail codesign's strict check.
+find "$STAGE" -type l ! -exec test -e {} \; -print -delete
 cp "$HERE/entry.cjs" "$STAGE/electron/mac-entry.cjs"
 node -e '
   const fs = require("fs"); const f = process.argv[1]; const p = JSON.parse(fs.readFileSync(f, "utf8"));
