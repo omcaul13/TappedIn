@@ -2,7 +2,7 @@ import type { Page } from 'playwright-core';
 import { describe, expect, it, vi } from 'vitest';
 import { loadProviderConfig } from '../../src/providers/registry';
 import type { ChannelRef, ProviderConfig, TuneTools } from '../../src/providers/types';
-import { collectPath, createUrlAdapter, itemsFromJson, refFromText } from '../../src/providers/url/adapter';
+import { collectPath, createUrlAdapter, itemsFromJson, MARK_ROW, refFromText } from '../../src/providers/url/adapter';
 
 const base = loadProviderConfig('xfinity-on-campus');
 const cfg = (tuning: Record<string, unknown>, over: Partial<ProviderConfig> = {}): ProviderConfig => ({
@@ -101,5 +101,73 @@ describe('guide-reading options', () => {
 
   it('refFromText cuts a label out with a pattern (YouTube TV "watch ESPN")', () => {
     expect(refFromText('watch ESPN', '^watch (.+)$')).toBe('ESPN');
+  });
+});
+
+describe('tuning by guide clicks (Hulu, DIRECTV)', () => {
+  const clickTuning = {
+    click: { before: '#CHANNELS', target: { closest: '.row', selector: '.on-now' }, then: '.play' },
+    lineup: { mode: 'dom', guideUrl: 'https://watch.example.net/guide', row: '.ch', ref: { attr: 'data-testid', pattern: '^ch-(.+)$' } },
+  };
+
+  function fakeClickPage(found: boolean) {
+    const clicks: string[] = [];
+    const page = {
+      url: () => 'https://watch.example.net/watch/abc',
+      waitForSelector: async () => {},
+      evaluate: vi.fn(async () => found),
+      locator: (sel: string) => ({ first: () => ({ waitFor: async () => {}, click: async () => void clicks.push(sel), dispatchEvent: async () => void clicks.push(`dom:${sel}`) }) }),
+    } as unknown as Page;
+    return { page, clicks };
+  }
+
+  it('opens the guide, presses the tab, clicks the marked row, then play', async () => {
+    const a = createUrlAdapter(cfg(clickTuning));
+    const { page, clicks } = fakeClickPage(true);
+    const { tools, load } = fakeTools(page);
+    const out = await a.tune(page, ch('espn'), tools);
+    expect(load).toHaveBeenCalledWith(page, 'https://watch.example.net/guide', 30000);
+    expect(clicks).toEqual(['#CHANNELS', '[data-tappedin-tune]', '.play']);
+    expect(out.path).toBe('guide');
+    expect(a.onChannel(out.url, ch('espn'))).toBe(true);
+  });
+
+  it('"dom" clicks with element.click(); a channel missing from the guide fails', async () => {
+    const a = createUrlAdapter(cfg({ ...clickTuning, click: { then: '.play', how: 'dom' } }));
+    const ok = fakeClickPage(true);
+    await a.tune(ok.page, ch('espn'), fakeTools(ok.page).tools);
+    expect(ok.clicks).toEqual(['dom:[data-tappedin-tune]', 'dom:.play']);
+    const missing = fakeClickPage(false);
+    await expect(a.tune(missing.page, ch('espn'), fakeTools(missing.page).tools)).rejects.toThrow(/isn't in the guide/);
+  });
+
+  it('needs a watchUrl or click with a DOM lineup', () => {
+    expect(() => createUrlAdapter(cfg({ lineup: clickTuning.lineup }))).toThrow(/watchUrl/);
+    expect(() => createUrlAdapter(cfg({ click: {}, lineup: { mode: 'static', channels: [{ label: 'ESPN', ref: 'espn' }] } }))).toThrow(/watchUrl/);
+  });
+
+  it('MARK_ROW marks the click target of the row whose id matches', async () => {
+    const el = (attrs: Record<string, string>, kids: Record<string, unknown> = {}, up: Record<string, unknown> = {}) => {
+      const a = { ...attrs };
+      return { getAttribute: (k: string) => a[k] ?? null, setAttribute: (k: string, v: string) => void (a[k] = v), removeAttribute: (k: string) => void delete a[k], querySelector: (s: string) => kids[s] ?? null, closest: (s: string) => up[s] ?? null, scrollIntoView: () => {}, attrs: a };
+    };
+    const onNow = el({});
+    const rows = [el({ 'data-testid': 'ch-cnn' }), el({ 'data-testid': 'ch-espn' }, {}, { '.row': el({}, { '.on-now': onNow }) })];
+    const document = { querySelectorAll: (s: string) => (s === '.ch' ? rows : []), scrollingElement: { scrollTop: 0, clientHeight: 100, scrollHeight: 100 } };
+    const run = new Function('document', `return (${MARK_ROW})`)(document) as (a: unknown) => Promise<boolean>;
+    const l = { ...clickTuning.lineup, scrollContainer: null, maxScrolls: 0, settleMs: 0 };
+    expect(await run({ l, target: clickTuning.click.target, ref: 'espn' })).toBe(true);
+    expect(onNow.attrs['data-tappedin-tune']).toBe('1');
+    expect(await run({ l, target: clickTuning.click.target, ref: 'fox' })).toBe(false);
+  });
+});
+
+describe('a fixed lineup (ESPN)', () => {
+  it('discoverLineup returns the configured channels without loading anything', async () => {
+    const a = createUrlAdapter(cfg({ watchUrl: 'https://x/p?network={ref}', lineup: { mode: 'static', channels: [{ label: 'ESPN', ref: 'espn' }] } }));
+    const page = { url: () => 'about:blank' } as unknown as Page;
+    const { tools, load } = fakeTools(page);
+    expect(await a.discoverLineup(page, tools)).toEqual([{ label: 'ESPN', number: null, callSign: null, ref: 'espn' }]);
+    expect(load).not.toHaveBeenCalled();
   });
 });

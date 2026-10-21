@@ -32,6 +32,7 @@ When a step fails, the settings it depends on appear right under it. They're the
 | `tuning.lineup.row` | A CSS selector for one channel row in the guide | `li.channel-header-row` |
 | `tuning.lineup.ref.*` | Where the channel's id is inside that row: an element, an attribute, and a pattern whose first `( )` group is the id | `img.channel-logo`, `src`, `/guide/(\d+)\?` |
 | `tuning.watchUrl` | The address of a channel; `{ref}` is replaced by its id | `https://watch.spectrum.net/livetv?tmsid={ref}` |
+| `tuning.click.*` | Services without channel addresses (Hulu, DIRECTV): `before` is clicked once on the guide, `target` is what to click in the channel's row (`closest` ancestor, then `selector` inside it), `then` is the play tile clicked after it; `how` is `mouse` or `dom` | `#CHANNELS`, `.LiveGuideProgram--first`, `[data-testid="generic-tile-thumbnail"]` |
 | `tuning.refInUrl` | Finds the id in the player's address, to check where a tune landed | `[?&]tmsid=(\d+)` |
 | `shell.hideCss` | Extra CSS to hide anything still covering the video | `.player-controls { display: none !important }` |
 

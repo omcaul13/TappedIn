@@ -79,11 +79,16 @@ The usual rules still hold: no game on two screens unless it's the only option, 
 | YouTube TV | Experimental (sign-in not yet tested) | an address per channel | 3 |
 | Sling TV | Experimental | an address per channel | Orange 1, Blue 3, both 4 |
 | Apogee Stream2 (USC, George Mason, Rochester, JMU, Wake Forest and others) | Experimental (built from its web player's code; sign-in not yet tested) | an address per channel | — |
+| Hulu + Live TV | Experimental | guide clicks (no address per channel) | 2 (unlimited at home with Unlimited Screens) |
+| Fubo | Experimental | an address per channel | 10 at home, 3 away |
+| DIRECTV (streaming) | Experimental | guide clicks (no address per channel) | unlimited at home, 3 away; FOX networks 3 |
+| Paramount+ (live CBS, Premium) | Experimental | an address per channel (in practice CBS only) | 3 or 4 (sources disagree) |
+| ESPN web player (ESPN Unlimited or a TV provider) | Experimental | an address per network | 3 |
 
 - **Tested:** used with a real account.
 - **Experimental:** built from the service's documentation and from open-source projects that drive the same web players, but nobody has tested it with a real account yet. If it doesn't work for you, the app's **Diagnostics** can usually fix it, and you can send the fix back: see [CONTRIBUTING.md](CONTRIBUTING.md).
 - **Not supported yet:**
-  - Hulu + Live TV, Fubo, DIRECTV.
+  - Peacock: its games are one-off event streams, not channels, and its only live channel (local NBC, Premium Plus) has no known channel address.
   - Philo, which carries no sports networks.
 - The research behind this list is in [docs/research/streaming-services.md](docs/research/streaming-services.md).
 

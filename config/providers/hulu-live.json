@@ -1,0 +1,107 @@
+{
+  "id": "hulu-live",
+  "name": "Hulu + Live TV",
+  "shortName": "Hulu",
+  "family": "url",
+  "kind": "consumer",
+  "status": "experimental",
+  "badge": {
+    "initials": "HL",
+    "color": "#14532d"
+  },
+  "search": [
+    "Hulu",
+    "Hulu Live",
+    "Disney",
+    "Disney+ Hulu ESPN"
+  ],
+  "documentedMaxStreams": 2,
+  "defaults": {
+    "standbyViews": 0
+  },
+  "notes": "Hulu has no address per channel, so TappedIn changes channels the way you would: it opens the live guide (hulu.com/live), presses the Channels tab, scrolls to the channel's row, clicks what's on now and then the play tile. Channel ids are the guide's own row names (data-testid live-guide-channel-kyber-<name>). Hulu + Live TV plays 2 streams at once; the Unlimited Screens add-on allows unlimited at home and 3 away. Home-network rules apply. If a \"Who's watching?\" profile picker appears, pick your profile yourself. Some open-source projects report that loading hulu.com/live directly sometimes fails at Hulu's edge until you go through hulu.com/hub/home. UNVERIFIED: every selector (taken from an open-source project that drives the same guide). Untested.",
+  "shell": {
+    "partition": "persist:hulu-live",
+    "userAgent": "chrome",
+    "appUrl": "^https://www\\.hulu\\.com/(?!welcome|login)",
+    "playerUrl": "/watch/",
+    "hideCss": ""
+  },
+  "signin": {
+    "portalUrl": null,
+    "autoClick": null,
+    "startUrl": null,
+    "checkUrl": "https://www.hulu.com/live",
+    "signedOutPattern": "\\b(log in|start your free trial)\\b",
+    "signedInPattern": null,
+    "instructions": "Log in to Hulu in the window that opened (and pick your profile if asked). TappedIn continues once the live guide appears",
+    "windowTitle": "TappedIn: sign in to Hulu + Live TV"
+  },
+  "errors": {
+    "probePatterns": [
+      "maximum number of",
+      "too many (devices|streams)",
+      "stream(ing)? limit",
+      "already (watching|streaming)",
+      "not available in your (area|location)",
+      "only available (on|when connected to)",
+      "outside (of )?(your )?(home|campus)",
+      "sign in",
+      "log in",
+      "session (has )?expired",
+      "something went wrong",
+      "error code",
+      "unable to play",
+      "playback error",
+      "not authorized",
+      "not entitled",
+      "try again later",
+      "still (watching|there)"
+    ],
+    "loginUrl": "(login|signin|sign-in|oauth|sso|idp|saml|shibboleth|microsoftonline|okta|duosecurity|auth\\.)",
+    "limit": "(maximum number of|too many|limit|already (watching|streaming))",
+    "unavailable": "(not available|only available|outside|not authorized|not entitled)",
+    "loginText": "(sign in|log in|session)",
+    "idlePrompt": "still (watching|there)"
+  },
+  "timing": {
+    "loadGapMs": 3500,
+    "maxParallelTunes": 2,
+    "spareWarmDelayMs": 20000,
+    "hidePollMs": 500
+  },
+  "tuning": {
+    "watchUrl": null,
+    "refInUrl": null,
+    "pageTimeoutMs": 30000,
+    "idlePromptButton": null,
+    "click": {
+      "before": "#CHANNELS",
+      "target": {
+        "closest": "[data-testid=\"live-guide-row\"]",
+        "selector": ".LiveGuideProgram--first"
+      },
+      "then": "[data-testid=\"generic-tile-thumbnail\"]",
+      "how": "mouse"
+    },
+    "lineup": {
+      "mode": "dom",
+      "guideUrl": "https://www.hulu.com/live",
+      "row": "[data-testid^=\"live-guide-channel-kyber-\"]",
+      "label": {
+        "selector": "[data-testid=\"live-guide-channel-button\"] .sr-only",
+        "attr": null,
+        "pattern": "^(.+?) Details, row"
+      },
+      "number": null,
+      "ref": {
+        "selector": null,
+        "attr": "data-testid",
+        "pattern": "^live-guide-channel-kyber-(.+)$"
+      },
+      "scrollContainer": null,
+      "settleMs": 400,
+      "maxScrolls": 200
+    }
+  }
+}

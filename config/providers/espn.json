@@ -1,0 +1,110 @@
+{
+  "id": "espn",
+  "name": "ESPN (web player)",
+  "shortName": "ESPN",
+  "family": "url",
+  "kind": "consumer",
+  "status": "experimental",
+  "badge": {
+    "initials": "ES",
+    "color": "#991b1b"
+  },
+  "search": [
+    "ESPN Unlimited",
+    "ESPN app",
+    "WatchESPN",
+    "SEC Network",
+    "ACC Network"
+  ],
+  "documentedMaxStreams": 3,
+  "defaults": {
+    "standbyViews": 0
+  },
+  "notes": "ESPN's own player at espn.com/watch, for ESPN Unlimited or a TV provider you sign in with on ESPN. Each network has a fixed URL (espn.com/watch/player?network=<id>), so there is no guide to scan: the lineup is ESPN, ESPN2, ESPNU, SEC Network, ACC Network and ESPNews. No ABC, FOX, CBS or NBC. ESPN Unlimited plays 3 streams at once; with a TV provider, your provider's rules apply. If the player asks you to choose a TV provider, sign in yourself. UNVERIFIED: that a signed-out espn.com shows \"Log In\" and a signed-in one doesn't. Untested.",
+  "shell": {
+    "partition": "persist:espn",
+    "userAgent": "chrome",
+    "appUrl": "^https://www\\.espn\\.com/watch",
+    "playerUrl": "/watch/player",
+    "hideCss": ""
+  },
+  "signin": {
+    "portalUrl": null,
+    "autoClick": null,
+    "startUrl": null,
+    "checkUrl": "https://www.espn.com/watch/",
+    "signedOutPattern": "/\\bLog In\\b/",
+    "signedInPattern": null,
+    "instructions": "Log in to your ESPN account in the window that opened (and link your TV provider if you watch through one). TappedIn continues once espn.com/watch shows you signed in",
+    "windowTitle": "TappedIn: sign in to ESPN (web player)"
+  },
+  "errors": {
+    "probePatterns": [
+      "maximum number of",
+      "too many (devices|streams)",
+      "stream(ing)? limit",
+      "already (watching|streaming)",
+      "not available in your (area|location)",
+      "only available (on|when connected to)",
+      "outside (of )?(your )?(home|campus)",
+      "sign in",
+      "log in",
+      "session (has )?expired",
+      "something went wrong",
+      "error code",
+      "unable to play",
+      "playback error",
+      "not authorized",
+      "not entitled",
+      "try again later",
+      "still (watching|there)",
+      "choose (a |your )?(tv )?provider"
+    ],
+    "loginUrl": "(login|signin|sign-in|oauth|sso|idp|saml|shibboleth|microsoftonline|okta|duosecurity|auth\\.)",
+    "limit": "(maximum number of|too many|limit|already (watching|streaming))",
+    "unavailable": "(not available|only available|outside|not authorized|not entitled)",
+    "loginText": "(sign in|log in|session|choose (a |your )?(tv )?provider)",
+    "idlePrompt": "still (watching|there)"
+  },
+  "timing": {
+    "loadGapMs": 3500,
+    "maxParallelTunes": 2,
+    "spareWarmDelayMs": 20000,
+    "hidePollMs": 500
+  },
+  "tuning": {
+    "watchUrl": "https://www.espn.com/watch/player?network={ref}",
+    "refInUrl": "[?&]network=([a-z0-9]+)",
+    "pageTimeoutMs": 30000,
+    "idlePromptButton": null,
+    "lineup": {
+      "mode": "static",
+      "channels": [
+        {
+          "label": "ESPN",
+          "ref": "espn"
+        },
+        {
+          "label": "ESPN2",
+          "ref": "espn2"
+        },
+        {
+          "label": "ESPNU",
+          "ref": "espnu"
+        },
+        {
+          "label": "SEC Network",
+          "ref": "sec"
+        },
+        {
+          "label": "ACC Network",
+          "ref": "acc"
+        },
+        {
+          "label": "ESPNews",
+          "ref": "espnews"
+        }
+      ]
+    }
+  }
+}

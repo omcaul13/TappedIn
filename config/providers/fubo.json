@@ -1,0 +1,98 @@
+{
+  "id": "fubo",
+  "name": "Fubo",
+  "shortName": "Fubo",
+  "family": "url",
+  "kind": "consumer",
+  "status": "experimental",
+  "badge": {
+    "initials": "FB",
+    "color": "#7c2d12"
+  },
+  "search": [
+    "fuboTV",
+    "Fubo TV",
+    "Pro",
+    "Elite"
+  ],
+  "documentedMaxStreams": 10,
+  "defaults": {
+    "standbyViews": 0
+  },
+  "notes": "Each channel has a URL (fubo.tv/p/watch?channelId=<id>&type=live) whose id is the channel's Gracenote station id (ESPN 10179, the same ids Spectrum uses), read from the links in the guide. 10 streams at home and 3 away on current plans. No TNT, TBS or truTV. UNVERIFIED: the guide address (fubo.tv/p/guide), that its rows are links carrying channelId, and that the channel URL still opens the live channel (one user reports no live deep links). If the scan finds nothing, fix tuning.lineup in Diagnostics. Untested.",
+  "shell": {
+    "partition": "persist:fubo",
+    "userAgent": "chrome",
+    "appUrl": "^https://www\\.fubo\\.tv/(?!welcome|signin)",
+    "playerUrl": "/watch",
+    "hideCss": ""
+  },
+  "signin": {
+    "portalUrl": null,
+    "autoClick": null,
+    "startUrl": null,
+    "checkUrl": "https://www.fubo.tv/p/guide",
+    "signedOutPattern": "\\b(sign in|log in|start (your )?free trial)\\b",
+    "signedInPattern": null,
+    "instructions": "Sign in to Fubo in the window that opened (and pick your profile if asked). TappedIn continues once the Fubo guide appears",
+    "windowTitle": "TappedIn: sign in to Fubo"
+  },
+  "errors": {
+    "probePatterns": [
+      "maximum number of",
+      "too many (devices|streams)",
+      "stream(ing)? limit",
+      "already (watching|streaming)",
+      "not available in your (area|location)",
+      "only available (on|when connected to)",
+      "outside (of )?(your )?(home|campus)",
+      "sign in",
+      "log in",
+      "session (has )?expired",
+      "something went wrong",
+      "error code",
+      "unable to play",
+      "playback error",
+      "not authorized",
+      "not entitled",
+      "try again later",
+      "still (watching|there)"
+    ],
+    "loginUrl": "(login|signin|sign-in|oauth|sso|idp|saml|shibboleth|microsoftonline|okta|duosecurity|auth\\.)",
+    "limit": "(maximum number of|too many|limit|already (watching|streaming))",
+    "unavailable": "(not available|only available|outside|not authorized|not entitled)",
+    "loginText": "(sign in|log in|session)",
+    "idlePrompt": "still (watching|there)"
+  },
+  "timing": {
+    "loadGapMs": 3500,
+    "maxParallelTunes": 2,
+    "spareWarmDelayMs": 20000,
+    "hidePollMs": 500
+  },
+  "tuning": {
+    "watchUrl": "https://www.fubo.tv/p/watch?channelId={ref}&type=live",
+    "refInUrl": "[?&]channelId=(\\d+)",
+    "pageTimeoutMs": 30000,
+    "idlePromptButton": null,
+    "lineup": {
+      "mode": "dom",
+      "guideUrl": "https://www.fubo.tv/p/guide",
+      "row": "a[href*=\"channelId=\"]",
+      "label": {
+        "selector": "img",
+        "attr": "alt",
+        "pattern": null
+      },
+      "number": null,
+      "ref": {
+        "selector": null,
+        "attr": "href",
+        "pattern": "channelId=(\\d+)"
+      },
+      "scrollContainer": null,
+      "settleMs": 300,
+      "maxScrolls": 200
+    }
+  }
+}

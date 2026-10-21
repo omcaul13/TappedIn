@@ -1,0 +1,108 @@
+{
+  "id": "directv",
+  "name": "DIRECTV (streaming)",
+  "shortName": "DIRECTV",
+  "family": "url",
+  "kind": "consumer",
+  "status": "experimental",
+  "badge": {
+    "initials": "DTV",
+    "color": "#0c4a6e"
+  },
+  "search": [
+    "DIRECTV STREAM",
+    "DirecTV Stream",
+    "MySports",
+    "Choice",
+    "AT&T TV"
+  ],
+  "documentedMaxStreams": null,
+  "defaults": {
+    "standbyViews": 0
+  },
+  "notes": "DIRECTV has no address per channel, so TappedIn changes channels the way you would: it opens the guide (stream.directv.com/guide), clicks the channel's logo, then the \"on now\" tile. Channel ids are the logo names (aria-label \"view <name>\"). Unlimited streams at home and 3 away, but FOX, FS1, FS2 and BTN together play at most 3. SECN, BTN, ESPNU and ACCN need Choice or above. DIRECTV recommends Chrome or Edge 143 or newer. UNVERIFIED: every selector (from an open-source project that drives the same guide), and the player's address (shell.playerUrl); if the video plays inside the guide page, the full-screen step can't hide the guide. Untested.",
+  "shell": {
+    "partition": "persist:directv",
+    "userAgent": "chrome",
+    "appUrl": "^https://stream\\.directv\\.com/",
+    "playerUrl": "/(watch|player|playback)",
+    "hideCss": ""
+  },
+  "signin": {
+    "portalUrl": null,
+    "autoClick": null,
+    "startUrl": null,
+    "checkUrl": "https://stream.directv.com/guide",
+    "signedOutPattern": "\\b(sign in|log in)\\b",
+    "signedInPattern": null,
+    "instructions": "Sign in to DIRECTV in the window that opened. TappedIn continues once the guide appears",
+    "windowTitle": "TappedIn: sign in to DIRECTV (streaming)"
+  },
+  "errors": {
+    "probePatterns": [
+      "maximum number of",
+      "too many (devices|streams)",
+      "stream(ing)? limit",
+      "already (watching|streaming)",
+      "not available in your (area|location)",
+      "only available (on|when connected to)",
+      "outside (of )?(your )?(home|campus)",
+      "sign in",
+      "log in",
+      "session (has )?expired",
+      "something went wrong",
+      "error code",
+      "unable to play",
+      "playback error",
+      "not authorized",
+      "not entitled",
+      "try again later",
+      "still (watching|there)"
+    ],
+    "loginUrl": "(login|signin|sign-in|oauth|sso|idp|saml|shibboleth|microsoftonline|okta|duosecurity|auth\\.)",
+    "limit": "(maximum number of|too many|limit|already (watching|streaming))",
+    "unavailable": "(not available|only available|outside|not authorized|not entitled)",
+    "loginText": "(sign in|log in|session)",
+    "idlePrompt": "still (watching|there)"
+  },
+  "timing": {
+    "loadGapMs": 3500,
+    "maxParallelTunes": 2,
+    "spareWarmDelayMs": 20000,
+    "hidePollMs": 500
+  },
+  "tuning": {
+    "watchUrl": null,
+    "refInUrl": null,
+    "pageTimeoutMs": 30000,
+    "idlePromptButton": null,
+    "click": {
+      "before": null,
+      "target": {
+        "closest": null,
+        "selector": null
+      },
+      "then": "[aria-label^=\"on now,\"] [tabindex=\"0\"]",
+      "how": "dom"
+    },
+    "lineup": {
+      "mode": "dom",
+      "guideUrl": "https://stream.directv.com/guide",
+      "row": "[aria-label^=\"view \"]",
+      "label": {
+        "selector": null,
+        "attr": "aria-label",
+        "pattern": "^view (.+)$"
+      },
+      "number": null,
+      "ref": {
+        "selector": null,
+        "attr": "aria-label",
+        "pattern": "^view (.+)$"
+      },
+      "scrollContainer": null,
+      "settleMs": 300,
+      "maxScrolls": 0
+    }
+  }
+}

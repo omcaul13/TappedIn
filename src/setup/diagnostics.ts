@@ -61,7 +61,7 @@ export function fieldsFor(step: DiagStep, c: ProviderConfig): string[] {
         : lineup.mode === 'response'
           ? ['tuning.lineup.guideUrl', 'tuning.lineup.responseUrl', 'tuning.lineup.items', 'tuning.lineup.ref', 'tuning.lineup.label', 'tuning.lineup.refPattern', 'tuning.lineup.scrollContainer']
           : ['tuning.lineup.guideUrl', 'tuning.lineup.row', 'tuning.lineup.ref.selector', 'tuning.lineup.ref.attr', 'tuning.lineup.ref.pattern', 'tuning.lineup.label.attr', 'tuning.lineup.label.pattern'],
-    tune: c.family === 'comcast' ? ['tuning.listingsUrl', 'tuning.livePath', 'tuning.rowButton', 'tuning.closePlayer', 'tuning.callSignInUrl'] : ['tuning.watchUrl', 'tuning.refInUrl'],
+    tune: c.family === 'comcast' ? ['tuning.listingsUrl', 'tuning.livePath', 'tuning.rowButton', 'tuning.closePlayer', 'tuning.callSignInUrl'] : ['tuning.watchUrl', 'tuning.refInUrl', 'tuning.click.before', 'tuning.click.target.closest', 'tuning.click.target.selector', 'tuning.click.then', 'tuning.click.how'],
     playback: ['shell.playerUrl', 'errors.limit', 'errors.unavailable', 'errors.loginText'],
     hide: ['shell.playerUrl', 'shell.appUrl', 'shell.hideCss'],
   };

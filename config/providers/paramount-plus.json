@@ -1,0 +1,98 @@
+{
+  "id": "paramount-plus",
+  "name": "Paramount+ (live CBS)",
+  "shortName": "Paramount+",
+  "family": "url",
+  "kind": "consumer",
+  "status": "experimental",
+  "badge": {
+    "initials": "P+",
+    "color": "#1e40af"
+  },
+  "search": [
+    "Paramount Plus",
+    "Paramount+ Premium",
+    "CBS",
+    "Showtime"
+  ],
+  "documentedMaxStreams": null,
+  "defaults": {
+    "standbyViews": 0
+  },
+  "notes": "Live TV on the Premium plan only: your local CBS station (in most markets) plus CBS Sports HQ and other streaming channels ESPN never lists, so in practice it gives TappedIn one channel, CBS. Each channel has a URL (paramountplus.com/live-tv/stream/<name>) read from the links on the Live TV page. Sources disagree on how many streams play at once (3 or 4). Your local station follows your location. UNVERIFIED: that the Live TV page links each channel that way, including your local CBS station. Untested.",
+  "shell": {
+    "partition": "persist:paramount-plus",
+    "userAgent": "chrome",
+    "appUrl": "^https://www\\.paramountplus\\.com/",
+    "playerUrl": "/live-tv/stream/",
+    "hideCss": ""
+  },
+  "signin": {
+    "portalUrl": null,
+    "autoClick": null,
+    "startUrl": null,
+    "checkUrl": "https://www.paramountplus.com/live-tv/",
+    "signedOutPattern": "\\b(sign in|try it free)\\b",
+    "signedInPattern": null,
+    "instructions": "Sign in to Paramount+ in the window that opened (and pick your profile if asked). TappedIn continues once the Live TV page appears",
+    "windowTitle": "TappedIn: sign in to Paramount+ (live CBS)"
+  },
+  "errors": {
+    "probePatterns": [
+      "maximum number of",
+      "too many (devices|streams)",
+      "stream(ing)? limit",
+      "already (watching|streaming)",
+      "not available in your (area|location)",
+      "only available (on|when connected to)",
+      "outside (of )?(your )?(home|campus)",
+      "sign in",
+      "log in",
+      "session (has )?expired",
+      "something went wrong",
+      "error code",
+      "unable to play",
+      "playback error",
+      "not authorized",
+      "not entitled",
+      "try again later",
+      "still (watching|there)"
+    ],
+    "loginUrl": "(login|signin|sign-in|oauth|sso|idp|saml|shibboleth|microsoftonline|okta|duosecurity|auth\\.)",
+    "limit": "(maximum number of|too many|limit|already (watching|streaming))",
+    "unavailable": "(not available|only available|outside|not authorized|not entitled)",
+    "loginText": "(sign in|log in|session)",
+    "idlePrompt": "still (watching|there)"
+  },
+  "timing": {
+    "loadGapMs": 3500,
+    "maxParallelTunes": 2,
+    "spareWarmDelayMs": 20000,
+    "hidePollMs": 500
+  },
+  "tuning": {
+    "watchUrl": "https://www.paramountplus.com/live-tv/stream/{ref}/",
+    "refInUrl": "/live-tv/stream/([^/?#]+)",
+    "pageTimeoutMs": 30000,
+    "idlePromptButton": null,
+    "lineup": {
+      "mode": "dom",
+      "guideUrl": "https://www.paramountplus.com/live-tv/",
+      "row": "a[href*=\"/live-tv/stream/\"]",
+      "label": {
+        "selector": "img",
+        "attr": "alt",
+        "pattern": null
+      },
+      "number": null,
+      "ref": {
+        "selector": null,
+        "attr": "href",
+        "pattern": "/live-tv/stream/([^/?#]+)"
+      },
+      "scrollContainer": null,
+      "settleMs": 300,
+      "maxScrolls": 20
+    }
+  }
+}

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { matchLineup } from '../../src/providers/networks';
 import { createAdapter, loadProviderConfig } from '../../src/providers/registry';
-import type { ChannelRef } from '../../src/providers/types';
+import { compileRegex, type ChannelRef } from '../../src/providers/types';
 import { refFromText, UrlTuningSchema } from '../../src/providers/url/adapter';
 
 const url = (id: string) => UrlTuningSchema.parse(loadProviderConfig(id).tuning);
@@ -12,7 +13,7 @@ describe('Spectrum', () => {
       const t = url(id);
       if (t.lineup.mode !== 'dom') throw new Error('expected a DOM scan');
       expect(refFromText('https://spectrum.net/guide/10179?width=50&sourceType=colorhybrid', t.lineup.ref.pattern)).toBe('10179');
-      expect(t.watchUrl.replace('{ref}', '10179')).toBe('https://watch.spectrum.net/livetv?tmsid=10179');
+      expect(t.watchUrl!.replace('{ref}', '10179')).toBe('https://watch.spectrum.net/livetv?tmsid=10179');
       const a = createAdapter(id);
       expect(a.onChannel('https://watch.spectrum.net/livetv?tmsid=10179', ch('10179'))).toBe(true);
       expect(a.onChannel('https://watch.spectrum.net/livetv?tmsid=1', ch('10179'))).toBe(false);
@@ -49,7 +50,7 @@ describe('Sling', () => {
     expect(refFromText('not-a-guid', t.lineup.refPattern)).toBeNull();
     expect(t.lineup.require).toBe('tiles[].actions.PLAY_CONTENT');
     expect(t.lineup.maxScrolls).toBeGreaterThan(0);
-    expect(t.watchUrl.replace('{ref}', 'g')).toBe('https://watch.sling.com/1/channel/g/watch');
+    expect(t.watchUrl!.replace('{ref}', 'g')).toBe('https://watch.sling.com/1/channel/g/watch');
   });
 });
 
@@ -67,5 +68,58 @@ describe('Cox Contour', () => {
   it('campus sign-in starts at the school picker', () => {
     expect(loadProviderConfig('cox-contour-campus').signin.startUrl).toBe('https://campus.cox.com/');
     expect(loadProviderConfig('cox-contour-campus').documentedMaxStreams).toBe(1);
+  });
+});
+
+describe('Hulu + Live TV and DIRECTV: no channel URL, tuned by guide clicks', () => {
+  it('Hulu: row name from data-testid, display name from the screen-reader text', () => {
+    const t = url('hulu-live');
+    if (t.lineup.mode !== 'dom' || !t.click) throw new Error('expected a DOM scan and click tuning');
+    expect(t.watchUrl).toBeNull();
+    expect(refFromText('live-guide-channel-kyber-espn', t.lineup.ref.pattern)).toBe('espn');
+    expect(refFromText('ESPN Details, row 12 of 90. On now', t.lineup.label.pattern)).toBe('ESPN');
+    expect(t.click.before).toBe('#CHANNELS');
+    expect(loadProviderConfig('hulu-live').documentedMaxStreams).toBe(2);
+  });
+
+  it('DIRECTV: logo aria-label is the id, clicked with element.click()', () => {
+    const t = url('directv');
+    if (t.lineup.mode !== 'dom' || !t.click) throw new Error('expected a DOM scan and click tuning');
+    expect(refFromText('view ESPN', t.lineup.ref.pattern)).toBe('ESPN');
+    expect(t.click.how).toBe('dom');
+    // The guide must not count as the player: the hide script would make it invisible before the clicks.
+    expect(createAdapter('directv').isOnPlayer('https://stream.directv.com/guide')).toBe(false);
+  });
+});
+
+describe('Fubo', () => {
+  it('Gracenote station id from the guide link, tuned with ?channelId=', () => {
+    const t = url('fubo');
+    if (t.lineup.mode !== 'dom') throw new Error('expected a DOM scan');
+    expect(refFromText('/p/watch?channelId=10179&type=live', t.lineup.ref.pattern)).toBe('10179');
+    expect(t.watchUrl!.replace('{ref}', '10179')).toBe('https://www.fubo.tv/p/watch?channelId=10179&type=live');
+    const a = createAdapter('fubo');
+    expect(a.onChannel('https://www.fubo.tv/p/watch?channelId=10179&type=live', ch('10179'))).toBe(true);
+    expect(a.onChannel('https://www.fubo.tv/p/watch?channelId=12444&type=live', ch('10179'))).toBe(false);
+  });
+});
+
+describe('Paramount+', () => {
+  it('channel name from the Live TV link', () => {
+    const t = url('paramount-plus');
+    if (t.lineup.mode !== 'dom') throw new Error('expected a DOM scan');
+    expect(refFromText('/live-tv/stream/cbs-sports-hq/', t.lineup.ref.pattern)).toBe('cbs-sports-hq');
+    expect(createAdapter('paramount-plus').onChannel('https://www.paramountplus.com/live-tv/stream/wbz/?x=1', ch('wbz'))).toBe(true);
+  });
+});
+
+describe('ESPN web player', () => {
+  it('a fixed lineup of ?network= ids that the network matcher recognises', () => {
+    const t = url('espn');
+    if (t.lineup.mode !== 'static') throw new Error('expected a fixed lineup');
+    const lineup = matchLineup(t.lineup.channels.map((c) => ({ label: c.label, number: null, callSign: null, ref: c.ref })));
+    expect(Object.fromEntries(Object.entries(lineup).filter(([, e]) => e.number !== null).map(([k, e]) => [k, e.ref]))).toEqual({ ESPN: 'espn', ESPN2: 'espn2', ESPNU: 'espnu', ESPNews: 'espnews', 'SEC Network': 'sec', 'ACC Network': 'acc' });
+    expect(createAdapter('espn').onChannel('https://www.espn.com/watch/player?network=espn2', ch('espn2'))).toBe(true);
+    expect(compileRegex(loadProviderConfig('espn').errors.loginText).test('Choose your TV provider')).toBe(true);
   });
 });

@@ -5,7 +5,10 @@ import { compileRegex, type ChannelRef, type DiscoveredChannel, type ProviderAda
 // Services whose web player has a stable URL per channel (Spectrum ?tmsid=, YouTube TV /watch/<id>,
 // Sling /1/channel/<guid>/watch). A channel change is one page load. The channel's id comes from a
 // lineup scan, which reads it from the guide: either from the page (a row selector plus an attribute
-// and a pattern) or from the guide data the page itself downloads (a URL pattern plus field paths).
+// and a pattern) or from the guide data the page itself downloads (a URL pattern plus field paths),
+// or it is a fixed list (ESPN's ?network= ids). Services with no channel URL (Hulu, DIRECTV) tune with
+// `click` instead: open the guide, find the channel's row the same way the DOM scan does, and click it
+// (then the service's own play tile), as a user would.
 // All of it is config, so a site change is fixed in config/providers/<id>.json (or a user override).
 
 const DomLineup = z.object({
@@ -44,16 +47,36 @@ const ResponseLineup = z.object({
   timeoutMs: z.number().int().positive().default(30000),
 });
 
-export const UrlTuningSchema = z.object({
-  /** The channel's live URL; {ref} is replaced by its id. */
-  watchUrl: z.string().includes('{ref}'),
-  /** Finds the channel id in a player URL (group 1), to check where a tune landed. */
-  refInUrl: z.string(),
-  pageTimeoutMs: z.number().int().positive().default(30000),
-  /** A button answering "Are you still watching?", if the service has one. */
-  idlePromptButton: z.string().nullable().default(null),
-  lineup: z.discriminatedUnion('mode', [DomLineup, ResponseLineup]),
+const StaticLineup = z.object({
+  mode: z.literal('static'),
+  /** Every channel the service has, with its id (for players whose channel ids are documented, not in a guide). */
+  channels: z.array(z.object({ label: z.string().min(1), ref: z.string().min(1) })).min(1),
 });
+
+const ClickTune = z.object({
+  /** Clicked once after the guide loads, before looking for the row (e.g. Hulu's Channels tab). */
+  before: z.string().nullable().default(null),
+  /** Clicked for the channel: `selector` inside the row's `closest` ancestor (both null: the row itself). */
+  target: z.object({ closest: z.string().nullable().default(null), selector: z.string().nullable().default(null) }).prefault({}),
+  /** Clicked once it appears after that (the service's own play / "on now" tile). */
+  then: z.string().nullable().default(null),
+  /** "mouse": a real click; "dom": element.click(), for pages where an overlay takes mouse clicks. */
+  how: z.enum(['mouse', 'dom']).default('mouse'),
+});
+
+export const UrlTuningSchema = z
+  .object({
+    /** The channel's live URL; {ref} is replaced by its id. Null when the service tunes by `click`. */
+    watchUrl: z.string().includes('{ref}').nullable().default(null),
+    /** Finds the channel id in a player URL (group 1), to check where a tune landed. Null: the URL can't tell. */
+    refInUrl: z.string().nullable().default(null),
+    pageTimeoutMs: z.number().int().positive().default(30000),
+    /** A button answering "Are you still watching?", if the service has one. */
+    idlePromptButton: z.string().nullable().default(null),
+    click: ClickTune.nullable().default(null),
+    lineup: z.discriminatedUnion('mode', [DomLineup, ResponseLineup, StaticLineup]),
+  })
+  .refine((t) => t.watchUrl || (t.click && t.lineup.mode === 'dom'), 'needs watchUrl, or click with a dom lineup (the row to click)');
 export type UrlTuning = z.infer<typeof UrlTuningSchema>;
 
 /** Group 1 of `pattern` in `text` (the whole text when there is no pattern), or null. */
@@ -99,12 +122,38 @@ export function createUrlAdapter(config: ProviderConfig): ProviderAdapter {
   if (!parsed.success) throw new Error(`config/providers/${config.id}.json tuning: ${z.prettifyError(parsed.error)}`);
   const t = parsed.data;
   const player = compileRegex(config.shell.playerUrl);
-  const refInUrl = compileRegex(t.refInUrl, '');
+  const refInUrl = t.refInUrl ? compileRegex(t.refInUrl, '') : null;
 
   const onChannel = (url: string, ch: ChannelRef): boolean => {
-    if (!ch.ref) return true;
+    if (!ch.ref || !refInUrl) return true;
     const m = refInUrl.exec(url);
     return m ? decodeURIComponent(m[1]) === ch.ref : true;
+  };
+
+  const click = async (page: Page, selector: string): Promise<void> => {
+    const el = page.locator(selector).first();
+    await el.waitFor({ state: 'visible', timeout: t.pageTimeoutMs });
+    if (t.click?.how === 'dom') await el.dispatchEvent('click');
+    else await el.click({ timeout: t.pageTimeoutMs });
+  };
+
+  /** Load the DOM lineup's guide (and press `click.before`) until its rows show. */
+  const openGuide = async (page: Page, tools: TuneTools): Promise<void> => {
+    const l = t.lineup;
+    if (l.mode !== 'dom') return;
+    await tools.load(page, l.guideUrl, t.pageTimeoutMs);
+    if (t.click?.before) await click(page, t.click.before);
+    await page.waitForSelector(l.row, { timeout: t.pageTimeoutMs });
+  };
+
+  const tuneByClick = async (page: Page, ch: ChannelRef, tools: TuneTools): Promise<void> => {
+    const c = t.click!;
+    await openGuide(page, tools);
+    // The page script scrolls the row into view and marks what to click; the click itself is a normal one.
+    const found = await page.evaluate(`(${MARK_ROW})(${JSON.stringify({ l: t.lineup, target: c.target, ref: ch.ref })})`);
+    if (!found) throw new Error(`${config.shortName}: ${ch.name} isn't in the guide; run a lineup scan`);
+    await click(page, `[${MARK}]`);
+    if (c.then) await click(page, c.then);
   };
 
   return {
@@ -130,6 +179,10 @@ export function createUrlAdapter(config: ProviderConfig): ProviderAdapter {
     async tune(page: Page, ch: ChannelRef, tools: TuneTools): Promise<TuneOutcome> {
       const t0 = Date.now();
       if (!ch.ref) throw new Error(`${config.shortName}: no channel id for ${ch.name}; run a lineup scan`);
+      if (!t.watchUrl) {
+        await tuneByClick(page, ch, tools);
+        return { path: 'guide', ms: Date.now() - t0, url: page.url() };
+      }
       await tools.load(page, t.watchUrl.replace('{ref}', encodeURIComponent(ch.ref)), t.pageTimeoutMs);
       if (!onChannel(page.url(), ch)) throw new Error(`${config.shortName} opened ${page.url().slice(0, 100)} instead of ${ch.name}`);
       return { path: 'url', ms: Date.now() - t0, url: page.url() };
@@ -137,6 +190,7 @@ export function createUrlAdapter(config: ProviderConfig): ProviderAdapter {
 
     async discoverLineup(page: Page, tools: TuneTools): Promise<DiscoveredChannel[]> {
       const l = t.lineup;
+      if (l.mode === 'static') return l.channels.map((c) => ({ label: c.label, number: null, callSign: null, ref: c.ref }));
       if (l.mode === 'response') {
         // Read the guide data the page downloads itself (passively: nothing is changed or replayed).
         const re = compileRegex(l.responseUrl);
@@ -165,8 +219,7 @@ export function createUrlAdapter(config: ProviderConfig): ProviderAdapter {
         }
         return out;
       }
-      await tools.load(page, l.guideUrl, t.pageTimeoutMs);
-      await page.waitForSelector(l.row, { timeout: t.pageTimeoutMs });
+      await openGuide(page, tools);
       const rows = (await page.evaluate(`(${READ_ROWS})(${JSON.stringify(l)})`)) as { label: string; number: string | null; ref: string | null }[];
       const seen = new Set<string>();
       const out: DiscoveredChannel[] = [];
@@ -191,6 +244,40 @@ const SCROLL_ALL = `async (l) => {
     box.scrollTop += Math.max(100, box.clientHeight);
     await sleep(l.settleMs);
   }
+}`;
+
+const MARK = 'data-tappedin-tune';
+
+/** Runs in the page: scroll until the row whose id is `ref` shows, mark its click target. True when found. */
+export const MARK_ROW = `async ({ l, target, ref }) => {
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const pick = (row, spec) => {
+    const el = spec.selector ? row.querySelector(spec.selector) : row;
+    return el ? el.getAttribute(spec.attr) : null;
+  };
+  const idOf = (text) => {
+    if (!text || !l.ref.pattern) return text;
+    const re = /^\\/(.*)\\/([dgimsuvy]*)$/s.exec(l.ref.pattern);
+    const m = (re ? new RegExp(re[1], re[2]) : new RegExp(l.ref.pattern)).exec(text);
+    return m ? m[1] : null;
+  };
+  for (const old of document.querySelectorAll('[${MARK}]')) old.removeAttribute('${MARK}');
+  const box = l.scrollContainer ? document.querySelector(l.scrollContainer) : document.scrollingElement;
+  for (let i = 0; i <= l.maxScrolls; i++) {
+    for (const row of document.querySelectorAll(l.row)) {
+      if (idOf(pick(row, l.ref)) !== ref) continue;
+      const base = target.closest ? row.closest(target.closest) : row;
+      const el = base && (target.selector ? base.querySelector(target.selector) : base);
+      if (!el) return false;
+      el.scrollIntoView({ block: 'center', inline: 'center' });
+      el.setAttribute('${MARK}', '1');
+      return true;
+    }
+    if (!box || box.scrollTop + box.clientHeight >= box.scrollHeight - 2) break;
+    box.scrollTop += Math.max(200, Math.floor(box.clientHeight * 0.8));
+    await sleep(l.settleMs);
+  }
+  return false;
 }`;
 
 /** Runs in the page: scroll through the guide and read every row (label, number, raw id text). */
