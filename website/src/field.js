@@ -1,6 +1,6 @@
 // The floodlit field behind every page: one WebGL2 fragment shader draws a football field seen from the stands
 // (mowing stripes, chalk yard lines and hash marks, light pools, haze and two banks of floodlights). Scrolling
-// carries the camera down the field and the pointer moves it a little; the lights dim once you're past the top
+// carries the camera down the field; the lights dim once you're past the top
 // and come back up at the bottom of the page. With reduced motion it draws one still frame (and redraws only
 // on resize). Without WebGL2 the .field element keeps its CSS gradient.
 
@@ -11,7 +11,6 @@ const FRAG = `#version 300 es
 precision highp float;
 uniform vec2 uRes;
 uniform float uTime, uZ, uGlow, uWarm;
-uniform vec2 uPtr;
 out vec4 o;
 
 float hash(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
@@ -30,7 +29,7 @@ void main() {
   vec3 lamp = mix(vec3(1., .95, .84), vec3(1., .74, .33), uWarm);
 
   // Camera in the stands: 11 yards up, looking down the field.
-  vec3 ro = vec3(uPtr.x * 2.4, 11. + uPtr.y * 1.2, uZ);
+  vec3 ro = vec3(0., 11., uZ);
   vec3 rd = normalize(vec3(uv.x, uv.y, 1.35));
   float pc = cos(.4), ps = sin(.4);
   rd = vec3(rd.x, rd.y * pc - rd.z * ps, rd.y * ps + rd.z * pc);
@@ -56,10 +55,10 @@ void main() {
     chalk = max(chalk, hy * step(abs(abs(f.x) - 25.6), .45));
     chalk *= exp(-t * .006);
     turf = mix(turf, vec3(.86, .85, .78), chalk * .32);
-    // Light pools from the towers (one pair every 60 yards) and a soft spot under the pointer.
+    // Light pools from the towers (one pair every 60 yards) and a soft spot in front of the camera.
     vec2 q = vec2(abs(f.x) - 22., mod(f.y + 30., 60.) - 30.);
     float pool = exp(-dot(q, q) / 900.);
-    vec2 sp = uv - vec2(uPtr.x * .45, -.18 + uPtr.y * .12);
+    vec2 sp = uv - vec2(0., -.18);
     pool += .55 * exp(-dot(sp, sp) * 9.);
     col = turf * (.3 + .95 * pool * glow) + lamp * pool * .05 * glow;
     // Haze toward the far end of the field.
@@ -121,7 +120,7 @@ export function startField(canvas, { reduce = false } = {}) {
   const loc = gl.getAttribLocation(prog, 'p');
   gl.enableVertexAttribArray(loc);
   gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-  const u = Object.fromEntries(['uRes', 'uTime', 'uZ', 'uGlow', 'uWarm', 'uPtr'].map((n) => [n, gl.getUniformLocation(prog, n)]));
+  const u = Object.fromEntries(['uRes', 'uTime', 'uZ', 'uGlow', 'uWarm'].map((n) => [n, gl.getUniformLocation(prog, n)]));
 
   const coarse = matchMedia('(pointer: coarse)').matches;
   let scale = renderScale(devicePixelRatio, coarse);
@@ -132,13 +131,6 @@ export function startField(canvas, { reduce = false } = {}) {
   };
   size();
 
-  const ptr = { x: 0, y: 0, tx: 0, ty: 0 };
-  if (!coarse && !reduce) {
-    addEventListener('pointermove', (e) => {
-      ptr.tx = (e.clientX / innerWidth) * 2 - 1;
-      ptr.ty = -((e.clientY / innerHeight) * 2 - 1);
-    }, { passive: true });
-  }
   const state = { warm: 0, warmTo: 0, glow: 1 };
   const t0 = performance.now();
   let slow = 0;
@@ -151,8 +143,6 @@ export function startField(canvas, { reduce = false } = {}) {
     const k = reduce ? 1 : 0.08;
     state.glow += (target - state.glow) * k;
     state.warm += (state.warmTo - state.warm) * (reduce ? 1 : 0.05);
-    ptr.x += (ptr.tx - ptr.x) * 0.05;
-    ptr.y += (ptr.ty - ptr.y) * 0.05;
     const time = reduce ? 0 : (now - t0) / 1000;
     gl.uniform2f(u.uRes, canvas.width, canvas.height);
     gl.uniform1f(u.uTime, time);
@@ -160,7 +150,6 @@ export function startField(canvas, { reduce = false } = {}) {
     gl.uniform1f(u.uZ, reduce ? 0 : scrollY * 0.025 + time * 0.4);
     gl.uniform1f(u.uGlow, state.glow);
     gl.uniform1f(u.uWarm, state.warm);
-    gl.uniform2f(u.uPtr, ptr.x, ptr.y);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   };
 

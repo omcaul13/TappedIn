@@ -243,19 +243,6 @@ async function rich() {
   });
 
   if (!fine) return;
-  // ---- magnetic download buttons ----
-  for (const b of document.querySelectorAll('.btn-xl, .nav .btn-primary')) {
-    const x = gsap.quickTo(b, 'x', { duration: 0.5, ease: 'power3' });
-    const y = gsap.quickTo(b, 'y', { duration: 0.5, ease: 'power3' });
-    b.addEventListener('pointermove', (e) => {
-      const r = b.getBoundingClientRect();
-      x((e.clientX - r.left - r.width / 2) * 0.22);
-      y((e.clientY - r.top - r.height / 2) * 0.3);
-    });
-    b.addEventListener('pointerleave', () => {
-      gsap.to(b, { x: 0, y: 0, duration: 0.9, ease: 'elastic.out(1, 0.4)' });
-    });
-  }
   // ---- cards light up under the pointer ----
   for (const c of document.querySelectorAll('.lit')) {
     c.addEventListener('pointermove', (e) => {
