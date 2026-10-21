@@ -81,7 +81,8 @@ h3 { text-wrap: balance; font-weight: 700; line-height: 1.05; font-size: 1.55rem
 .nav-links a { color: var(--dim); text-decoration: none; font-size: 0.95rem; font-weight: 500; padding: 8px 0; }
 .nav-links a:hover { color: var(--text); }
 .nav .btn { margin-left: auto; }
-.nav-links a[aria-current] { color: var(--text); box-shadow: inset 0 -2px var(--signal); }
+.nav-links a[aria-current] { color: var(--text); }
+.nav-links a[aria-current]::after { transform: scaleX(1); background: var(--signal); }
 @media (min-width: 960px) { .nav-links { display: flex; } .nav .btn { margin-left: 0; } .nav-menu { display: none; } }
 /* Phones: the same sections in a menu (a native details element, so it works without JS). */
 .nav-menu { position: relative; margin-left: auto; }
@@ -99,20 +100,50 @@ h3 { text-wrap: balance; font-weight: 700; line-height: 1.05; font-size: 1.55rem
 html:not(.js) .progress { display: none; }
 
 /* ---- buttons and the download block ---- */
+/* Overpass keeps more room below the baseline than above the capitals, so centered button text sits high
+   (about 0.26em more space under it). --nudge moves the text down by half that; icons move back up. */
 .btn {
+  --pad: 10px; --nudge: 0.13em;
+  position: relative; overflow: hidden; isolation: isolate;
   display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 44px;
-  padding: 10px 20px; border-radius: 999px; border: 1px solid var(--line-2); background: transparent;
+  padding: calc(var(--pad) + var(--nudge)) 20px calc(var(--pad) - var(--nudge)); border-radius: 999px;
+  border: 1px solid var(--line-2); background: transparent;
   color: var(--text); font: 600 1rem/1.1 var(--body); text-decoration: none; cursor: pointer;
-  transition: background-color 0.2s, border-color 0.2s, color 0.2s, transform 0.2s var(--ease);
+  transition: background-color 0.25s, border-color 0.25s, color 0.25s, box-shadow 0.3s var(--ease), transform 0.35s var(--ease);
 }
-.btn:hover { border-color: var(--dim); color: var(--text); }
-.btn:active { transform: scale(0.98); }
+.btn:hover { border-color: var(--dim); color: var(--text); transform: translateY(-2px); box-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.8); }
+.btn:active { transform: translateY(0) scale(0.97); transition-duration: 0.08s; box-shadow: none; }
 .btn-primary { background: var(--signal); border-color: var(--signal); color: var(--signal-ink); }
-.btn-primary:hover { background: #f5ead0; border-color: #f5ead0; color: var(--signal-ink); }
-.btn-sm { min-height: 44px; padding: 8px 16px; font-size: 0.92rem; }
-.btn-xl { min-height: 60px; padding: 16px 30px; font-size: 1.12rem; font-weight: 700; width: 100%; }
+.btn-primary:hover { background: #f5ead0; border-color: #f5ead0; color: var(--signal-ink); box-shadow: 0 12px 30px -10px rgba(233, 217, 176, 0.45); }
+/* A light sweep across the primary buttons on hover (transform only). */
+.btn-primary::after {
+  content: ''; position: absolute; inset: -1px; z-index: -1; pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.55) 50%, transparent 65%);
+  transform: translateX(-110%); transition: transform 0s;
+}
+.btn-primary:hover::after { transform: translateX(110%); transition: transform 0.7s var(--ease); }
+.btn-sm { --pad: 8px; min-height: 44px; padding-inline: 16px; font-size: 0.92rem; }
+.btn-xl { --pad: 16px; min-height: 60px; padding-inline: 30px; font-size: 1.12rem; font-weight: 700; width: 100%; }
 @media (min-width: 560px) { .btn-xl { width: auto; } }
-.btn svg { width: 20px; height: 20px; flex: none; }
+.btn svg { width: 20px; height: 20px; flex: none; transform: translateY(calc(var(--nudge) * -1)); }
+
+/* Links. In running text: a faint underline that fills in on hover (it wraps with the text). Standalone
+   links (nav, footer, download lines): an underline that grows out from under the text. */
+:where(p, li, .legend, figcaption) a:where(:not(.btn)) {
+  text-decoration: none;
+  background: linear-gradient(currentColor, currentColor) 0 100% / 0% 1.5px no-repeat, linear-gradient(rgba(233, 217, 176, 0.35), rgba(233, 217, 176, 0.35)) 0 100% / 100% 1px no-repeat;
+  padding-bottom: 1px; transition: background-size 0.35s var(--ease), color 0.2s;
+}
+:where(p, li, .legend, figcaption) a:where(:not(.btn)):hover { background-size: 100% 1.5px, 100% 1px; }
+.nav-links a, footer a, .dl-platforms a, .dl-meta a { position: relative; background: none; text-decoration: none; padding-bottom: 2px; }
+.nav-links a::after, footer a::after, .dl-platforms a::after, .dl-meta a::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; border-radius: 1px;
+  background: currentColor; transform: scaleX(0); transform-origin: 50% 50%; transition: transform 0.35s var(--ease);
+}
+.nav-links a:hover::after, footer a:hover::after, .dl-platforms a:hover::after, .dl-meta a:hover::after,
+.nav-links a:focus-visible::after, footer a:focus-visible::after { transform: scaleX(1); }
+.nav-links a::after { bottom: 4px; }
+footer .brand::after { display: none; }
 
 .dl { margin: 34px 0 0; }
 .for-windows, .for-mac, .for-mobile { display: none; }
