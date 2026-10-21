@@ -57,7 +57,7 @@ let TOP = TOP_BAR;
 /** Per-screen fullscreen: the screen that fills the window (0: the grid). */
 let FOCUS = 0;
 const GAP = 2;
-const BG = '#05070a';
+const BG = '#0b1a12';
 const MAC = process.platform === 'darwin';
 
 app.setName('TappedIn');
@@ -481,7 +481,7 @@ app.whenReady().then(async () => {
     icon: path.join(__dirname, 'tappedin.ico'),
     backgroundColor: BG,
     titleBarStyle: 'hidden',
-    titleBarOverlay: { color: '#0b0f14', symbolColor: '#cbd5e1', height: TOP_BAR },
+    titleBarOverlay: { color: '#0f2117', symbolColor: '#d9dccb', height: TOP_BAR },
   };
   if (MAC) {
     // The bundle carries the icon; the traffic lights sit centered in the top bar's left end (the UI leaves room).

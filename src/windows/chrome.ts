@@ -90,7 +90,7 @@ export async function connect(cfg: Config): Promise<{ browser: Browser; context:
 
 /** A blank local page we can recognise after the window opens. */
 export function markerUrl(label: string): string {
-  const html = `<title>${label}</title><body style="margin:0;background:#0b0f14;color:#9fb3c8;font:600 22px system-ui;display:grid;place-items:center;height:100vh">${label}</body>`;
+  const html = `<title>${label}</title><body style="margin:0;background:#0b1a12;color:#a8b8a2;font:600 22px system-ui;display:grid;place-items:center;height:100vh">${label}</body>`;
   return `data:text/html,${encodeURIComponent(html)}`;
 }
 

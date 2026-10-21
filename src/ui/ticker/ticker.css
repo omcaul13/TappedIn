@@ -5,11 +5,11 @@
   --gold: #ffc72c;
   --live-red: #ff4040;
   --bt-line: rgba(255, 255, 255, .09);
-  --bt-text: #f4f7fb;
-  --bt-dim: #97a3b6;
-  --bt-faint: #5f6c80;
+  --bt-text: #f4efe2;
+  --bt-dim: #a8b8a2;
+  --bt-faint: #6f8a74;
   position: absolute; inset: 0 0 auto 0; height: var(--h); z-index: 30; font-size: var(--fs);
-  display: flex; color: var(--bt-text); background: linear-gradient(180deg, #131c2b, #0a0f18);
+  display: flex; color: var(--bt-text); background: linear-gradient(180deg, #153021, #0a0f18);
   box-shadow: inset 0 -.08em 0 var(--gold);
   font-family: 'Barlow Condensed', 'Arial Narrow', 'Roboto Condensed', Arial, sans-serif; -webkit-font-smoothing: antialiased;
   font-feature-settings: normal;
@@ -20,7 +20,7 @@
 .bt .label {
   flex: none; width: var(--lw); height: 100%; padding: 0 .55em; position: relative; z-index: 3;
   display: flex; flex-direction: column; justify-content: center; gap: .18em;
-  background: linear-gradient(180deg, #1b2a45, #0f182b); box-shadow: .25em 0 .7em rgba(0, 0, 0, .55);
+  background: linear-gradient(180deg, #1f3d2b, #10271a); box-shadow: .25em 0 .7em rgba(0, 0, 0, .55);
   -webkit-app-region: drag;
 }
 .bt .label .brand { display: flex; align-items: baseline; gap: .3em; font-weight: 800; font-size: 1.3em; line-height: .9; letter-spacing: .01em; white-space: nowrap; }
@@ -112,8 +112,8 @@
 /* right column: the top bar's controls, under Windows' minimize/maximize/close buttons */
 .bt .ctl {
   flex: none; width: 150px; height: 100%; padding: 38px 10px 6px; display: flex; flex-direction: column; justify-content: center; gap: 4px; align-items: flex-end;
-  font-family: 'Overpass Dot', 'Overpass', 'Segoe UI', system-ui, sans-serif; font-size: 12px; background: linear-gradient(180deg, #0f1620, #0b0f14);
-  border-left: 1px solid rgba(107, 107, 255, .35); -webkit-app-region: drag;
+  font-family: 'Overpass Dot', 'Overpass', 'Segoe UI', system-ui, sans-serif; font-size: 12px; background: linear-gradient(180deg, #163020, #0b1a12);
+  border-left: 1px solid rgba(233, 217, 176, .3); -webkit-app-region: drag;
 }
 .app.fullscreen .bt .ctl { padding-top: 6px; }
 /* Mac: no window buttons above the controls; the traffic lights sit left of the label block instead. */

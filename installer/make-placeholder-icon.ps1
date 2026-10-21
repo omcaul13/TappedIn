@@ -1,5 +1,5 @@
 # Draws the placeholder TappedIn icon (electron/tappedin.ico) to match BrandGlyph in src/ui/icons.tsx:
-# a white signal (dot + two waves) on a cyan-to-violet rounded tile. Replace the .ico with the real logo
+# a cream signal (dot + two waves) on a forest-green rounded tile. Replace the .ico with the real logo
 # when it's ready; this script is only for the placeholder. Windows PowerShell 5.1.
 Add-Type -AssemblyName System.Drawing
 $out = Join-Path (Split-Path -Parent $PSScriptRoot) 'electron\tappedin.ico'
@@ -15,17 +15,18 @@ function New-IconPng([int]$S) {
     $tile.CloseFigure()
     $brush = New-Object System.Drawing.Drawing2D.LinearGradientBrush ([System.Drawing.Point]::new(0, 0)), ([System.Drawing.Point]::new($S, $S)), ([System.Drawing.Color]::Black), ([System.Drawing.Color]::Black)
     $blend = New-Object System.Drawing.Drawing2D.ColorBlend 3
-    $blend.Colors = @([System.Drawing.ColorTranslator]::FromHtml('#22d3ee'), [System.Drawing.ColorTranslator]::FromHtml('#6b6bff'), [System.Drawing.ColorTranslator]::FromHtml('#8b5cf6'))
+    $blend.Colors = @([System.Drawing.ColorTranslator]::FromHtml('#2f7a4f'), [System.Drawing.ColorTranslator]::FromHtml('#174a30'), [System.Drawing.ColorTranslator]::FromHtml('#0f2a1b'))
     $blend.Positions = @([single]0, [single]0.55, [single]1)
     $brush.InterpolationColors = $blend
     $g.FillPath($brush, $tile)
     # Glyph on a 24-unit grid, 70% of the tile, centered (same numbers as BrandGlyph).
     $k = $S * 0.7 / 24; $o = $S * 0.15
-    $pen = New-Object System.Drawing.Pen ([System.Drawing.Color]::White), ([single](2.6 * $k))
+    $cream = [System.Drawing.ColorTranslator]::FromHtml('#efe3c2')
+    $pen = New-Object System.Drawing.Pen $cream, ([single](2.6 * $k))
     $pen.StartCap = 'Round'; $pen.EndCap = 'Round'
     $cx = $o + 7 * $k; $cy = $o + 17 * $k
     foreach ($rad in 6.5, 12) { $a = $rad * $k; $g.DrawArc($pen, [single]($cx - $a), [single]($cy - $a), [single](2 * $a), [single](2 * $a), 270, 90) }
-    $d = 2.2 * $k; $g.FillEllipse([System.Drawing.Brushes]::White, [single]($cx - $d), [single]($cy - $d), [single](2 * $d), [single](2 * $d))
+    $d = 2.2 * $k; $g.FillEllipse((New-Object System.Drawing.SolidBrush $cream), [single]($cx - $d), [single]($cy - $d), [single](2 * $d), [single](2 * $d))
     $ms = New-Object System.IO.MemoryStream
     $bmp.Save($ms, [System.Drawing.Imaging.ImageFormat]::Png)
     $g.Dispose(); $bmp.Dispose()

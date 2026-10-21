@@ -36,17 +36,17 @@
     .err{position:absolute;inset:18% 10%;background:rgba(127,29,29,.94);color:#fff;border:2px solid #fca5a5;border-radius:12px;
       padding:18px 22px;font:500 15px/1.4 system-ui,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.6)}
     .err b{display:block;font-size:20px;margin-bottom:6px}.err small{display:block;margin-top:10px;opacity:.85}
-    .pop{pointer-events:auto;position:absolute;inset:36px 18px 14px;background:rgba(11,15,20,.96);color:#e6edf3;border:1px solid #334155;
+    .pop{pointer-events:auto;position:absolute;inset:36px 18px 14px;background:rgba(11,26,18,.96);color:#f4efe2;border:1px solid #335640;
       border-radius:12px;display:flex;flex-direction:column;font:500 13px/1.3 system-ui,sans-serif;box-shadow:0 12px 40px rgba(0,0,0,.7)}
     .ph{display:flex;justify-content:space-between;align-items:baseline;padding:10px 14px 6px;gap:10px}
     .ph b{font-size:16px}.cd{color:#fbbf24;font-weight:700;white-space:nowrap}
     .list{overflow:auto;padding:0 10px 6px;flex:1}
-    h4{margin:8px 4px 4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#8b9bb0}
+    h4{margin:8px 4px 4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#a8b8a2}
     .list button{display:flex;justify-content:space-between;gap:10px;width:100%;text-align:left;background:#121923;color:inherit;
       border:1px solid #223042;border-radius:8px;padding:7px 10px;margin:3px 0;cursor:pointer;font:inherit}
-    .list button:hover{border-color:#60a5fa;background:#16202d}.list span{color:#8b9bb0;white-space:nowrap}
+    .list button:hover{border-color:#e9d9b0;background:#16202d}.list span{color:#a8b8a2;white-space:nowrap}
     .foot{display:flex;justify-content:flex-end;padding:6px 12px 10px}
-    .ghost{background:transparent;border:1px solid #475569;color:#cbd5e1;border-radius:8px;padding:6px 12px;cursor:pointer;font:inherit}
+    .ghost{background:transparent;border:1px solid #3f6650;color:#d9dccb;border-radius:8px;padding:6px 12px;cursor:pointer;font:inherit}
   </style>
   ${b ? `<div class="badge" style="background:${tones[b.tone] || tones.idle}">${esc(b.text)}</div>` : ''}
   ${e ? `<div class="err"><b>${esc(e.title)}</b>${esc(e.detail)}<small>${esc(e.hint)}</small></div>` : ''}

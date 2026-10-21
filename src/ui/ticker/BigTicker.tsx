@@ -23,7 +23,7 @@ export function stripeColor(t: TeamDTO): string {
   };
   if (lum(t.color) > 0.045) return `#${t.color}`;
   if (lum(t.altColor) > 0.045) return `#${t.altColor}`;
-  return '#5f6c80';
+  return '#6f8a74';
 }
 
 function TeamLogo({ t }: { t: TeamDTO }) {

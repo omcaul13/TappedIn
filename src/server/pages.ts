@@ -2,8 +2,10 @@
 // No build step: HTML + inline JS polling /api/state and POSTing actions.
 
 const BASE_CSS = `
-  :root{--bg:#0b0f14;--panel:#121923;--panel2:#16202d;--line:#223042;--text:#e6edf3;--dim:#8b9bb0;--live:#22c55e;--brk:#f59e0b;--half:#3b82f6;--fin:#9ca3af;--rz:#ef4444;--data:#a78bfa;--err:#dc2626}
-  *{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+  :root{--bg:#0b1a12;--panel:#11251a;--panel2:#163020;--line:#24402e;--text:#f4efe2;--dim:#a8b8a2;--live:#22c55e;--brk:#f59e0b;--half:#3b82f6;--fin:#9ca3af;--rz:#ef4444;--data:#a78bfa;--err:#dc2626}
+  @font-face{font-family:'Overpass';font-weight:100 900;font-display:swap;src:url(/ui/overpass.woff2) format('woff2')}
+  @font-face{font-family:'Overpass Dot';src:local('Segoe UI'),local('Helvetica Neue'),local('Arial');unicode-range:U+00B7}
+  *{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:'Overpass Dot','Overpass',system-ui,-apple-system,"Segoe UI",sans-serif}
   .chip{display:inline-block;padding:2px 7px;border-radius:999px;font-weight:700;font-size:11px;letter-spacing:.04em;color:#000}
   button,select{font:inherit;color:inherit}
 `;
@@ -32,9 +34,9 @@ const PICKER_CSS = `
   .cd{color:#fbbf24;font-weight:700;white-space:nowrap}.pklist{overflow:auto;padding:0 10px 6px;flex:1}
   .pklist h4{margin:8px 4px 4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
   .pk{display:flex;justify-content:space-between;gap:10px;width:100%;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 10px;margin:3px 0;cursor:pointer}
-  .pk:hover{border-color:#60a5fa;background:var(--panel2)}.pk span{color:var(--dim);white-space:nowrap}
+  .pk:hover{border-color:#e9d9b0;background:var(--panel2)}.pk span{color:var(--dim);white-space:nowrap}
   .pkfoot{display:flex;justify-content:flex-end;padding:6px 12px 10px}
-  .ghost{background:transparent;border:1px solid #475569;color:#cbd5e1;border-radius:8px;padding:6px 12px;cursor:pointer}
+  .ghost{background:transparent;border:1px solid #3f6650;color:#d9dccb;border-radius:8px;padding:6px 12px;cursor:pointer}
 `;
 
 export function tilePage(screen: number): string {
@@ -47,7 +49,7 @@ export function tilePage(screen: number): string {
   .score{font-weight:800;font-size:clamp(34px,11vh,64px);font-variant-numeric:tabular-nums}
   .pos::after{content:"\\25CF";color:var(--brk);font-size:.7em;margin-left:8px}
   .mid{display:flex;justify-content:space-between;align-items:baseline;font-size:clamp(14px,3.6vh,20px);font-weight:600}
-  .field{position:relative;height:18px;border-radius:9px;background:linear-gradient(90deg,#14532d,#166534 50%,#14532d);overflow:hidden;border:1px solid var(--line)}
+  .field{position:relative;height:18px;border-radius:9px;background:linear-gradient(90deg,#1f5a3a,#166534 50%,#1f5a3a);overflow:hidden;border:1px solid var(--line)}
   .rz{position:absolute;top:0;bottom:0;width:20%;background:rgba(239,68,68,.35)}
   .ball{position:absolute;top:2px;width:12px;height:12px;border-radius:50%;background:#fbbf24;transform:translateX(-6px);box-shadow:0 0 6px #fbbf24}
   .last{color:var(--dim);font-size:clamp(12px,2.8vh,15px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -158,7 +160,7 @@ export function panelPage(): string {
   header{display:flex;align-items:center;gap:14px;padding:8px 12px;border-bottom:1px solid var(--line);background:var(--panel)}
   header h1{font-size:15px;margin:0}header .sp{flex:1}.dim{color:var(--dim)}
   .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}.seg button{background:transparent;border:0;padding:4px 10px;cursor:pointer;color:var(--dim)}
-  .seg button.on{background:#1e3a5f;color:#fff}
+  .seg button.on{background:#24503a;color:#fff}
   main{flex:1;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:10px;padding:10px;min-height:0}
   .left{display:flex;flex-direction:column;gap:10px;min-height:0;min-width:0}
   .cards{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
@@ -167,21 +169,21 @@ export function panelPage(): string {
   .ch{display:flex;align-items:center;gap:6px}.ch b{font-size:14px}.ch .sp{flex:1}
   .score{font-weight:800;font-size:16px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .small{font-size:12px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .why{font-size:11.5px;color:#cbd5e1;max-height:2.7em;overflow:hidden}
+  .why{font-size:11.5px;color:#d9dccb;max-height:2.7em;overflow:hidden}
   .errbox{font-size:12px;color:#fecaca}
   .btns{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
   .btns button,.btns select{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:3px 7px;cursor:pointer;font-size:12px}
-  .btns button:hover{border-color:#60a5fa}.btns .on{background:#1e3a5f;border-color:#3b82f6}
+  .btns button:hover{border-color:#e9d9b0}.btns .on{background:#24503a;border-color:#3b82f6}
   .btns select{max-width:120px}
   .feed{flex:1;min-height:90px;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 8px;font:12px/1.35 ui-monospace,Consolas,monospace}
   .feed div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.feed .switch{color:#e6edf3}.feed .note,.feed .game{color:var(--dim)}.feed .info{color:#93c5fd}.feed .audio{color:#c4b5fd}.feed .label{color:#fde68a}
   .slate{display:flex;flex-direction:column;min-height:0;background:var(--panel);border:1px solid var(--line);border-radius:10px}
   .slate .tabs{display:flex;gap:6px;padding:8px;border-bottom:1px solid var(--line)}
   .rows{overflow:auto;padding:4px 8px}
-  .row{display:grid;grid-template-columns:62px 1fr auto;gap:6px;align-items:center;padding:5px 2px;border-bottom:1px solid #172231}
+  .row{display:grid;grid-template-columns:62px 1fr auto;gap:6px;align-items:center;padding:5px 2px;border-bottom:1px solid #183a28}
   .row.na{opacity:.45}.row .t b{font-variant-numeric:tabular-nums}.row .t small{display:block;color:var(--dim)}
   .set button{background:var(--panel2);border:1px solid var(--line);border-radius:5px;width:22px;height:22px;padding:0;cursor:pointer;font-size:11px;margin-left:2px}
-  .set button.home{background:#14532d;border-color:var(--live)}
+  .set button.home{background:#1f5a3a;border-color:var(--live)}
   .keys{font-size:11px}
   </style></head><body>
   <header><h1>TappedIn</h1><span id="mode" class="dim"></span><span class="sp"></span>

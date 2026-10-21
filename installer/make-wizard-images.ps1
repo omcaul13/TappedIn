@@ -25,7 +25,7 @@ function Save([System.Drawing.Bitmap]$bmp, [string]$name) {
     Write-Host "Wrote installer\$name"
 }
 
-# Side image, 164:314 like Inno's: the app's dark background with a soft indigo glow, the icon, the
+# Side image, 164:314 like Inno's: the app's dark forest background with a soft cream glow, the icon, the
 # wordmark and one line about what it does.
 foreach ($w in 164, 246, 410) {
     $h = [int][math]::Round($w * 314 / 164)
@@ -33,13 +33,13 @@ foreach ($w in 164, 246, 410) {
     $bmp = New-Object System.Drawing.Bitmap $w, $h
     $g = [System.Drawing.Graphics]::FromImage($bmp)
     $g.SmoothingMode = 'AntiAlias'; $g.InterpolationMode = 'HighQualityBicubic'; $g.TextRenderingHint = 'AntiAliasGridFit'
-    $bg = New-Object System.Drawing.Drawing2D.LinearGradientBrush ([System.Drawing.Point]::new(0, 0)), ([System.Drawing.Point]::new(0, $h)), (& $hex '#171a33'), (& $hex '#06070c')
+    $bg = New-Object System.Drawing.Drawing2D.LinearGradientBrush ([System.Drawing.Point]::new(0, 0)), ([System.Drawing.Point]::new(0, $h)), (& $hex '#173a26'), (& $hex '#0b1a12')
     $g.FillRectangle($bg, 0, 0, $w, $h)
     $glow = New-Object System.Drawing.Drawing2D.GraphicsPath
     $glow.AddEllipse([single](-0.4 * $w), [single](0.05 * $h), [single](1.8 * $w), [single](0.55 * $h))
     $pb = New-Object System.Drawing.Drawing2D.PathGradientBrush $glow
-    $pb.CenterColor = [System.Drawing.Color]::FromArgb(70, 107, 107, 255)
-    $pb.SurroundColors = @([System.Drawing.Color]::FromArgb(0, 107, 107, 255))
+    $pb.CenterColor = [System.Drawing.Color]::FromArgb(60, 233, 217, 176)
+    $pb.SurroundColors = @([System.Drawing.Color]::FromArgb(0, 233, 217, 176))
     $g.FillPath($pb, $glow)
     $s = [int](64 * $k)
     $g.DrawImage($tile, [int](($w - $s) / 2), [int](0.24 * $h), $s, $s)
@@ -52,10 +52,10 @@ foreach ($w in 164, 246, 410) {
     $b = $g.MeasureString('In', $font, [System.Drawing.PointF]::new(0, 0), [System.Drawing.StringFormat]::GenericTypographic).Width
     $x = ($w - $a - $b) / 2
     $g.DrawString('Tapped', $font, [System.Drawing.Brushes]::White, [single]$x, $y, [System.Drawing.StringFormat]::GenericTypographic)
-    $g.DrawString('In', $font, (New-Object System.Drawing.SolidBrush (& $hex '#8b8bff')), [single]($x + $a), $y, [System.Drawing.StringFormat]::GenericTypographic)
+    $g.DrawString('In', $font, (New-Object System.Drawing.SolidBrush (& $hex '#e9d9b0')), [single]($x + $a), $y, [System.Drawing.StringFormat]::GenericTypographic)
     $small = New-Object System.Drawing.Font 'Segoe UI', ([single](10 * $k)), ([System.Drawing.FontStyle]::Regular), ([System.Drawing.GraphicsUnit]::Pixel)
     $rect = New-Object System.Drawing.RectangleF ([single](14 * $k)), ([single]($y + 30 * $k)), ([single]($w - 28 * $k)), ([single](60 * $k))
-    $g.DrawString("Every game that matters,`non the TV service you have", $small, (New-Object System.Drawing.SolidBrush (& $hex '#9aa0bd')), $rect, $center)
+    $g.DrawString("Every game that matters,`non the TV service you have", $small, (New-Object System.Drawing.SolidBrush (& $hex '#a8b8a2')), $rect, $center)
     $g.Dispose()
     Save $bmp "wizard-$w.png"
 }
