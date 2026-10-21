@@ -28,13 +28,4 @@ function rules(sp) {
   };
 }
 
-/**
- * Electron's identifier as a plain Chrome one: no "Electron/…" or "TappedIn/…" (some services, Xfinity included,
- * send Electron to an "update your browser" page), and the version reduced to "152.0.0.0" as Chrome itself sends it
- * (Paramount+ answers a full "152.0.7977.130" with a 403 on its sign-in and sign-up pages).
- */
-function chromeUserAgent(ua) {
-  return ua.replace(/ Electron\/\S+/, '').replace(/ TappedIn\/\S+/, '').replace(/Chrome\/(\d+)[\d.]*/, 'Chrome/$1.0.0.0');
-}
-
-module.exports = { compile, rules, chromeUserAgent };
+module.exports = { compile, rules };

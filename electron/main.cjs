@@ -19,7 +19,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { app, BrowserWindow, Menu, WebContentsView, components, ipcMain, session, shell } = require('electron');
-const { compile, rules, chromeUserAgent } = require('./signin-rules.cjs');
+const { compile, rules } = require('./signin-rules.cjs');
 const { screenRect } = require('./layout.cjs');
 
 const args = process.argv.slice(2);
@@ -114,11 +114,11 @@ const isApp = (url) => R.isApp(url);
 // The title is how src/shell.ts finds each view; the page stays blank so the UI's game picker shows over it.
 const marker = (label) => `data:text/html,${encodeURIComponent(`<title>${label}</title><body style="margin:0;background:#000"></body>`)}`;
 
-/** With userAgent 'chrome', a plain Chrome identifier (see chromeUserAgent). */
+/** Chrome's identifier without "Electron/…" (some services, Xfinity included, send Electron to an "update your browser" page). */
 let ORIGINAL_UA = null;
 function applyUserAgent() {
   ORIGINAL_UA ??= session.defaultSession.getUserAgent();
-  const ua = SP.userAgent === 'chrome' ? chromeUserAgent(ORIGINAL_UA) : ORIGINAL_UA;
+  const ua = SP.userAgent === 'chrome' ? ORIGINAL_UA.replace(/ Electron\/\S+/, '').replace(/ TappedIn\/\S+/, '') : ORIGINAL_UA;
   app.userAgentFallback = ua;
   session.defaultSession.setUserAgent(ua);
   session.fromPartition(PARTITION).setUserAgent(ua);

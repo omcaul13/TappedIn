@@ -38,7 +38,7 @@ const ResponseLineup = z.object({
   label: z.string(),
   number: z.string().nullable().default(null),
   refPattern: z.string().nullable().default(null),
-  /** Only items that have a value here count (e.g. Sling ribbons that can play); "path=value" needs that value (Paramount+ "channelTypes[]=live_local"). */
+  /** Only items that have a value here count (e.g. Sling ribbons that can play). */
   require: z.string().nullable().default(null),
   /** Guides that load their data as you scroll: scroll this element and collect every response. */
   scrollContainer: z.string().nullable().default(null),
@@ -108,10 +108,7 @@ export function collectPath(root: unknown, path: string): unknown[] {
 export function itemsFromJson(json: unknown, paths: { items: string; ref: string; label: string; number: string | null; refPattern: string | null; require?: string | null }): DiscoveredChannel[] {
   const out: DiscoveredChannel[] = [];
   for (const item of collectPath(json, paths.items)) {
-    if (paths.require) {
-      const [path, want] = paths.require.split('=');
-      if (!collectPath(item, path).some((v) => want === undefined || String(v) === want)) continue;
-    }
+    if (paths.require && !collectPath(item, paths.require).length) continue;
     const ref = refFromText(String(collectPath(item, paths.ref)[0] ?? ''), paths.refPattern);
     if (!ref) continue;
     const n = paths.number ? Number(collectPath(item, paths.number)[0]) : NaN;

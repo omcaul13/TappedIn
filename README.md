@@ -82,13 +82,13 @@ The usual rules still hold: no game on two screens unless it's the only option, 
 | Hulu + Live TV | Experimental | guide clicks (no address per channel) | 2 (unlimited at home with Unlimited Screens) |
 | Fubo | Experimental | an address per channel | 10 at home, 3 away |
 | DIRECTV (streaming) | Experimental | guide clicks (no address per channel) | unlimited at home, 3 away; FOX networks 3 |
-| Paramount+ (live CBS, Premium) | Experimental | an address per channel (in practice CBS only) | 3 or 4 (sources disagree) |
 | ESPN web player (ESPN Unlimited or a TV provider) | Experimental | an address per network | 3 |
 
 - **Tested:** used with a real account.
 - **Experimental:** built from the service's documentation and from open-source projects that drive the same web players, but nobody has tested it with a real account yet. If it doesn't work for you, the app's **Diagnostics** can usually fix it, and you can send the fix back: see [CONTRIBUTING.md](CONTRIBUTING.md).
 - **Not supported yet:**
   - Peacock: its games are one-off event streams, not channels, and its only live channel (local NBC, Premium Plus) has no known channel address.
+  - Paramount+: its Premium live TV is one channel (your local CBS station), and its other sports are one-off event streams that are often not live.
   - Philo, which carries no sports networks.
 - The research behind this list is in [docs/research/streaming-services.md](docs/research/streaming-services.md).
 
