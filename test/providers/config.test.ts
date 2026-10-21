@@ -35,7 +35,7 @@ describe('provider config', () => {
       const c = loadProviderConfig(id, { stateDir: empty, onWarning: (m) => warnings.push(m) });
       expect(c.id).toBe(id);
       expect(warnings).toEqual([]);
-      for (const src of [c.shell.appUrl, c.shell.playerUrl, c.signin.signedOutPattern, c.errors.loginUrl, c.errors.limit, c.errors.unavailable, c.errors.loginText, c.errors.idlePrompt, ...c.errors.probePatterns]) {
+      for (const src of [c.shell.appUrl, c.shell.playerUrl, c.signin.signedOutPattern, ...(c.signin.signedInPattern ? [c.signin.signedInPattern] : []), c.errors.loginUrl, c.errors.limit, c.errors.unavailable, c.errors.loginText, c.errors.idlePrompt, ...c.errors.probePatterns]) {
         expect(() => compileRegex(src)).not.toThrow();
       }
     }

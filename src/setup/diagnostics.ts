@@ -54,7 +54,7 @@ export function fieldsFor(step: DiagStep, c: ProviderConfig): string[] {
   const t = c.tuning as Record<string, unknown>;
   const lineup = (t.lineup ?? {}) as Record<string, unknown>;
   const candidates: Record<DiagStep, string[]> = {
-    signin: ['signin.checkUrl', 'signin.signedOutPattern', 'shell.appUrl', 'signin.startUrl'],
+    signin: ['signin.checkUrl', 'signin.signedOutPattern', 'signin.signedInPattern', 'shell.appUrl', 'signin.startUrl'],
     scan:
       c.family === 'comcast'
         ? ['tuning.listingsUrl', 'tuning.channelMapResponse', 'tuning.channelNumber', 'tuning.row']
@@ -86,7 +86,7 @@ export async function runStep(step: DiagStep, d: DiagDeps): Promise<DiagResult> 
       case 'signin': {
         const r = await d.signinCheck();
         if (!r.isApp) return result(false, `The check page didn't reach ${d.config.name}; it ended at ${r.url}.`, r);
-        if (r.signedOut) return result(false, `${d.config.name} looks signed out (its page matches signin.signedOutPattern).`, r);
+        if (r.signedOut) return result(false, `${d.config.name} looks signed out (its page matches signin.signedOutPattern${d.config.signin.signedInPattern ? ', or never matched signin.signedInPattern' : ''}).`, r);
         return result(true, `Signed in: the check page is ${d.config.name} and doesn't look signed out.`, r);
       }
       case 'scan': {

@@ -20,6 +20,7 @@
   "signin": {
     "checkUrl": "https://www.xfinity.com/stream/",
     "signedOutPattern": "/\\bSign In\\b/",
+    "signedInPattern": "/\\bLive TV\\b/",
     "portalUrl": "https://www.xfinityoncampus.com/",
     "autoClick": { "selector": "a.watch-now-btn", "text": "watch now" },
     "instructions": "Sign in to Xfinity On Campus in the window that opened, then click Watch Now",

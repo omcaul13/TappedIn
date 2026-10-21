@@ -12,6 +12,9 @@ function rules(sp) {
   const player = compile(sp.playerUrl);
   const out = compile(sp.signin.signedOutPattern);
   const signedOut = (text) => out.test(String(text || '').slice(0, 4000));
+  const inPattern = sp.signin.signedInPattern ? compile(sp.signin.signedInPattern) : null;
+  /** 'in', 'out', or 'loading' (only with signedInPattern: matches neither, e.g. a "Please wait" page). */
+  const signinState = (text) => (signedOut(text) ? 'out' : !inPattern || inPattern.test(String(text || '').slice(0, 4000)) ? 'in' : 'loading');
   return {
     /** Any page of the service's web app. */
     isApp: (url) => app.test(url),
@@ -19,8 +22,9 @@ function rules(sp) {
     isPlayer: (url) => player.test(url),
     /** The page text says "signed out". */
     signedOut,
-    /** Signed in: some window of the sign-in flow reached the service and doesn't look signed out. */
-    signinDone: (windows) => windows.some((w) => app.test(w.url) && !signedOut(w.bodyText)),
+    signinState,
+    /** Signed in: some window of the sign-in flow reached the service and looks signed in. */
+    signinDone: (windows) => windows.some((w) => app.test(w.url) && signinState(w.bodyText) === 'in'),
   };
 }
 

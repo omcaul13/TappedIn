@@ -142,12 +142,22 @@ const withTimeout = (p, ms, what) => Promise.race([p, sleep(ms).then(() => Promi
 const BODY_TEXT_JS = `document.body ? document.body.innerText.slice(0, 4000) : ''`;
 const bodyText = (wc) => wc.executeJavaScript(BODY_TEXT_JS).catch(() => '');
 
+/** Read the page until it looks signed in or out, for up to ms while it's still loading. True when signed in. */
+async function waitSignedIn(wc, ms) {
+  const deadline = Date.now() + ms;
+  for (;;) {
+    const state = R.signinState(await bodyText(wc));
+    if (state !== 'loading' || Date.now() >= deadline) return state === 'in';
+    await sleep(500);
+  }
+}
+
 /** Is the service still signed in from last time? (Then no sign-in is needed.) */
 async function streamSignedIn(w) {
   try {
     await withTimeout(w.loadURL(SIGNIN.checkUrl), SIGNIN.checkTimeoutMs, SP.shortName);
     await sleep(SIGNIN.checkSettleMs);
-    return isApp(w.webContents.getURL()) && !R.signedOut(await w.webContents.executeJavaScript(BODY_TEXT_JS));
+    return isApp(w.webContents.getURL()) && (await waitSignedIn(w.webContents, SIGNIN.checkTimeoutMs));
   } catch (err) {
     send({ type: 'log', text: `sign-in check: ${err && err.message ? err.message : err}` });
     return false;
@@ -198,8 +208,10 @@ async function portalHandoff(w, say) {
   const wc = await Promise.race([stream, sleep(clicked ? SIGNIN.waitAfterClickMs : SIGNIN.waitForUserMs).then(() => null)]);
   if (!wc) throw new Error(`${SP.shortName} did not open after the ${SP.name} hand-off`);
   await sleep(SIGNIN.handoffSettleMs); // let the service finish setting up its session
-  const out = await wc.executeJavaScript(BODY_TEXT_JS).then((t) => R.signedOut(t)).catch(() => null);
-  say({ type: 'signin', state: out === true ? 'failed' : 'ok', detail: out === true ? `${SP.shortName} still looks signed out` : `Signed in to ${SP.shortName}` });
+  // Xfinity spends its one-time hand-off token at once but writes its session seconds later:
+  // closing the window before the signed-in page shows loses the sign-in.
+  const ok = await waitSignedIn(wc, SIGNIN.waitAfterClickMs);
+  say({ type: 'signin', state: ok ? 'ok' : 'failed', detail: ok ? `Signed in to ${SP.shortName}` : `${SP.shortName} still looks signed out` });
 }
 
 /** No portal: show the service's own sign-in and wait for any window of the flow to reach the signed-in page. */
@@ -392,7 +404,7 @@ async function signinCheck() {
       const u = new URL(url);
       where = `${u.origin}${u.pathname}`;
     } catch {}
-    return { url: where, isApp: R.isApp(url), signedOut: R.signedOut(await bodyText(w.webContents)) };
+    return { url: where, isApp: R.isApp(url), signedOut: !(await waitSignedIn(w.webContents, SIGNIN.checkTimeoutMs)) };
   } finally {
     if (!w.isDestroyed()) w.destroy();
   }

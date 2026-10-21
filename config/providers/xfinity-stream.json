@@ -31,6 +31,7 @@
   "signin": {
     "checkUrl": "https://www.xfinity.com/stream/",
     "signedOutPattern": "/\\bSign In\\b/",
+    "signedInPattern": "/\\bLive TV\\b/",
     "portalUrl": null,
     "autoClick": null,
     "instructions": "Sign in with your Xfinity ID in the window that opened. TappedIn continues once the Xfinity Stream guide appears",

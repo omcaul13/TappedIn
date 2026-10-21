@@ -46,6 +46,8 @@ const SigninSchema = z.object({
   checkUrl: z.string().url(),
   /** Text near the top of the page that means "signed out" (first 4000 characters). */
   signedOutPattern: RegexSource,
+  /** Text that only appears once signed in. Without it, any page that isn't signed out counts as signed in, a still-loading one included. */
+  signedInPattern: RegexSource.nullable().default(null),
   /** Where a user's own sign-in starts, when not at checkUrl (e.g. campus.cox.com's school picker). */
   startUrl: z.string().url().nullable().default(null),
   /** A portal whose button hands the session to the service (Xfinity On Campus "Watch Now"). */

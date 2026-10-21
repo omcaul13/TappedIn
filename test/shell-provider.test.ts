@@ -6,7 +6,7 @@ import { loadProviderConfig } from '../src/providers/registry';
 import { effectiveStandby, shellProvider, type ShellProvider } from '../src/shell';
 
 const require = createRequire(import.meta.url);
-const { rules } = require('../electron/signin-rules.cjs') as { rules(sp: ShellProvider): { isApp(u: string): boolean; isPlayer(u: string): boolean; signedOut(t: string): boolean; signinDone(w: { url: string; bodyText: string }[]): boolean } };
+const { rules } = require('../electron/signin-rules.cjs') as { rules(sp: ShellProvider): { isApp(u: string): boolean; isPlayer(u: string): boolean; signedOut(t: string): boolean; signinState(t: string): string; signinDone(w: { url: string; bodyText: string }[]): boolean } };
 
 const xocConfig = loadProviderConfig('xfinity-on-campus');
 const xoc = shellProvider(xocConfig);
@@ -51,6 +51,17 @@ describe('shell provider for the Electron window', () => {
     expect(r.signinDone([{ url: 'https://idp.school.edu/sso', bodyText: '' }, { url: 'https://www.xfinity.com/stream/', bodyText: 'Live TV' }])).toBe(true);
     expect(r.signinDone([{ url: 'https://idp.school.edu/sso', bodyText: '' }, { url: 'https://www.xfinity.com/stream/', bodyText: 'Sign In' }])).toBe(false);
     expect(r.signinDone([])).toBe(false);
+  });
+
+  it("Xfinity's loading page isn't signed in yet (the hand-off would be cut short)", () => {
+    const r = rules(xoc);
+    expect(r.signinState('Skip to: CONTENT  Please wait')).toBe('loading');
+    expect(r.signinState('Skip to: TV MENU  Home  Saved  Live TV  Browse')).toBe('in');
+    expect(r.signinState('Watch anywhere  Stream live TV plus thousands of shows  Sign In')).toBe('out');
+    expect(r.signinDone([{ url: 'https://www.xfinity.com/stream/', bodyText: 'Please wait' }])).toBe(false);
+    // Without signedInPattern, anything not signed out is signed in, as before.
+    const sling = rules(shellProvider(loadProviderConfig('sling')));
+    expect(sling.signinState('Please wait')).toBe('in');
   });
 
   it('effective standby resolution', () => {

@@ -26,6 +26,7 @@ When a step fails, the settings it depends on appear right under it. They're the
 |---|---|---|
 | `signin.checkUrl` | A page that shows the service when you're signed in | `https://watch.spectrum.net/guide` |
 | `signin.signedOutPattern` | Text that only appears when you're signed out (a regular expression; `/…/` keeps upper and lower case exact) | `/\bSign In\b/` |
+| `signin.signedInPattern` | Optional: text that only appears once you're signed in. Set it when the service shows a loading page first, so TappedIn waits for the real page | `/\bLive TV\b/` |
 | `shell.appUrl` | Matches every page of the service's player (regex) | `^https://watch\.spectrum\.net/` |
 | `shell.playerUrl` | Matches the page that's playing a channel (regex) | `/livetv` |
 | `tuning.lineup.row` | A CSS selector for one channel row in the guide | `li.channel-header-row` |
