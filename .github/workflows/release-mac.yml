@@ -1,0 +1,157 @@
+# Builds the universal Mac app (TappedIn.dmg + TappedIn-mac.zip) and attaches it to the same GitHub
+# Release as the Windows installer (release.yml, which this leaves alone).
+#   Push a tag like v0.2.0  -> VMP-signed for Widevine (EVS secrets), attached to the v0.2.0 release
+#                              once release.yml has created it, then published on the website (R2).
+#   Run it by hand, or a PR -> a test build without the VMP signature (video won't play), as a workflow artifact.
+#   that changes the Mac      (PRs only when they touch the Mac build or the Electron shell: macOS minutes
+#   build                     cost 10x in a private repo.)
+# Apple signing is chosen only by which secrets exist (docs/mac-signing.md):
+#   no MAC_CERT_P12  -> Mode A: ad hoc signature, no notarization (users click "Open Anyway" once)
+#   MAC_CERT_P12 set -> Mode B: Developer ID + hardened runtime, notarized and stapled; auto-updates on
+name: Release Mac app
+
+on:
+  push:
+    tags: ['v*']
+  pull_request:
+    paths: ['installer/mac/**', '.github/workflows/release-mac.yml', 'electron/**']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+    env:
+      SIGNED: ${{ github.event_name == 'push' }}
+      MAC_CERT_P12: ${{ secrets.MAC_CERT_P12 }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - uses: actions/setup-python@v5
+        if: env.SIGNED == 'true'
+        with:
+          python-version: '3.12'
+
+      - name: Install the Widevine signing tool
+        if: env.SIGNED == 'true'
+        run: python3 -m pip install --disable-pip-version-check castlabs-evs==1.3.2 truststore==0.10.5
+
+      - name: Mode B - Developer ID certificate and notarization key
+        if: env.MAC_CERT_P12 != ''
+        env:
+          MAC_CERT_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+        run: |
+          kc="$RUNNER_TEMP/signing.keychain-db"
+          kcpass="$(uuidgen)"
+          security create-keychain -p "$kcpass" "$kc"
+          security set-keychain-settings -lut 21600 "$kc"
+          security unlock-keychain -p "$kcpass" "$kc"
+          echo "$MAC_CERT_P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -k "$kc" -P "$MAC_CERT_PASSWORD" -T /usr/bin/codesign
+          rm "$RUNNER_TEMP/cert.p12"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$kcpass" "$kc" >/dev/null
+          security list-keychains -d user -s "$kc" $(security list-keychains -d user | tr -d '"')
+          identity="$(security find-identity -v -p codesigning "$kc" | sed -nE 's/.*"(Developer ID Application: .*)"/\1/p' | head -1)"
+          [ -n "$identity" ] || { echo "MAC_CERT_P12 holds no 'Developer ID Application' certificate"; exit 1; }
+          echo "MAC_SIGN_IDENTITY=$identity" >> "$GITHUB_ENV"
+          if [ -n "$APPLE_API_KEY_P8" ]; then
+            printf '%s' "$APPLE_API_KEY_P8" > "$RUNNER_TEMP/AuthKey.p8"
+            echo "APPLE_API_KEY_PATH=$RUNNER_TEMP/AuthKey.p8" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build the Mac app
+        env:
+          EVS_ACCOUNT_NAME: ${{ secrets.EVS_ACCOUNT_NAME }}
+          EVS_PASSWD: ${{ secrets.EVS_PASSWD }}
+          EVS_NO_ASK: '1'
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          if [ "$SIGNED" = true ]; then
+            [ -n "$EVS_ACCOUNT_NAME" ] && [ -n "$EVS_PASSWD" ] || { echo 'Set the EVS_ACCOUNT_NAME and EVS_PASSWD repo secrets to build a signed release.'; exit 1; }
+            bash installer/mac/build-mac.sh
+          else
+            bash installer/mac/build-mac.sh --unsigned
+          fi
+          cat dist/mac-info.json >> "$GITHUB_STEP_SUMMARY"
+
+      # Starts the built app as Finder would (Apple Silicon, then Intel under Rosetta) and checks that it
+      # serves the settings it was given. Video and sign-in need a real Mac (docs/mac-testing.md).
+      - name: Smoke test (start, settings load) on both architectures
+        run: |
+          app="build/mac/out/TappedIn.app"
+          data="$HOME/Library/Application Support/TappedIn"
+          for arch in arm64 x86_64; do
+            if ! arch -"$arch" /usr/bin/true 2>/dev/null; then echo "::warning::$arch can't run on this runner (no Rosetta?); skipped"; continue; fi
+            rm -rf "$data" && mkdir -p "$data/.state"
+            echo '{"dwellSeconds":47}' > "$data/.state/settings.json"
+            arch -"$arch" "$app/Contents/MacOS/Electron" &
+            state=""
+            for i in $(seq 60); do
+              sleep 2
+              state="$(curl -fs --max-time 3 http://localhost:7480/api/state || true)"
+              [ -n "$state" ] && break
+            done
+            if [ -z "$state" ] || [ "$(echo "$state" | jq .settings.dwellSeconds)" != 47 ]; then
+              tail -60 "$data/logs/launcher.log" || true
+              echo "TappedIn ($arch) did not start or did not load its settings"; exit 1
+            fi
+            echo "- $arch: started, settings loaded from Application Support" >> "$GITHUB_STEP_SUMMARY"
+            pkill -f "TappedIn.app/Contents" || true
+            sleep 5
+          done
+
+      - name: Upload the build
+        uses: actions/upload-artifact@v4
+        with:
+          name: TappedIn-mac${{ env.SIGNED != 'true' && '-test' || '' }}
+          path: |
+            dist/TappedIn.dmg
+            dist/TappedIn-mac.zip
+            dist/mac-info.json
+
+      # release.yml creates the release; creating it here too could race it and fail the Windows job.
+      - name: Attach to the release
+        if: env.SIGNED == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag='${{ github.ref_name }}'
+          for i in $(seq 60); do
+            gh release view "$tag" >/dev/null 2>&1 && break
+            echo "Waiting for release.yml to create the $tag release..."; sleep 30
+          done
+          gh release upload "$tag" dist/TappedIn.dmg dist/TappedIn-mac.zip --clobber
+
+      # Same bucket and secrets as release.yml. The site serves /download/mac (TappedIn.dmg), the update
+      # zip (TappedIn-mac.zip) and latest-mac.json; the Windows objects are not touched.
+      - name: Publish the Mac app on the website
+        if: env.SIGNED == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+          AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+        run: |
+          if [ -z "$R2_ACCOUNT_ID" ]; then echo '::warning::R2 secrets are not set: the website still offers the previous Mac app.'; exit 0; fi
+          tag='${{ github.ref_name }}'
+          gh release view "$tag" --json body --jq .body | node website/release-info.mjs "$tag" dist/TappedIn.dmg \
+            | jq --slurpfile mac dist/mac-info.json '. + { minimumSystemVersion: $mac[0].minimumSystemVersion }' > latest-mac.json
+          r2="https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com"
+          # The files first, so latest-mac.json never names a version the site can't serve yet.
+          aws s3 cp dist/TappedIn.dmg s3://tappedin-downloads/TappedIn.dmg --endpoint-url "$r2" --content-type application/x-apple-diskimage
+          aws s3 cp dist/TappedIn-mac.zip s3://tappedin-downloads/TappedIn-mac.zip --endpoint-url "$r2" --content-type application/zip
+          aws s3 cp latest-mac.json s3://tappedin-downloads/latest-mac.json --endpoint-url "$r2" --content-type application/json
