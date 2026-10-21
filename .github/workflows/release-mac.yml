@@ -18,15 +18,17 @@ on:
   workflow_dispatch:
     inputs:
       runner:
-        description: 'Runner label (macos-latest is Apple Silicon; try macos-15-intel when that pool is full)'
-        default: macos-latest
+        description: 'Runner label (macos-15-intel, or macos-latest for Apple Silicon)'
+        default: macos-15-intel
 
 permissions:
   contents: write
 
 jobs:
   build:
-    runs-on: ${{ inputs.runner || 'macos-latest' }}
+    # Intel by default: GitHub's Apple Silicon pool was too full to start the job (Oct 2026). The app is
+    # universal either way; the smoke test skips arm64 where it can't run. Switch back to macos-latest here.
+    runs-on: ${{ inputs.runner || 'macos-15-intel' }}
     env:
       SIGNED: ${{ github.event_name == 'push' }}
       MAC_CERT_P12: ${{ secrets.MAC_CERT_P12 }}
