@@ -6,7 +6,7 @@ import { loadProviderConfig } from '../src/providers/registry';
 import { effectiveStandby, shellProvider, type ShellProvider } from '../src/shell';
 
 const require = createRequire(import.meta.url);
-const { rules } = require('../electron/signin-rules.cjs') as { rules(sp: ShellProvider): { isApp(u: string): boolean; isPlayer(u: string): boolean; signedOut(t: string): boolean; signinState(t: string): string; signinDone(w: { url: string; bodyText: string }[]): boolean } };
+const { rules, chromeUserAgent } = require('../electron/signin-rules.cjs') as { chromeUserAgent(ua: string): string; rules(sp: ShellProvider): { isApp(u: string): boolean; isPlayer(u: string): boolean; signedOut(t: string): boolean; signinState(t: string): string; signinDone(w: { url: string; bodyText: string }[]): boolean } };
 
 const xocConfig = loadProviderConfig('xfinity-on-campus');
 const xoc = shellProvider(xocConfig);
@@ -62,6 +62,19 @@ describe('shell provider for the Electron window', () => {
     // Without signedInPattern, anything not signed out is signed in, as before.
     const sling = rules(shellProvider(loadProviderConfig('sling')));
     expect(sling.signinState('Please wait')).toBe('in');
+  });
+
+  it('the chrome user agent is the one Chrome itself sends', () => {
+    // Paramount+ answers the full version (152.0.7977.130) with a 403 on its sign-in and sign-up pages.
+    const electron = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) TappedIn/0.1.2 Chrome/152.0.7977.130 Electron/44.0.0 Safari/537.36';
+    expect(chromeUserAgent(electron)).toBe('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36');
+  });
+
+  it("Paramount+'s sign-up page (where /live-tv/ sends a signed-out or non-Premium account) is not signed in", () => {
+    const p = rules(shellProvider(loadProviderConfig('paramount-plus')));
+    expect(p.isApp('https://www.paramountplus.com/account/signup/live-tv/?intcid=x')).toBe(false);
+    expect(p.signinDone([{ url: 'https://www.paramountplus.com/account/signup/live-tv/', bodyText: 'Error 403 Forbidden' }])).toBe(false);
+    expect(p.isApp('https://www.paramountplus.com/live-tv/')).toBe(true);
   });
 
   it('effective standby resolution', () => {

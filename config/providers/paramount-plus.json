@@ -15,15 +15,15 @@
     "CBS",
     "Showtime"
   ],
-  "documentedMaxStreams": null,
+  "documentedMaxStreams": 3,
   "defaults": {
     "standbyViews": 0
   },
-  "notes": "Live TV on the Premium plan only: your local CBS station (in most markets) plus CBS Sports HQ and other streaming channels ESPN never lists, so in practice it gives TappedIn one channel, CBS. Each channel has a URL (paramountplus.com/live-tv/stream/<name>) read from the links on the Live TV page. Sources disagree on how many streams play at once (3 or 4). Your local station follows your location. UNVERIFIED: that the Live TV page links each channel that way, including your local CBS station. Untested.",
+  "notes": "Live TV on the Premium plan only: your local CBS station (in most markets) plus CBS Sports HQ and other streaming channels ESPN never lists, so in practice it gives TappedIn one channel, CBS. Each channel has a URL (paramountplus.com/live-tv/stream/<name>) read from the links on the Live TV page. Premium plays 3 streams at once (its plan page). Signed out or without Premium, /live-tv/ sends you to /account/signup/live-tv/, and appUrl leaves out /account/ pages so that never counts as signed in. Your local station follows your location. UNVERIFIED: that the Live TV page links each channel that way, including your local CBS station. Untested.",
   "shell": {
     "partition": "persist:paramount-plus",
     "userAgent": "chrome",
-    "appUrl": "^https://www\\.paramountplus\\.com/",
+    "appUrl": "^https://www\\.paramountplus\\.com/(?!account/)",
     "playerUrl": "/live-tv/stream/",
     "hideCss": ""
   },
@@ -34,7 +34,7 @@
     "checkUrl": "https://www.paramountplus.com/live-tv/",
     "signedOutPattern": "\\b(sign in|try it free)\\b",
     "signedInPattern": null,
-    "instructions": "Sign in to Paramount+ in the window that opened (and pick your profile if asked). TappedIn continues once the Live TV page appears",
+    "instructions": "Sign in to Paramount+ in the window that opened (and pick your profile if asked). TappedIn continues once the Live TV page appears. Live TV needs the Premium plan: without it Paramount+ keeps showing its plan page",
     "windowTitle": "TappedIn: sign in to Paramount+ (live CBS)"
   },
   "errors": {
