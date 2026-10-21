@@ -28,6 +28,7 @@
   --signal-ink: #0b1a12;
   --break: #e9b44c;
   --live: #8fd19e;
+  --other: #779cab; /* a screen showing another game, as in the app */
   --hot: #f2937a;
   --flood: rgba(255, 244, 224, 0.07);
   --glass: rgba(14, 32, 22, 0.72);
@@ -261,15 +262,15 @@ figcaption, .caption { color: var(--faint); font-size: 0.82rem; margin-top: 14px
 .tv .bar { display: flex; align-items: center; gap: 2.2cqi; font: 600 2.6cqi/1 var(--body); color: var(--dim); min-height: 5cqi; }
 .tv .chip { display: inline-flex; align-items: center; gap: 1.2cqi; font: 800 2.5cqi/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; padding: 1.1cqi 1.8cqi; border-radius: 99px; color: #0b1a12; background: var(--live); }
 .tv .chip.brk { background: var(--break); color: #0b1a12; }
-.tv .chip.oth { background: var(--signal); color: var(--signal-ink); }
+.tv .chip.oth { background: var(--other); color: var(--signal-ink); }
 .tv .teams { display: grid; gap: 2cqi; align-content: center; }
 .tv .team { display: flex; align-items: center; gap: 3cqi; padding: 3cqi 4cqi; border-radius: 2cqi; background: rgba(255, 255, 255, 0.035); border: 1px solid rgba(255, 255, 255, 0.05); }
 .tv .abbr { font: 800 8cqi/1 var(--display); min-width: 4.2em; }
 .tv .name { color: var(--dim); font-size: 2.6cqi; flex: 1; }
 .tv .score { font: 800 11cqi/0.9 var(--display); font-variant-numeric: tabular-nums; }
 .tv .foot { display: flex; justify-content: space-between; gap: 2cqi; font: 700 3cqi/1.2 var(--display); letter-spacing: 0.02em; }
-.tv .why { position: absolute; left: 4cqi; right: 4cqi; bottom: 4cqi; padding: 2.2cqi 3cqi; border-radius: 2cqi; background: rgba(11, 26, 18, 0.88); border: 1px solid rgba(233, 217, 176, 0.4); font-size: 2.6cqi; line-height: 1.35; color: var(--text); transition: opacity 0.5s var(--ease), transform 0.7s var(--ease); }
-.tv .why b { color: var(--signal); font-weight: 700; }
+.tv .why { position: absolute; left: 4cqi; right: 4cqi; bottom: 4cqi; padding: 2.2cqi 3cqi; border-radius: 2cqi; background: rgba(11, 26, 18, 0.88); border: 1px solid rgba(119, 156, 171, 0.55); font-size: 2.6cqi; line-height: 1.35; color: var(--text); transition: opacity 0.5s var(--ease), transform 0.7s var(--ease); }
+.tv .why b { color: #a9c4cf; font-weight: 700; }
 .tv .back { position: absolute; top: 4.6cqi; right: 5cqi; display: inline-flex; gap: 1.2cqi; align-items: center; font: 700 2.6cqi/1 var(--body); padding: 1.4cqi 2.4cqi; border-radius: 99px; background: var(--signal); color: var(--signal-ink); transition: opacity 0.4s, transform 0.6s var(--spring); }
 /* The channel change: a bright band wipes down the screen when it switches. */
 .tv .scan { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, transparent 0%, rgba(245, 234, 208, 0.18) 46%, rgba(245, 234, 208, 0.5) 50%, rgba(245, 234, 208, 0.18) 54%, transparent 100%); transform: translateY(-100%); opacity: 0; }
@@ -295,7 +296,8 @@ figcaption, .caption { color: var(--faint); font-size: 0.82rem; margin-top: 14px
 @keyframes wipe { 0% { opacity: 1; transform: translateY(-100%); } 100% { opacity: 1; transform: translateY(100%); } }
 .demo.live[data-step='1'] .tv-wrap::before { background: radial-gradient(closest-side, rgba(233, 180, 76, 0.26), transparent); }
 .demo.live[data-step='1'] .tv { border-color: rgba(233, 180, 76, 0.5); box-shadow: 0 40px 100px -30px rgba(0, 0, 0, 0.9), 0 0 60px -10px rgba(233, 180, 76, 0.3); }
-.demo.live[data-step='2'] .tv { border-color: rgba(233, 217, 176, 0.55); }
+.demo.live[data-step='2'] .tv { border-color: rgba(119, 156, 171, 0.6); box-shadow: 0 40px 100px -30px rgba(0, 0, 0, 0.9), 0 0 60px -10px rgba(119, 156, 171, 0.3); }
+.demo.live[data-step='2'] .tv-wrap::before { background: radial-gradient(closest-side, rgba(119, 156, 171, 0.22), transparent); }
 
 /* The demo's controls: pause, and a rail of the four beats (the current one fills as it plays). */
 .controls-bar { display: none; }
@@ -342,9 +344,9 @@ figcaption, .caption { color: var(--faint); font-size: 0.82rem; margin-top: 14px
 @media (min-width: 900px) { .trio { grid-template-columns: 1fr 1fr 1fr; align-items: start; } }
 .trio h3 { font-size: clamp(1.7rem, 2.6vw, 2.3rem); text-transform: uppercase; font-weight: 800; line-height: 0.95; }
 .trio p { color: var(--dim); margin: 12px 0 0; }
-/* Just the game list: the screenshot's top-left panel (470 x 480 of 1600 x 950), zoomed to fill the frame. */
-.trio .pick .frame { margin-bottom: 22px; aspect-ratio: 470 / 480; max-width: 440px; }
-.trio .pick .frame img { width: 340%; max-width: none; }
+/* Just the game list: the screenshot's panel at 812,83 (460 x 400 of 1600 x 950), zoomed to fill the frame. */
+.trio .pick .frame { margin-bottom: 22px; aspect-ratio: 460 / 400; max-width: 440px; }
+.trio .pick .frame img { width: 347.8%; max-width: none; margin: -18% 0 0 -176.5%; }
 .keys { display: flex; gap: 8px; margin-top: 20px; }
 .keys kbd { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 10px; border: 1px solid var(--line-2); border-bottom-width: 4px; background: var(--night); font: 800 1.3rem/1 var(--display); color: var(--text); animation: key 4s var(--ease) infinite; }
 .keys kbd:nth-child(2) { animation-delay: 1s; }
