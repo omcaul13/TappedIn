@@ -9,6 +9,9 @@ const here = dirname(fileURLToPath(import.meta.url));
 /** Where the footer's "Report a bug" link sends mail. */
 export const REPORT_EMAIL = 'REPLACE-ME@example.com';
 
+/** The production address, for canonical links and link previews (they need absolute URLs). */
+export const SITE_URL = 'https://tappedin-4ot.pages.dev';
+
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
 const STATUS = { stable: 'Stable', experimental: 'Experimental', unsupported: 'Not working yet' };
@@ -61,6 +64,7 @@ export function build({ out = join(here, 'dist'), providers, email = REPORT_EMAI
     BUG_MAILTO: esc(bug),
     REPORT_EMAIL: esc(email),
     YEAR: String(new Date().getFullYear()),
+    SITE_URL,
   };
   const partial = (name) => readFileSync(join(here, 'partials', `${name}.html`), 'utf8').trimEnd();
   for (const f of readdirSync(out).filter((f) => f.endsWith('.html'))) {

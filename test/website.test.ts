@@ -47,6 +47,51 @@ describe('website build', async () => {
     const groups = JSON.parse(readFileSync(path.join(PROJECT_ROOT, 'website', 'sports.json'), 'utf8')) as { leagues: { id: string }[] }[];
     expect(groups.flatMap((g) => g.leagues.map((l) => l.id)).sort()).toEqual([...SPORT_IDS].sort());
   });
+
+  it('fills the sport and league counts on the home page from sports.json', () => {
+    const groups = JSON.parse(readFileSync(path.join(PROJECT_ROOT, 'website', 'sports.json'), 'utf8')) as { family: string; leagues: unknown[] }[];
+    const families = new Set(groups.map((g) => g.family)).size;
+    const leagues = groups.reduce((n, g) => n + g.leagues.length, 0);
+    const html = page('index.html');
+    expect(html).toContain(`<b data-count="${families}">${families}</b><span>sports`);
+    expect(html).toContain(`<b data-count="${leagues}">${leagues}</b><span>leagues`);
+  });
+
+  it('never uses the old name or calls itself a red zone channel', () => {
+    for (const f of ['index.html', 'install.html', 'fix-your-service.html']) {
+      expect(page(f), f).not.toMatch(/redzone|red zone channel/i);
+    }
+  });
+});
+
+describe('scroll story', async () => {
+  const { sceneProgress, stepAt } = await site('src/scroll.js');
+
+  it('runs a tall scene from its top at the top to its bottom at the bottom', () => {
+    expect(sceneProgress(100, 3000, 1000)).toBe(0); // not reached yet
+    expect(sceneProgress(0, 3000, 1000)).toBe(0);
+    expect(sceneProgress(-1000, 3000, 1000)).toBe(0.5);
+    expect(sceneProgress(-2000, 3000, 1000)).toBe(1);
+    expect(sceneProgress(-5000, 3000, 1000)).toBe(1); // past it
+  });
+
+  it('runs a scene no taller than the viewport while it scrolls out, and never divides by zero', () => {
+    expect(sceneProgress(64, 800, 1000)).toBe(0);
+    expect(sceneProgress(-400, 800, 1000)).toBe(0.5);
+    expect(sceneProgress(-900, 800, 1000)).toBe(1);
+    expect(sceneProgress(-400, 1000, 1000)).toBe(0.4);
+    expect(sceneProgress(1, 0, 1000)).toBe(0);
+    expect(sceneProgress(0, 0, 1000)).toBe(1);
+  });
+
+  it('picks the step, holding the last one through the end', () => {
+    expect(stepAt(0, 4)).toBe(0);
+    expect(stepAt(0.249, 4)).toBe(0);
+    expect(stepAt(0.25, 4)).toBe(1);
+    expect(stepAt(0.99, 4)).toBe(3);
+    expect(stepAt(1, 4)).toBe(3);
+    expect(stepAt(1, 1)).toBe(0);
+  });
 });
 
 describe('download button', async () => {

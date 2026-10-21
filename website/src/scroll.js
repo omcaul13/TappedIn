@@ -4,11 +4,10 @@
 // in once when they enter the viewport; [data-count] numbers count up. With reduced motion (or no JS) none of
 // this runs and the page is the plain stacked version style.css draws by default.
 
-const reduce = matchMedia('(prefers-reduced-motion: reduce)');
-
-/** How far through a scene the viewport is: 0 when its top reaches the top, 1 when its bottom reaches the bottom. */
+/** How far through a scene the viewport is: 0 when its top reaches the top, 1 when its bottom reaches the bottom.
+ *  A scene no taller than the viewport runs while it scrolls out the top instead (no jump from 0 to 1). */
 export function sceneProgress(top, height, viewport) {
-  const run = height - viewport;
+  const run = height > viewport ? height - viewport : height;
   if (run <= 0) return top <= 0 ? 1 : 0;
   return Math.min(1, Math.max(0, -top / run));
 }
@@ -22,10 +21,14 @@ function scenes() {
   let queued = false;
   const update = () => {
     queued = false;
-    const vh = innerHeight;
-    for (const el of live) {
+    // clientHeight is the small viewport on iOS and Android (what 100svh pins to), and doesn't change with the toolbar.
+    const vh = document.documentElement.clientHeight;
+    // Measure every scene first, then write, so the writes don't force a layout per scene.
+    const at = [...live].map((el) => {
       const r = el.getBoundingClientRect();
-      const p = sceneProgress(r.top, r.height, vh);
+      return [el, sceneProgress(r.top, r.height, vh)];
+    });
+    for (const [el, p] of at) {
       el.style.setProperty('--p', p.toFixed(4));
       const steps = Number(el.dataset.steps) || 1;
       const step = String(stepAt(p, steps));
@@ -33,7 +36,7 @@ function scenes() {
     }
   };
   const queue = () => {
-    if (!queued) {
+    if (!queued && live.size) {
       queued = true;
       requestAnimationFrame(update);
     }
@@ -85,8 +88,13 @@ function count(el) {
 }
 
 function init() {
-  if (reduce.matches || !('IntersectionObserver' in window)) return;
-  document.documentElement.classList.add('motion', 'motion-ready');
+  const root = document.documentElement;
+  // index.html's head script adds .motion before first paint (not under reduced motion or without IntersectionObserver)
+  // and takes it off after 4 s if this hasn't started. Starting later than that would jump the layout: stay static.
+  if (!root.classList.contains('motion') || typeof IntersectionObserver === 'undefined') return;
+  root.classList.add('motion-ready');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+  reduce.addEventListener?.('change', () => reduce.matches && root.classList.remove('motion'));
   scenes();
   reveals();
 }
