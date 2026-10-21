@@ -2,7 +2,7 @@
 // No build step: HTML + inline JS polling /api/state and POSTing actions.
 
 const BASE_CSS = `
-  :root{--bg:#0b1a12;--panel:#11251a;--panel2:#163020;--line:#24402e;--text:#f4efe2;--dim:#a8b8a2;--live:#22c55e;--brk:#f59e0b;--half:#3b82f6;--fin:#9ca3af;--rz:#ef4444;--data:#a78bfa;--err:#dc2626}
+  :root{--bg:#0b1a12;--panel:#11251a;--panel2:#163020;--line:#24402e;--text:#f4efe2;--dim:#a8b8a2;--live:#22c55e;--brk:#f59e0b;--half:#3b82f6;--fin:#9ca3af;--rz:#ef4444;--data:#779cab;--err:#dc2626}
   @font-face{font-family:'Overpass';font-weight:100 900;font-display:swap;src:url(/ui/overpass.woff2) format('woff2')}
   @font-face{font-family:'Overpass Dot';src:local('Segoe UI'),local('Helvetica Neue'),local('Arial');unicode-range:U+00B7}
   *{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:'Overpass Dot','Overpass',system-ui,-apple-system,"Segoe UI",sans-serif}

@@ -24,7 +24,7 @@
     });
   }
   const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-  const tones = { live: '#1f9d55', break: '#d97706', halftime: '#2563eb', final: '#4b5563', error: '#dc2626', data: '#7c3aed', idle: '#374151' };
+  const tones = { live: '#1f9d55', break: '#d97706', halftime: '#2563eb', final: '#4b5563', error: '#dc2626', data: '#5f8494', idle: '#374151' };
   const b = state && state.badge;
   const e = state && state.error;
   const p = state && state.popup;
