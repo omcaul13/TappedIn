@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { matchLineup } from '../../src/providers/networks';
 import { createAdapter, loadProviderConfig } from '../../src/providers/registry';
 import { compileRegex, type ChannelRef } from '../../src/providers/types';
-import { refFromText, UrlTuningSchema } from '../../src/providers/url/adapter';
+import { itemsFromJson, refFromText, UrlTuningSchema } from '../../src/providers/url/adapter';
+import schedule from '../fixtures/providers/paramount-schedule.json';
 
 const url = (id: string) => UrlTuningSchema.parse(loadProviderConfig(id).tuning);
 const ch = (ref: string): ChannelRef => ({ name: 'ESPN', number: 1, callSign: null, ref });
@@ -105,10 +106,18 @@ describe('Fubo', () => {
 });
 
 describe('Paramount+', () => {
-  it('channel name from the Live TV link', () => {
+  it('lineup from the schedule.json the Live TV page downloads: only the local station, as CBS', () => {
     const t = url('paramount-plus');
-    if (t.lineup.mode !== 'dom') throw new Error('expected a DOM scan');
-    expect(refFromText('/live-tv/stream/cbs-sports-hq/', t.lineup.ref.pattern)).toBe('cbs-sports-hq');
+    if (t.lineup.mode !== 'response') throw new Error('expected a response scan');
+    expect(compileRegex(t.lineup.responseUrl).test('https://www.paramountplus.com/live-tv/stream/liveSchedulePlayer/schedule.json?x=1')).toBe(true);
+    // Real schedule.json (trimmed to slug, name and brand) from a Premium account in Boston.
+    const rows = itemsFromJson(schedule, t.lineup);
+    // Only the local station: "CBS Sports HQ" would match CBS Sports Network, "nfl-on-cbs" NFL Network.
+    expect(rows).toEqual([{ label: 'CBS', number: null, callSign: null, ref: 'wbz' }]);
+    const lineup = matchLineup(rows);
+    expect(lineup.CBS?.ref).toBe('wbz');
+    expect(Object.entries(lineup).filter(([, c]) => c.number !== null).map(([k]) => k)).toEqual(['CBS']);
+    expect(t.watchUrl!.replace('{ref}', 'wbz')).toBe('https://www.paramountplus.com/live-tv/stream/wbz/');
     expect(createAdapter('paramount-plus').onChannel('https://www.paramountplus.com/live-tv/stream/wbz/?x=1', ch('wbz'))).toBe(true);
   });
 });

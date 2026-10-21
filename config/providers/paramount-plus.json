@@ -19,7 +19,7 @@
   "defaults": {
     "standbyViews": 0
   },
-  "notes": "Live TV on the Premium plan only: your local CBS station (in most markets) plus CBS Sports HQ and other streaming channels ESPN never lists, so in practice it gives TappedIn one channel, CBS. Each channel has a URL (paramountplus.com/live-tv/stream/<name>) read from the links on the Live TV page. Premium plays 3 streams at once (its plan page). Signed out or without Premium, /live-tv/ sends you to /account/signup/live-tv/, and appUrl leaves out /account/ pages so that never counts as signed in. Your local station follows your location. UNVERIFIED: that the Live TV page links each channel that way, including your local CBS station. Untested.",
+  "notes": "Live TV on the Premium plan only: your local CBS station (in most markets) plus CBS Sports HQ and other streaming channels ESPN never lists, so in practice it gives TappedIn one channel, CBS. /live-tv/ opens the player (/live-tv/stream/) with a guide of a.channel rows whose links are href=\"#\", so the lineup comes from the schedule.json the page downloads: each channel's slug is its URL (paramountplus.com/live-tv/stream/<slug>/), the local station is the only channelTypes live_local, labelled by its brand (\"CBS\"), and require keeps only that row: other names or slugs would be taken for networks they aren't (\"CBS Sports HQ\" for CBS Sports Network, \"nfl-on-cbs\" for NFL Network). Premium plays 3 streams at once (its plan page). Signed out or without Premium, /live-tv/ sends you to /account/signup/live-tv/, and appUrl leaves out /account/ pages so that never counts as signed in. Your local station follows your location. Page and schedule.json read from a Premium account in Boston (WBZ), October 2026; tuning and playback not yet confirmed.",
   "shell": {
     "partition": "persist:paramount-plus",
     "userAgent": "chrome",
@@ -76,23 +76,16 @@
     "pageTimeoutMs": 30000,
     "idlePromptButton": null,
     "lineup": {
-      "mode": "dom",
+      "mode": "response",
       "guideUrl": "https://www.paramountplus.com/live-tv/",
-      "row": "a[href*=\"/live-tv/stream/\"]",
-      "label": {
-        "selector": "img",
-        "attr": "alt",
-        "pattern": null
-      },
+      "responseUrl": "/live-tv/stream/liveSchedulePlayer/schedule\\.json",
+      "items": "result.channels[]",
+      "ref": "slug",
+      "label": "brand.title",
       "number": null,
-      "ref": {
-        "selector": null,
-        "attr": "href",
-        "pattern": "/live-tv/stream/([^/?#]+)"
-      },
-      "scrollContainer": null,
-      "settleMs": 300,
-      "maxScrolls": 20
+      "refPattern": null,
+      "require": "channelTypes[]=live_local",
+      "settleMs": 1000
     }
   }
 }
