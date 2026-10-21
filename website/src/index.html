@@ -22,10 +22,10 @@
   <link rel="preload" href="/fonts/barlow-condensed-800.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/fonts/overpass-var.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/style.css">
-  <!-- The scroll story is on before first paint (no jump), and off again if scroll.js never starts. -->
-  <script>(function(c){if(matchMedia('(prefers-reduced-motion: reduce)').matches||!('IntersectionObserver'in window))return;c.add('motion');setTimeout(function(){if(!c.contains('motion-ready'))c.remove('motion')},4000)})(document.documentElement.classList)</script>
+  <!-- Motion is on before first paint (the hero waits for its entrance), and off again if motion.js never starts. -->
+  <script>(function(c){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;c.add('motion');setTimeout(function(){if(!c.contains('motion-ready'))c.remove('motion')},4000)})(document.documentElement.classList)</script>
   <script type="module" src="/download.js"></script>
-  <script type="module" src="/scroll.js"></script>
+  <script type="module" src="/motion.js"></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -34,215 +34,222 @@
 
 <main id="main">
 
-<!-- 1. What it is -->
-<section class="hero" id="download" data-scene data-steps="1">
-  <div class="wrap copy">
-    <p class="avail">Free for Windows and Mac</p>
-    <h1>Every break,<br>a better game.</h1>
-    <p class="lead">TappedIn puts up to four live games from <strong>your own TV service</strong> in one window. When a game cuts to commercial, its screen jumps to the best game that's live right now, and jumps back the moment play resumes.</p>
-
-    <div class="dl">
-      <div class="for-windows">
-        <a class="btn btn-primary btn-xl" href="/download/windows">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 5.5 10.5 4.4v7.1H3zm0 13L10.5 19.6v-7.1H3zm8.5 1.2L21 21v-8.5h-9.5zm0-15.4v7.2H21V3z"/></svg>
-          Download for Windows
-        </a>
-      </div>
-      <div class="for-mac">
-        <a class="btn btn-primary btn-xl" href="/download/mac">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="11" rx="1.5"/><path d="M2 19h20"/></svg>
-          Download for Mac
-        </a>
-      </div>
-      <div class="for-mobile">
-        <p class="dl-note"><strong>TappedIn is a desktop app for Windows and Mac.</strong> Send yourself the link and open it on your computer: <span class="link-text" data-link-text>this page</span></p>
-        <div class="share">
-          <button class="btn btn-primary" type="button" data-copy>Copy link</button>
-          <button class="btn" type="button" data-share hidden>Share</button>
-          <a class="btn" href="mailto:" data-email>Email me the link</a>
+<!-- What it is, and the download -->
+<section class="hero" id="download">
+  <div class="wrap">
+    <p class="avail" data-intro><span class="pulse" aria-hidden="true"></span>Free for Windows and Mac</p>
+    <h1 data-split>Every break, <br>a better game.</h1>
+    <div class="hero-row">
+      <p class="lead" data-intro>TappedIn puts up to four live games from <strong>your own TV service</strong> in one window. When a game cuts to commercial, its screen jumps to the best game that's live right now, and jumps back the moment play resumes.</p>
+      <div class="dl" data-intro>
+        <div class="for-windows">
+          <a class="btn btn-primary btn-xl" href="/download/windows">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 5.5 10.5 4.4v7.1H3zm0 13L10.5 19.6v-7.1H3zm8.5 1.2L21 21v-8.5h-9.5zm0-15.4v7.2H21V3z"/></svg>
+            Download for Windows
+          </a>
         </div>
+        <div class="for-mac">
+          <a class="btn btn-primary btn-xl" href="/download/mac">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="11" rx="1.5"/><path d="M2 19h20"/></svg>
+            Download for Mac
+          </a>
+        </div>
+        <div class="for-mobile">
+          <p class="dl-note"><strong>TappedIn is a desktop app for Windows and Mac.</strong> Send yourself the link and open it on your computer: <span class="link-text" data-link-text>this page</span></p>
+          <div class="share">
+            <button class="btn btn-primary" type="button" data-copy>Copy link</button>
+            <button class="btn" type="button" data-share hidden>Share</button>
+            <a class="btn" href="mailto:" data-email>Email me the link</a>
+          </div>
+        </div>
+        <ul class="dl-platforms no-mobile">
+          <li><a href="/download/windows">Windows</a> · <span data-latest>Latest beta · Windows 10 &amp; 11, 64-bit</span></li>
+          <li><a href="/download/mac">Mac</a> · <span data-latest-mac>Requires macOS 13 or later, Apple Silicon or Intel</span></li>
+        </ul>
+        <p class="dl-meta no-mobile"><a href="/install.html">Install guide</a></p>
+        <details class="notes" data-notes hidden>
+          <summary>What's new in <span data-notes-version></span></summary>
+          <ul></ul>
+        </details>
       </div>
-      <ul class="dl-platforms no-mobile">
-        <li><a href="/download/windows">Windows</a> · <span data-latest>Latest beta · Windows 10 &amp; 11, 64-bit</span></li>
-        <li><a href="/download/mac">Mac</a> · <span data-latest-mac>Requires macOS 13 or later, Apple Silicon or Intel</span></li>
-      </ul>
-      <p class="dl-meta no-mobile"><a href="/install.html">Install guide</a></p>
     </div>
-    <details class="notes" data-notes hidden>
-      <summary>What's new in <span data-notes-version></span></summary>
-      <ul></ul>
-    </details>
   </div>
 
   <figure class="hero-shot">
-    <div class="frame">
-      <img src="/img/fill-in.jpg" alt="TappedIn with four college football games in a two-by-two grid. The bottom-right screen has switched to Washington State at Oregon State during its own game's break, and says why: TCU at Baylor is at a change of possession, about a minute left." width="1600" height="950" fetchpriority="high">
+    <div class="tilt">
+      <div class="frame">
+        <img src="/img/fill-in.jpg" alt="TappedIn with four college football games in a two-by-two grid. The bottom-right screen has switched to Washington State at Oregon State during its own game's break, and says why: TCU at Baylor is at a change of possession, about a minute left." width="1600" height="950" fetchpriority="high">
+        <span class="glare" aria-hidden="true"></span>
+      </div>
     </div>
     <figcaption>From TappedIn's replay mode, which shows each screen's live game data. In the app, each screen plays your TV service's channel.</figcaption>
   </figure>
 </section>
 
+<div class="ticker" role="region" aria-label="Leagues TappedIn follows">
+  <ul>{{TICKER}}</ul><ul aria-hidden="true">{{TICKER}}</ul>
+</div>
+
 <section class="stats" aria-label="TappedIn at a glance">
   <div class="wrap">
     <ul data-reveal>
-      <li class="stagger"><b data-count="4">4</b><span>live games in one window</span></li>
-      <li class="stagger"><b data-count="{{SPORT_COUNT}}">{{SPORT_COUNT}}</b><span>sports, each with its own break detector</span></li>
-      <li class="stagger"><b data-count="{{LEAGUE_COUNT}}">{{LEAGUE_COUNT}}</b><span>leagues, from college football to the WTA</span></li>
-      <li class="stagger"><b data-count="2">2</b><span>minutes to set up, about</span></li>
+      <li><b data-count="4">4</b><span>live games in one window</span></li>
+      <li><b data-count="{{SPORT_COUNT}}">{{SPORT_COUNT}}</b><span>sports, each with its own break detector</span></li>
+      <li><b data-count="{{LEAGUE_COUNT}}">{{LEAGUE_COUNT}}</b><span>leagues, from college football to the WTA</span></li>
+      <li><b data-count="2">2</b><span>minutes to set up, about</span></li>
     </ul>
   </div>
 </section>
 
-<!-- 2. The switch -->
-<section class="scene switch" id="switch" data-scene data-steps="4" style="--steps:4" aria-labelledby="switch-title">
-  <div class="stage">
-    <div class="wrap">
-      <h2 class="sr-only" id="switch-title">How a switch works</h2>
-      <div class="split">
-        <div>
-          <ol class="caps">
-            <li class="cap" data-i="0"><span class="num">Step 1 of 4</span><h3>Watch your game.</h3><p>Arkansas at Vanderbilt, end of the 1st. Each screen follows its own game, on your TV service's own channel.</p></li>
-            <li class="cap" data-i="1"><span class="num">Step 2 of 4</span><h3>Then it cuts to commercial.</h3><p>A kickoff after a score means a long break. TappedIn forecasts each stoppage from breaks measured in real games. Incompletions and penalties never trigger a switch.</p></li>
-            <li class="cap" data-i="2"><span class="num">Step 3 of 4</span><h3>So the screen switches.</h3><p>It fills in with the best game that's live right now, and tells you why: here, first and goal at the Louisville 10.</p></li>
-            <li class="cap" data-i="3"><span class="num">Step 4 of 4</span><h3>And comes right back.</h3><p>As soon as your game shows a new play, the screen goes back. Or press <strong>Back to my game</strong> whenever you like.</p></li>
-          </ol>
-          <div class="rail" role="group" aria-label="Jump to a step"><button type="button" data-go="0" aria-label="Step 1 of 4: your game"></button><button type="button" data-go="1" aria-label="Step 2 of 4: the break"></button><button type="button" data-go="2" aria-label="Step 3 of 4: the switch"></button><button type="button" data-go="3" aria-label="Step 4 of 4: the return"></button></div>
-        </div>
-
-        <div class="tv-wrap">
-          <div class="tv" role="img" aria-label="Illustration of one TappedIn screen. Arkansas trails Vanderbilt 0 to 7 at the end of the first quarter; during the break the screen shows Louisville and Syracuse, 0 to 0, first and goal at the Louisville 10, then returns.">
-            <div class="game home" aria-hidden="true">
-              <div class="bar"><span class="chips"><span class="chip live">Live</span><span class="chip brk">Commercial break</span><span class="chip returned">Back on your game</span></span><span>ESPN2 850</span></div>
-              <div class="teams">
-                <div class="team"><span class="abbr">ARK</span><span class="name">Arkansas</span><span class="score">0</span></div>
-                <div class="team"><span class="abbr">VAN</span><span class="name">Vanderbilt</span><span class="score">7</span></div>
-              </div>
-              <div class="foot"><span>End of 1st</span><span>Kickoff after a score</span></div>
+<!-- The switch: a demo that plays itself -->
+<section class="section switch" id="switch" aria-labelledby="switch-title">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 class="title" id="switch-title" data-split>One break. <br>Four beats.</h2>
+      <p class="lead">How a switch works, replayed from real games: Arkansas at Vanderbilt, then Louisville and Syracuse.</p>
+    </div>
+    <div class="demo" data-demo data-step="2">
+      <div class="tv-wrap">
+        <div class="tv" role="img" aria-label="Illustration of one TappedIn screen. Arkansas trails Vanderbilt 0 to 7 at the end of the first quarter; during the break the screen shows Louisville and Syracuse, 0 to 0, first and goal at the Louisville 10, then returns.">
+          <div class="game home" aria-hidden="true">
+            <div class="bar"><span class="chips"><span class="chip live">Live</span><span class="chip brk">Commercial break</span><span class="chip returned">Back on your game</span></span><span>ESPN2 850</span></div>
+            <div class="teams">
+              <div class="team"><span class="abbr">ARK</span><span class="name">Arkansas</span><span class="score">0</span></div>
+              <div class="team"><span class="abbr">VAN</span><span class="name">Vanderbilt</span><span class="score">7</span></div>
             </div>
-            <div class="game fill" aria-hidden="true">
-              <div class="bar"><span class="chip oth">Showing other game</span><span>ACC Network 1325</span></div>
-              <div class="teams">
-                <div class="team"><span class="abbr">LOU</span><span class="name">Louisville</span><span class="score">0</span></div>
-                <div class="team"><span class="abbr">SYR</span><span class="name">Syracuse</span><span class="score">0</span></div>
-              </div>
-            </div>
-            <span class="back" aria-hidden="true">&larr; Back to my game</span>
-            <div class="why" aria-hidden="true"><b>Same sport:</b> 1st &amp; Goal at LOU 10 · ARK @ VAN: kickoff after a score · ~1:36 left</div>
+            <div class="foot"><span>End of 1st</span><span>Kickoff after a score</span></div>
           </div>
-          <p class="caption">Illustration from a replay of real games. Screens show your service's video in the app.</p>
+          <div class="game fill" aria-hidden="true">
+            <div class="bar"><span class="chip oth">Showing other game</span><span>ACC Network 1325</span></div>
+            <div class="teams">
+              <div class="team"><span class="abbr">LOU</span><span class="name">Louisville</span><span class="score">0</span></div>
+              <div class="team"><span class="abbr">SYR</span><span class="name">Syracuse</span><span class="score">0</span></div>
+            </div>
+          </div>
+          <span class="back" aria-hidden="true">&larr; Back to my game</span>
+          <div class="why" aria-hidden="true"><b>Same sport:</b> 1st &amp; Goal at LOU 10 · ARK @ VAN: kickoff after a score · ~1:36 left</div>
+          <span class="scan" aria-hidden="true"></span>
         </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- 3. Four games, one window -->
-<section class="scene zoom" id="screens" data-scene data-steps="3" style="--steps:3" aria-labelledby="screens-title">
-  <div class="stage">
-    <div class="wrap">
-      <div class="split flip">
-        <div>
-          <h2 class="title" id="screens-title">Four games.<br>One window.</h2>
-          <ol class="caps" style="margin-top:28px">
-            <li class="cap" data-i="0"><h3>Each screen, its own game.</h3><p>Four college football games here, or mix them: the NHL on one screen, the NBA on another.</p></li>
-            <li class="cap" data-i="1"><h3>Pick from today's games.</h3><p>Search by team or network, and see at a glance which ones your lineup carries.</p></li>
-            <li class="cap" data-i="2"><h3>Fill the window with one.</h3><p>Double-click a screen, or press 1 to 4. The others keep playing and switching behind it, so going back is instant.</p></li>
-          </ol>
-          <div class="rail" role="group" aria-label="Jump to a step"><button type="button" data-go="0" aria-label="Step 1 of 3: its own game"></button><button type="button" data-go="1" aria-label="Step 2 of 3: today's games"></button><button type="button" data-go="2" aria-label="Step 3 of 3: fullscreen"></button></div>
+        <div class="controls-bar">
+          <button class="play" type="button" data-play aria-pressed="false" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-pause" d="M7 5h3v14H7zM14 5h3v14h-3z"/><path class="i-play" d="M8 5v14l11-7z"/></svg><span>Pause</span></button>
+          <div class="rail" role="group" aria-label="Show a beat"><button type="button" data-go="0" aria-label="Beat 1 of 4: your game"></button><button type="button" data-go="1" aria-label="Beat 2 of 4: the break"></button><button type="button" data-go="2" aria-label="Beat 3 of 4: the switch"></button><button type="button" data-go="3" aria-label="Beat 4 of 4: the return"></button></div>
         </div>
-        <figure>
-          <div class="frame"><img src="/img/grid.jpg" alt="Four screens in a two-by-two grid, each with a live college football game's score, clock, down and distance." width="1600" height="950" loading="lazy"></div>
-        </figure>
+        <p class="caption">Illustration from a replay of real games. Screens show your service's video in the app.</p>
       </div>
-    </div>
-  </div>
-</section>
-
-<!-- 4. How it picks -->
-<section class="section" id="picks" aria-labelledby="picks-title">
-  <div class="wrap">
-    <div class="section-head" data-reveal>
-      <h2 class="title" id="picks-title">The best game,<br>in three tiers.</h2>
-      <p class="lead">When a screen needs a fill-in, TappedIn looks in this order, and every switch says which tier it came from.</p>
-    </div>
-    <ol class="tiers" data-reveal>
-      <li class="tier stagger"><span class="n" aria-hidden="true">1</span><h3>Same sport</h3><p>That sport's biggest moments first: a drive in the red zone, a power play, clutch time, match point.</p></li>
-      <li class="tier stagger"><span class="n" aria-hidden="true">2</span><h3>A sport another screen is watching</h3>
-        <div><p>Ranked by a 0 to 100 excitement score: how close, how late, and what's happening.</p>
-          <div class="meter" aria-hidden="true"><div class="track"><i></i></div><div class="scale"><b>0</b><span>Excitement</span><b>100</b></div></div></div></li>
-      <li class="tier stagger"><span class="n" aria-hidden="true">3</span><h3>Any sport you follow</h3><p>A tight soccer match is a great way to wait out a football timeout.</p></li>
-    </ol>
-  </div>
-</section>
-
-<!-- 5. Halftime and game over -->
-<section class="scene" id="breaks" data-scene data-steps="2" style="--steps:2" aria-labelledby="breaks-title">
-  <div class="stage">
-    <div class="wrap">
-      <div class="split">
-        <div>
-          <h2 class="title" id="breaks-title">Halftime.<br>Final. Covered.</h2>
-          <ol class="caps" style="margin-top:28px">
-            <li class="cap" data-i="0"><h3>Halftime highlights.</h3><p>At halftime or a hockey intermission, the screen plays a highlights reel, same sport first, and a scores board, while the game keeps going underneath so the second half starts instantly.</p></li>
-            <li class="cap" data-i="1"><h3>Game over? Pick the next one.</h3><p>When a game ends, a picker opens in that screen with what's live now, same sport first, and a countdown. Pick one, or let TappedIn put the best live game on for you.</p></li>
-          </ol>
-          <div class="rail" role="group" aria-label="Jump to a step"><button type="button" data-go="0" aria-label="Step 1 of 2: halftime"></button><button type="button" data-go="1" aria-label="Step 2 of 2: game over"></button></div>
-        </div>
-        <div class="layers">
-          <figure data-i="0">
-            <div class="frame"><img src="/img/halftime.jpg" alt="Two screens at halftime playing highlight clips while two others show live games." width="1600" height="950" loading="lazy"></div>
-            <figcaption>Highlight video blurred for this page.</figcaption>
-          </figure>
-          <figure data-i="1">
-            <div class="frame"><img src="/img/game-over.jpg" alt="A game-over picker in one screen: final, UNLV 31, Air Force 41, with a list of live games and a countdown to the best one." width="1600" height="950" loading="lazy"></div>
-          </figure>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- 6. Control -->
-<section class="section" id="control" aria-labelledby="control-title">
-  <div class="wrap">
-    <div class="section-head" data-reveal>
-      <h2 class="title" id="control-title">You stay<br>in control.</h2>
-    </div>
-    <ul class="controls" data-reveal>
-      <li class="control stagger">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
-        <h3>Lock a screen</h3><p>A locked screen never switches on its own.</p></li>
-      <li class="control stagger">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg>
-        <h3>Back to my game</h3><p>One click returns a screen to its own game, any time.</p></li>
-      <li class="control stagger">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
-        <h3>Choose the sound</h3><p>Pick whose sound you hear, one screen at a time.</p></li>
-      <li class="control stagger">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 7h18M3 12h18M3 17h10"/></svg>
-        <h3>Big and mini tickers</h3><p>A scrolling score ticker for every sport, or a one-line ticker by the clock that jumps to scores and big moments.</p></li>
-    </ul>
-    <div class="sens" data-reveal>
-      <div>
-        <h3>Switching, as eager as you like.</h3>
-        <p>Set the sensitivity for every sport, or one sport at a time.</p>
-      </div>
-      <ol class="levels">
-        <li><b>Low</b><span>Only clear long breaks. The default.</span></li>
-        <li><b>Medium</b><span>Switches for more breaks.</span></li>
-        <li><b>High</b><span>Most stoppages, and jumps to big moments.</span></li>
+      <ol class="beats">
+        <li data-i="0"><h3>Watch your game.</h3><p>Arkansas at Vanderbilt, end of the 1st. Each screen follows its own game, on your TV service's own channel.</p></li>
+        <li data-i="1"><h3>Then it cuts to commercial.</h3><p>A kickoff after a score means a long break. TappedIn forecasts each stoppage from breaks measured in real games. Incompletions and penalties never trigger a switch.</p></li>
+        <li data-i="2"><h3>So the screen switches.</h3><p>It fills in with the best game that's live right now, and tells you why: here, first and goal at the Louisville 10.</p></li>
+        <li data-i="3"><h3>And comes right back.</h3><p>As soon as your game shows a new play, the screen goes back. Or press <strong>Back to my game</strong> whenever you like.</p></li>
       </ol>
     </div>
   </div>
 </section>
 
-<hr class="rule">
+<!-- Four games, one window -->
+<section class="section screens" id="screens" aria-labelledby="screens-title">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 class="title" id="screens-title" data-split>Four games. <br>One window.</h2>
+    </div>
+  </div>
+  <figure class="iris">
+    <div class="frame"><img src="/img/grid.jpg" alt="Four screens in a two-by-two grid, each with a live college football game's score, clock, down and distance." width="1600" height="950" loading="lazy"></div>
+  </figure>
+  <div class="wrap">
+    <ul class="trio" data-reveal>
+      <li><h3>Each screen, its own game.</h3><p>Four college football games here, or mix them: the NHL on one screen, the NBA on another.</p></li>
+      <li class="pick">
+        <figure class="frame"><img src="/img/game-list.jpg" alt="A screen's game list open over the grid: a search box for teams, networks or sports, and today's live college football games with their scores, clocks and networks." width="1600" height="950" loading="lazy"></figure>
+        <h3>Pick from today's games.</h3><p>Search by team or network, and see at a glance which ones your lineup carries.</p>
+      </li>
+      <li><h3>Fill the window with one.</h3><p>Double-click a screen, or press 1 to 4. The others keep playing and switching behind it, so going back is instant.</p>
+        <div class="keys" aria-hidden="true"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd></div></li>
+    </ul>
+  </div>
+</section>
 
-<!-- 7. Sports -->
+<!-- How it picks -->
+<section class="section" id="picks" aria-labelledby="picks-title">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 class="title" id="picks-title" data-split>The best game, <br>in three tiers.</h2>
+      <p class="lead">When a screen needs a fill-in, TappedIn looks in this order, and every switch says which tier it came from.</p>
+    </div>
+    <ol class="tiers">
+      <li class="tier"><span class="n" aria-hidden="true">1</span><h3>Same sport</h3><p>That sport's biggest moments first: a drive in the red zone, a power play, clutch time, match point.</p></li>
+      <li class="tier"><span class="n" aria-hidden="true">2</span><h3>A sport another screen is watching</h3>
+        <div><p>Ranked by a 0 to 100 excitement score: how close, how late, and what's happening.</p>
+          <div class="meter" aria-hidden="true"><div class="track"><i></i></div><div class="scale"><b>0</b><span>Excitement</span><b>100</b></div></div></div></li>
+      <li class="tier"><span class="n" aria-hidden="true">3</span><h3>Any sport you follow</h3><p>A tight soccer match is a great way to wait out a football timeout.</p></li>
+    </ol>
+  </div>
+</section>
+
+<!-- Halftime and game over -->
+<section class="section breaks" id="breaks" aria-labelledby="breaks-title">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 class="title" id="breaks-title" data-split>Halftime. <br>Final. Covered.</h2>
+    </div>
+    <div class="pair">
+      <figure data-speed="0.6">
+        <div class="frame"><img src="/img/halftime.jpg" alt="Two screens at halftime playing highlight clips while two others show live games." width="1600" height="950" loading="lazy"></div>
+        <figcaption><h3>Halftime highlights.</h3><p>At halftime or a hockey intermission, the screen plays a highlights reel, same sport first, and a scores board, while the game keeps going underneath so the second half starts instantly.</p><small>Highlight video blurred for this page.</small></figcaption>
+      </figure>
+      <figure data-speed="-0.6">
+        <div class="frame"><img src="/img/game-over.jpg" alt="A game-over picker in one screen: final, UNLV 31, Air Force 41, with a list of live games and a countdown to the best one." width="1600" height="950" loading="lazy"></div>
+        <figcaption><h3>Game over? Pick the next one.</h3><p>When a game ends, a picker opens in that screen with what's live now, same sport first, and a countdown. Pick one, or let TappedIn put the best live game on for you.</p></figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- Control -->
+<section class="section" id="control" aria-labelledby="control-title">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 class="title" id="control-title" data-split>You stay <br>in control.</h2>
+    </div>
+    <ul class="controls" data-reveal>
+      <li class="control lit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        <h3>Lock a screen</h3><p>A locked screen never switches on its own.</p></li>
+      <li class="control lit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg>
+        <h3>Back to my game</h3><p>One click returns a screen to its own game, any time.</p></li>
+      <li class="control lit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+        <h3>Choose the sound</h3><p>Pick whose sound you hear, one screen at a time.</p></li>
+      <li class="control lit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 7h18M3 12h18M3 17h10"/></svg>
+        <h3>Big and mini tickers</h3><p>A scrolling score ticker for every sport, or a one-line ticker by the clock that jumps to scores and big moments.</p></li>
+    </ul>
+    <figure class="strip" data-reveal>
+      <div class="frame"><img src="/img/ticker.jpg" alt="The big ticker across the top of TappedIn's window: scores, clocks and down and distance for the day's college football games." width="1600" height="950" loading="lazy"></div>
+    </figure>
+    <div class="sens">
+      <div class="sens-copy" data-reveal>
+        <h3>Switching, as eager as you like.</h3>
+        <p>Set the sensitivity for every sport, or one sport at a time.</p>
+        <ol class="levels">
+          <li><b>Low</b><span>Only clear long breaks. The default.</span></li>
+          <li><b>Medium</b><span>Switches for more breaks.</span></li>
+          <li><b>High</b><span>Most stoppages, and jumps to big moments.</span></li>
+        </ol>
+      </div>
+      <figure data-speed="-0.4">
+        <div class="frame"><img src="/img/settings.jpg" alt="TappedIn's settings panel: switching sensitivity (Low, Medium, High), sound, the sports to follow, tickers and the TV service." width="1600" height="950" loading="lazy"></div>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- Sports -->
 <section class="section" id="sports" aria-labelledby="sports-title">
   <div class="wrap">
-    <div class="section-head" data-reveal>
-      <h2 class="title" id="sports-title">Knows a timeout<br>from a foul shot.</h2>
+    <div class="section-head">
+      <h2 class="title" id="sports-title" data-split>Knows a timeout <br>from a foul shot.</h2>
       <p class="lead">Each sport has its own break detector, built from that sport's measured stoppages.</p>
     </div>
     <ul class="sports" data-reveal>
@@ -251,11 +258,11 @@
   </div>
 </section>
 
-<!-- 8. Services -->
+<!-- Services -->
 <section class="section" id="services" aria-labelledby="services-title">
   <div class="wrap">
-    <div class="section-head" data-reveal>
-      <h2 class="title" id="services-title">Bring the TV<br>you already have.</h2>
+    <div class="section-head">
+      <h2 class="title" id="services-title" data-split>Bring the TV <br>you already have.</h2>
       <p class="lead">TappedIn plays your service's own web player, so you need your own account: campus TV that comes with your housing, or a TV service you pay for at home.</p>
     </div>
     <ul class="services" data-reveal>
@@ -265,39 +272,39 @@
   </div>
 </section>
 
-<!-- 9. Trust -->
+<!-- Trust -->
 <section class="section trust" id="privacy-promise" aria-labelledby="trust-title">
   <div class="wrap">
-    <div class="section-head" data-reveal>
-      <h2 class="title" id="trust-title">Your password<br>stays yours.</h2>
+    <div class="section-head">
+      <h2 class="title" id="trust-title" data-split>Your password <br>stays yours.</h2>
     </div>
     <ul class="facts" data-reveal>
-      <li class="stagger"><h3>Sign in on your service's page</h3><p>TappedIn opens your service's real sign-in page, and your school's SSO and Duo work as usual. It never types, stores or sends your password, and never accepts terms for you.</p></li>
-      <li class="stagger"><h3>Everything runs on your computer</h3><p>It talks only to your TV service and ESPN's public scores. No accounts, no tracking. Sign-in cookies stay on your computer, separately for each service.</p></li>
-      <li class="stagger"><h3>It never records the game</h3><p>It plays your service's own player and changes channels the way you would. It never records, extracts or redistributes video, and never touches copy protection.</p></li>
+      <li class="lit"><h3>Sign in on your service's page</h3><p>TappedIn opens your service's real sign-in page, and your school's SSO and Duo work as usual. It never types, stores or sends your password, and never accepts terms for you.</p></li>
+      <li class="lit"><h3>Everything runs on your computer</h3><p>It talks only to your TV service and ESPN's public scores. No accounts, no tracking. Sign-in cookies stay on your computer, separately for each service.</p></li>
+      <li class="lit"><h3>It never records the game</h3><p>It plays your service's own player and changes channels the way you would. It never records, extracts or redistributes video, and never touches copy protection.</p></li>
     </ul>
   </div>
 </section>
 
-<!-- 10. Setup -->
+<!-- Setup -->
 <section class="section" id="how" aria-labelledby="how-title">
   <div class="wrap">
-    <div class="section-head" data-reveal>
-      <h2 class="title" id="how-title">Two minutes<br>to kickoff.</h2>
+    <div class="section-head">
+      <h2 class="title" id="how-title" data-split>Two minutes <br>to kickoff.</h2>
     </div>
     <ol class="steps" data-reveal>
-      <li class="stagger"><h3>Pick your service</h3><p>Choose your TV service, or search for your school to find its campus TV.</p></li>
-      <li class="stagger"><h3>Sign in on its own page</h3><p>TappedIn opens your service's real sign-in page. School SSO and Duo work as usual.</p></li>
-      <li class="stagger"><h3>Choose your games</h3><p>TappedIn checks your channels and how many streams your plan plays, then picks great games to start.</p></li>
-      <li class="stagger"><h3>Watch</h3><p>Breaks, halftimes and finals take care of themselves.</p></li>
+      <li><h3>Pick your service</h3><p>Choose your TV service, or search for your school to find its campus TV.</p></li>
+      <li><h3>Sign in on its own page</h3><p>TappedIn opens your service's real sign-in page. School SSO and Duo work as usual.</p></li>
+      <li><h3>Choose your games</h3><p>TappedIn checks your channels and how many streams your plan plays, then picks great games to start.</p></li>
+      <li><h3>Watch</h3><p>Breaks, halftimes and finals take care of themselves.</p></li>
     </ol>
   </div>
 </section>
 
-<!-- 11. Questions, then download -->
+<!-- Questions, then download -->
 <section class="section" id="faq" aria-labelledby="faq-title">
   <div class="wrap faq">
-    <div class="section-head"><h2 class="title" id="faq-title">Questions.</h2></div>
+    <div class="section-head"><h2 class="title" id="faq-title" data-split>Questions.</h2></div>
     <details>
       <summary>Do I need a subscription?</summary>
       <p>Yes. TappedIn doesn't provide any channels. It plays the channels you already get from your own campus TV service (for example Xfinity On Campus through your housing) or a TV service you subscribe to. Games on networks your lineup doesn't carry are greyed out and never picked.</p>
@@ -332,7 +339,7 @@
 
 <section class="section cta" aria-labelledby="cta-title">
   <div class="wrap">
-    <h2 id="cta-title">Ready for<br>kickoff?</h2>
+    <h2 id="cta-title" data-split>Ready for <br>kickoff?</h2>
     <p class="lead">Free. Windows 10 &amp; 11 or macOS. Bring your own TV service.</p>
     <div class="dl">
       <div class="for-windows">

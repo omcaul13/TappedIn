@@ -17,18 +17,30 @@
   <link rel="icon" href="/favicon.ico?v=2" sizes="32x32">
   <link rel="icon" href="/img/mark.svg?v=2" type="image/svg+xml">
   <link rel="stylesheet" href="/style.css">
+  <script>(function(c){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;c.add('motion');setTimeout(function(){if(!c.contains('motion-ready'))c.remove('motion')},4000)})(document.documentElement.classList)</script>
   <script type="module" src="/download.js"></script>
-  <script type="module" src="/scroll.js"></script>
+  <script type="module" src="/motion.js"></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
 {{NAV}}
 
-<main id="main" class="wrap doc">
-  <h1>Install TappedIn</h1>
-  <p class="lede">About five minutes, start to finish. You don't need anything else installed first. On a Mac? Skip to <a href="#mac">installing on a Mac</a>.</p>
+<main id="main">
+<header class="wrap doc-head">
+  <h1 data-split>Install <br>TappedIn</h1>
+  <p class="lede" data-intro>About five minutes, start to finish. You don't need anything else installed first. On a Mac? Skip to <a href="#mac">installing on a Mac</a>.</p>
+  <ul class="toc" data-intro>
+    <li><a href="#requirements">What you need</a></li>
+    <li><a href="#steps">Windows</a></li>
+    <li><a href="#mac">Mac</a></li>
+    <li><a href="#update">Updating</a></li>
+    <li><a href="#trouble">If something goes wrong</a></li>
+  </ul>
+</header>
 
-  <h2 id="requirements">What you need</h2>
+<div class="wrap doc">
+  <section aria-labelledby="requirements">
+  <h2 id="requirements" data-split>What you need</h2>
   <ul class="reqs">
     <li><strong>Windows 10 or 11, 64-bit</strong><span class="dim">No admin rights needed.</span></li>
     <li><strong>Or a Mac with macOS 13 Ventura or later</strong><span class="dim">Apple Silicon or Intel.</span></li>
@@ -36,8 +48,10 @@
     <li><strong>Your own TV service</strong><span class="dim">Campus TV or a home TV service <a href="/#services">TappedIn supports</a>.</span></li>
     <li><strong>Internet fast enough for a few HD streams</strong><span class="dim">Each screen is one stream. Campus TV usually needs the campus network.</span></li>
   </ul>
+  </section>
 
-  <h2 id="steps">On Windows, step by step</h2>
+  <section aria-labelledby="steps">
+  <h2 id="steps" data-split>On Windows, step by step</h2>
   <ol class="big">
     <li>
       <h3>Download the installer</h3>
@@ -107,8 +121,10 @@
       <p>If a step gets stuck, press <strong>Having trouble?</strong> to open Diagnostics, or see <a href="/fix-your-service.html">fix your service</a>.</p>
     </li>
   </ol>
+  </section>
 
-  <h2 id="mac">On a Mac, step by step</h2>
+  <section aria-labelledby="mac">
+  <h2 id="mac" data-split>On a Mac, step by step</h2>
   <ol class="big">
     <li>
       <h3>Download the disk image</h3>
@@ -138,8 +154,10 @@
   </section>
 
   <p>Then TappedIn runs the same <a href="#setup">first-run setup</a> as on Windows.</p>
+  </section>
 
-  <h2 id="update">Updating and uninstalling</h2>
+  <section aria-labelledby="update">
+  <h2 id="update" data-split>Updating and uninstalling</h2>
   <ul>
     <li><strong>Update on Windows:</strong> download the newest installer here and run it the same way. Your settings and sign-ins are kept.</li>
     <li><strong>Uninstall on Windows:</strong> Windows Settings → Apps → Installed apps → TappedIn → Uninstall. Your settings stay in the <code>.state</code> folder inside the install folder and your service sign-ins in <code>%LOCALAPPDATA%\TappedIn</code>, in case you reinstall. Delete both folders to remove them too.</li>
@@ -147,14 +165,18 @@
     <li><strong>Update on a Mac:</strong> download the newest <code>.dmg</code> here and drag TappedIn to Applications again, choosing <strong>Replace</strong>.</li>
     <li><strong>Uninstall on a Mac:</strong> quit TappedIn and drag it from Applications to the Trash.</li>
   </ul>
+  </section>
 
-  <h2 id="trouble">If something goes wrong</h2>
+  <section aria-labelledby="trouble">
+  <h2 id="trouble" data-split>If something goes wrong</h2>
   <ul>
     <li><strong>The download link says it's unavailable:</strong> a new version is probably being published. Try again in a few minutes.</li>
     <li><strong>A screen is black but the sound plays:</strong> TappedIn turns off a Windows video setting that causes this on some laptops. If it still happens, <a href="{{BUG_MAILTO}}">tell us</a>.</li>
     <li><strong>"Maximum number of devices" or a stream limit:</strong> your plan plays fewer streams at once than you have screens. TappedIn shows live data tiles on the extra screens.</li>
     <li><strong>Anything else:</strong> <a href="{{BUG_MAILTO}}">report a bug</a>.</li>
   </ul>
+  </section>
+</div>
 </main>
 
 {{FOOTER}}

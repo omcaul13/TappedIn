@@ -17,18 +17,30 @@
   <link rel="icon" href="/favicon.ico?v=2" sizes="32x32">
   <link rel="icon" href="/img/mark.svg?v=2" type="image/svg+xml">
   <link rel="stylesheet" href="/style.css">
+  <script>(function(c){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;c.add('motion');setTimeout(function(){if(!c.contains('motion-ready'))c.remove('motion')},4000)})(document.documentElement.classList)</script>
   <script type="module" src="/download.js"></script>
-  <script type="module" src="/scroll.js"></script>
+  <script type="module" src="/motion.js"></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
 {{NAV}}
 
-<main id="main" class="wrap doc">
-  <h1>Fix your TV service</h1>
-  <p class="lede">TappedIn drives each TV service's own web player. Websites change, and most services were built without a real account to test with (they're marked <strong>Experimental</strong>). If you have one of them, you can test it, fix it, and send the fix back so it works for everyone. No coding needed.</p>
+<main id="main">
+<header class="wrap doc-head">
+  <h1 data-split>Fix your <br>TV service</h1>
+  <p class="lede" data-intro>TappedIn drives each TV service's own web player. Websites change, and most services were built without a real account to test with (they're marked <strong>Experimental</strong>). If you have one of them, you can test it, fix it, and send the fix back so it works for everyone. No coding needed.</p>
+  <ul class="toc" data-intro>
+    <li><a href="#test">Test your service</a></li>
+    <li><a href="#fix">Fix what fails</a></li>
+    <li><a href="#send">Send the fix</a></li>
+    <li><a href="#rules">What TappedIn will and won't do</a></li>
+    <li><a href="#unlisted">A service that isn't listed</a></li>
+  </ul>
+</header>
 
-  <h2>1. Test your service</h2>
+<div class="wrap doc">
+  <section aria-labelledby="test">
+  <h2 id="test" data-split>1. Test your service</h2>
   <ol>
     <li><a href="/install.html">Install TappedIn</a> and pick your service in setup.</li>
     <li>If setup gets stuck at any step (sign-in, channels, playback), press <strong>Diagnostics</strong>. You can also open it later from <strong>Settings → TV service → Diagnostics</strong>.</li>
@@ -44,8 +56,10 @@
       <tr><td>Full-screen video</td><td>The service's menus are hidden and the video fills the screen</td></tr>
     </tbody>
   </table>
+  </section>
 
-  <h2>2. Fix what fails</h2>
+  <section aria-labelledby="fix">
+  <h2 id="fix" data-split>2. Fix what fails</h2>
   <p>When a step fails, the settings it depends on appear right under it:</p>
   <table>
     <thead><tr><th>Setting</th><th>What it is</th><th>Example</th></tr></thead>
@@ -68,16 +82,20 @@
     <li>Your fixes are stored on your computer and sit on top of the built-in settings, so updates to TappedIn don't erase them.</li>
     <li><strong>Edit all fixes as JSON</strong> shows the whole fix file, for bigger changes.</li>
   </ul>
+  </section>
 
-  <h2>3. Send the fix</h2>
+  <section aria-labelledby="send">
+  <h2 id="send" data-split>3. Send the fix</h2>
   <p>Press <strong>Export config</strong>. TappedIn writes <code>tappedin-&lt;service&gt;-&lt;date&gt;.json</code> to <code>Documents\TappedIn</code> and opens the folder.</p>
   <ul>
     <li><strong>What it contains:</strong> your fixes, each step's pass or fail, and what each step saw.</li>
     <li><strong>What it never contains:</strong> your password, cookies, page text, or the parts of web addresses after <code>?</code> or <code>#</code> (that's where sign-in codes live).</li>
   </ul>
   <p>Open the file in Notepad first if you'd like to check it. Then <a href="{{BUG_MAILTO}}">email it to us</a> with the service's name, so the fix can go into the next version.</p>
+  </section>
 
-  <h2>What TappedIn will and won't do</h2>
+  <section aria-labelledby="rules">
+  <h2 id="rules" data-split>What TappedIn will and won't do</h2>
   <p>These rules keep TappedIn on the right side of the services' terms and the law, so a fix that needs to break one can't be accepted:</p>
   <ul>
     <li>TappedIn only does what you could do yourself in the service's player: load channel addresses, click its guide and its own buttons. Reading the page, and the data the page itself downloads, is fine.</li>
@@ -85,9 +103,13 @@
     <li>It never gets around a stream limit, a home-network or location check, or a "this browser isn't supported" or bot check. If a service blocks TappedIn, it's marked as not working, with the reason.</li>
     <li>Nothing leaves your computer except what your service and ESPN's public scores need. No servers, no proxies, no tracking.</li>
   </ul>
+  </section>
 
-  <h2>A service that isn't listed</h2>
+  <section aria-labelledby="unlisted">
+  <h2 id="unlisted" data-split>A service that isn't listed</h2>
   <p>Not supported yet: Peacock, whose games are one-off event streams rather than channels TappedIn can switch between. If you use another service with a web player, <a href="{{BUG_MAILTO}}">email us</a> its name and whether it's campus TV or a home service.</p>
+  </section>
+</div>
 </main>
 
 {{FOOTER}}

@@ -64,43 +64,59 @@ describe('website build', async () => {
   });
 });
 
-describe('scroll story', async () => {
-  const { sceneProgress, stepAt, stepScrollY } = await site('src/scroll.js');
+describe('site build extras', async () => {
+  const { build } = await site('build.mjs');
+  const out = mkdtempSync(path.join(tmpdir(), 'tappedin-site-'));
+  build({ out });
+  afterAll(() => rmSync(out, { recursive: true, force: true }));
+  const page = (f: string) => readFileSync(path.join(out, f), 'utf8');
 
-  it('runs a tall scene from its top at the top to its bottom at the bottom', () => {
-    expect(sceneProgress(100, 3000, 1000)).toBe(0); // not reached yet
-    expect(sceneProgress(0, 3000, 1000)).toBe(0);
-    expect(sceneProgress(-1000, 3000, 1000)).toBe(0.5);
-    expect(sceneProgress(-2000, 3000, 1000)).toBe(1);
-    expect(sceneProgress(-5000, 3000, 1000)).toBe(1); // past it
+  it('runs the league ticker through every league, twice for the loop (the copy hidden from screen readers)', () => {
+    const html = page('index.html');
+    for (const id of SPORT_IDS) expect(html.split(`<li><b>${id.toUpperCase()}</b>`).length - 1, id).toBe(2);
+    expect(html).toMatch(/<ul aria-hidden="true"><li><b>/);
   });
 
-  it('runs a scene no taller than the viewport while it scrolls out, and never divides by zero', () => {
-    expect(sceneProgress(64, 800, 1000)).toBe(0);
-    expect(sceneProgress(-400, 800, 1000)).toBe(0.5);
-    expect(sceneProgress(-900, 800, 1000)).toBe(1);
-    expect(sceneProgress(-400, 1000, 1000)).toBe(0.4);
-    expect(sceneProgress(1, 0, 1000)).toBe(0);
-    expect(sceneProgress(0, 0, 1000)).toBe(1);
-  });
-
-  it('picks the step, holding the last one through the end', () => {
-    expect(stepAt(0, 4)).toBe(0);
-    expect(stepAt(0.249, 4)).toBe(0);
-    expect(stepAt(0.25, 4)).toBe(1);
-    expect(stepAt(0.99, 4)).toBe(3);
-    expect(stepAt(1, 4)).toBe(3);
-    expect(stepAt(1, 1)).toBe(0);
-  });
-
-  it('jumps to the middle of a step, and the step there is the one asked for', () => {
-    // A 4-step scene at y=2000, 5000 px tall, 1000 px viewport: 4000 px of run, 1000 per step.
-    expect(stepScrollY(0, 4, 2000, 5000, 1000)).toBe(2500);
-    expect(stepScrollY(3, 4, 2000, 5000, 1000)).toBe(5500);
-    for (let i = 0; i < 4; i++) {
-      const y = stepScrollY(i, 4, 2000, 5000, 1000);
-      expect(stepAt(sceneProgress(2000 - y, 5000, 1000), 4)).toBe(i);
+  it('loads every script, style and font from the site itself (no third parties: no cookies, no analytics)', () => {
+    for (const f of ['index.html', 'install.html', 'fix-your-service.html']) {
+      const refs = [...page(f).matchAll(/<(?:script|link)\b[^>]*\b(?:src|href)="([^"]+)"/g)].map((m) => m[1]);
+      for (const r of refs) expect(r.startsWith('/') || r.startsWith('https://tappedin-4ot.pages.dev'), `${f}: ${r}`).toBe(true);
     }
+    for (const lib of ['gsap', 'ScrollTrigger', 'SplitText', 'lenis']) expect(readFileSync(path.join(out, 'vendor', `${lib}.min.js`), 'utf8').length).toBeGreaterThan(1000);
+  });
+});
+
+describe('motion', async () => {
+  const { demoAt, demoStart, DEMO_MS } = await site('src/motion.js');
+  const { glowAt, renderScale } = await site('src/field.js');
+
+  it('plays the switch demo beat by beat, then loops', () => {
+    const d = [1000, 2000, 3000, 1000];
+    expect(demoAt(0, d)).toEqual({ step: 0, t: 0 });
+    expect(demoAt(500, d)).toEqual({ step: 0, t: 0.5 });
+    expect(demoAt(1000, d)).toEqual({ step: 1, t: 0 });
+    expect(demoAt(4500, d)).toEqual({ step: 2, t: 0.5 });
+    expect(demoAt(6999, d).step).toBe(3);
+    expect(demoAt(7000, d)).toEqual({ step: 0, t: 0 }); // the loop
+    expect(demoAt(-1, d).step).toBe(3);
+  });
+
+  it('starts each beat where a rail button jumps to it', () => {
+    for (let i = 0; i < DEMO_MS.length; i++) expect(demoAt(demoStart(i) + 1).step).toBe(i);
+    expect(demoStart(0)).toBe(0);
+  });
+
+  it('dims the field lights while reading and brings them back at the bottom', () => {
+    expect(glowAt(0, 1000, 8000)).toBe(1);
+    expect(glowAt(3000, 1000, 8000)).toBe(0);
+    expect(glowAt(8000, 1000, 8000)).toBeCloseTo(0.85);
+    expect(glowAt(0, 1000, 0)).toBe(1); // a page that doesn't scroll
+  });
+
+  it('renders the field at a fraction of the screen, less on phones', () => {
+    expect(renderScale(1, false)).toBeCloseTo(0.6);
+    expect(renderScale(3, true)).toBeCloseTo(0.675);
+    expect(renderScale(2, true)).toBeLessThan(renderScale(2, false));
   });
 });
 

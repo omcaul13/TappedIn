@@ -34,7 +34,7 @@ export function servicesHtml(services) {
     .map((p) => {
       const status = STATUS[p.status] ?? p.status;
       const streams = p.documentedMaxStreams ? `${p.documentedMaxStreams} documented` : 'setup measures it';
-      return `<li class="svc svc-${esc(p.status)}"><div class="svc-top"><strong>${esc(p.name)}</strong><span class="badge badge-${esc(p.status)}">${esc(status)}</span></div><span class="svc-kind">${esc(KIND[p.kind] ?? p.kind)} · streams at once: ${esc(streams)}</span></li>`;
+      return `<li class="svc lit svc-${esc(p.status)}"><div class="svc-top"><strong>${esc(p.name)}</strong><span class="badge badge-${esc(p.status)}">${esc(status)}</span></div><span class="svc-kind">${esc(KIND[p.kind] ?? p.kind)} · streams at once: ${esc(streams)}</span></li>`;
     })
     .join('\n');
 }
@@ -43,9 +43,16 @@ export function sportsHtml(groups) {
   return groups
     .map(
       (g) =>
-        `<li class="sport"><h3>${esc(g.family)}</h3><p class="leagues">${g.leagues.map((l) => esc(l.name)).join(' · ')}</p><p><strong>Switches for:</strong> ${esc(g.switches)}</p><p><strong>Hot moments:</strong> ${esc(g.hot)}</p></li>`,
+        `<li class="sport lit"><h3>${esc(g.family)}</h3><p class="leagues">${g.leagues.map((l) => esc(l.name)).join(' · ')}</p><p><strong>Switches for:</strong> ${esc(g.switches)}</p><p><strong>Hot moments:</strong> ${esc(g.hot)}</p></li>`,
     )
     .join('\n');
+}
+
+/** The league ticker under the hero: one item per league, shortest name first like the app's own ticker. */
+export function tickerHtml(groups) {
+  return groups
+    .flatMap((g) => g.leagues.map((l) => `<li><b>${esc(l.id.toUpperCase())}</b>${esc(l.name)}</li>`))
+    .join('');
 }
 
 export function build({ out = join(here, 'dist'), providers, email = REPORT_EMAIL } = {}) {
@@ -59,6 +66,7 @@ export function build({ out = join(here, 'dist'), providers, email = REPORT_EMAI
   const fill = {
     SERVICES: servicesHtml(loadServices(providers)),
     SPORTS: sportsHtml(sports),
+    TICKER: tickerHtml(sports),
     SPORT_COUNT: String(sports.length),
     LEAGUE_COUNT: String(sports.reduce((n, g) => n + g.leagues.length, 0)),
     BUG_MAILTO: esc(bug),

@@ -1,10 +1,11 @@
 # TappedIn website
 
-The download site: a home page, an install guide and a "fix your service" guide. It's plain HTML, CSS and a little JS, with no framework and no dependencies.
+The download site: a home page, an install guide and a "fix your service" guide. It's plain HTML, CSS and JS with no framework and no build dependencies. The motion libraries (GSAP and Lenis) are vendored in `src/vendor/` so the site loads nothing from a third party.
 
 ```text
 website/
-  src/                    the pages, style.css, download.js (platform detection, version line), img/, fonts/
+  src/                    the pages, style.css, download.js (platform detection, version line), motion.js (scroll motion,
+                          the switch demo), field.js (the WebGL field behind every page), vendor/, img/, fonts/
   partials/               nav and footer shared by every page
   sports.json             the sports section (a test checks it lists exactly the app's sports)
   build.mjs               src/ -> dist/, filling in the sports and the TV services (from config/providers/*.json)
