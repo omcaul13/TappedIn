@@ -52,7 +52,7 @@ export function tilePage(screen: number): string {
   .ball{position:absolute;top:2px;width:12px;height:12px;border-radius:50%;background:#fbbf24;transform:translateX(-6px);box-shadow:0 0 6px #fbbf24}
   .last{color:var(--dim);font-size:clamp(12px,2.8vh,15px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .empty{flex:1;display:grid;place-items:center;color:var(--dim);font-size:20px;text-align:center}
-  .redzone{animation:pulse 1.4s infinite}@keyframes pulse{50%{box-shadow:0 0 0 4px rgba(239,68,68,.45)}}
+  .hot-moment{animation:pulse 1.4s infinite}@keyframes pulse{50%{box-shadow:0 0 0 4px rgba(239,68,68,.45)}}
   #pop{position:fixed;inset:30px 16px 12px;background:rgba(11,15,20,.97);border:1px solid #334155;border-radius:12px;display:none;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.7)}
   </style></head><body><div id="root" class="empty">TappedIn screen ${screen}</div><div id="pop"></div><script>${CLIENT_JS}
   const N=${screen};wirePicker(document.getElementById('pop'),N);let popKey='';
@@ -71,7 +71,7 @@ export function tilePage(screen: number): string {
     if(!fb){const parts=[];if(g.hot)parts.push(g.hot.toUpperCase());if(L&&L.family==='baseball'&&(L.half==='top'||L.half==='bottom')){const b=[L.onFirst?'1st':'',L.onSecond?'2nd':'',L.onThird?'3rd':''].filter(Boolean);parts.push((b.length?'on '+b.join(', '):'bases empty')+(L.outs!=null?' \\u00b7 '+L.outs+' out':'')+(L.balls!=null&&L.strikes!=null?' \\u00b7 '+L.balls+'-'+L.strikes:''));}sit=parts.join(' \\u00b7 ');}
     root.className='';root.style.display='contents';
     root.innerHTML='<div class="top"><span><span class="chip" style="background:'+(TONE[a.state]||'var(--fin)')+'">'+stateLabel(a.state)+'</span> &nbsp;'+esc(g.channel?g.channel.name+' '+g.channel.number:g.networks.join('/'))+(sc.audio?' &#128266;':'')+'</span><span>'+esc([fill,why,st.mode!=='live'?st.mode.toUpperCase():''].filter(Boolean).join(' \\u00b7 '))+'</span></div>'+
-      '<div class="teams'+((s&&s.isRedZone)||(!fb&&g.hot)?' redzone':'')+'">'+[g.away,g.home].map((t)=>'<div class="team"><span class="abbr'+(s&&s.possessionTeamId===t.id?' pos':'')+'">'+esc(t.abbr)+'</span><span class="name">'+esc(t.name)+'</span><span class="score">'+t.score+'</span></div>').join('')+'</div>'+
+      '<div class="teams'+((s&&s.isRedZone)||(!fb&&g.hot)?' hot-moment':'')+'">'+[g.away,g.home].map((t)=>'<div class="team"><span class="abbr'+(s&&s.possessionTeamId===t.id?' pos':'')+'">'+esc(t.abbr)+'</span><span class="name">'+esc(t.name)+'</span><span class="score">'+t.score+'</span></div>').join('')+'</div>'+
       '<div class="mid"><span>'+esc((fb?'':g.sportShort+' \\u00b7 ')+g.detail)+'</span><span style="color:'+((s&&s.isRedZone)||(!fb&&g.hot)?'var(--rz)':'inherit')+'">'+esc(fb?(s&&s.downDistanceText?s.downDistanceText+(s.isRedZone?' \\u00b7 RED ZONE':''):''):sit)+'</span></div>'+
       (fb?'<div class="field">'+(s?'<div class="rz" style="'+rzSide+'"></div>':'')+ball+'</div>':'')+
       '<div class="last">'+esc(s&&s.lastPlay?s.lastPlay:'')+'</div>';

@@ -45,7 +45,7 @@ How I tested: a fresh worktree on origin/main (3dce3ca). I looked at onboarding,
 - **No "my team" concept** (medium). Lock is the only tool. I want "Texas": always on screen 3 when it's on TV, its sound wins ties, and the app never covers my team's live snaps with another game's blowout.
 
 ## New feature ideas
-- **A real "RedZone" screen** (high value). One screen with no home game that always chases the best live moment (red zone, one-score 4th, OT, upset alert), like the TV channel. The other three keep their homes. Right now only the High level's "FILL_UPGRADE" comes close, and only during a home break.
+- **A "best moment" screen** (high value). One screen with no home game that always chases the best live moment (a drive in the red zone, one-score 4th, OT, upset alert). The other three keep their homes. Right now only the High level's "FILL_UPGRADE" comes close, and only during a home break.
 - **Upset alert**: ranked team trailing or tied in the 2nd half against an unranked or lower-ranked team. Use it as a hot moment for the ranker, the sound and a mini-ticker jump.
 - **"Close & late" first on Saturdays**: one-score game in the last 5:00 of the 4th, or OT, beats any red-zone trip with a margin above 16.
 - **Never duplicate unless I ask**: a duplicate fill or auto-pick should be off by default. If every screen's game is in a break, just stay home.

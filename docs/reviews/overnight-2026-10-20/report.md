@@ -175,7 +175,7 @@ Screenshots:
 | **"What you missed" chip** when a screen comes back home ("TD UNC while you were away") | 2: first-timer, CFB | M |
 | **Choose which sports may fill which screen** (or "CFB only today") | 2: multi-sport, CFB | M |
 | **Text-size control** | 2: laptop, a11y | S |
-| A dedicated **RedZone chase screen** with no home that always shows the best moment | 1: CFB | M |
+| A dedicated **best-moment chase screen** with no home that always shows the best moment | 1: CFB | M |
 | A **"Calm" level** below Low (quarter breaks, halftime, game over only) | 1: casual | S |
 | **Low-power mode** (no big ticker, pause hidden views, no standby) and a hardware hint in "How many screens?" | 1: laptop | M |
 | **Lineup advisor:** what a service carries before sign-in, games you're missing and why, combining two services, ESPN+ | 1: Philo | L |

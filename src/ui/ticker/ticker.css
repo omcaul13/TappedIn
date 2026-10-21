@@ -112,7 +112,7 @@
 /* right column: the top bar's controls, under Windows' minimize/maximize/close buttons */
 .bt .ctl {
   flex: none; width: 150px; height: 100%; padding: 38px 10px 6px; display: flex; flex-direction: column; justify-content: center; gap: 4px; align-items: flex-end;
-  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; font-size: 12px; background: linear-gradient(180deg, #0f1620, #0b0f14);
+  font-family: 'Overpass Dot', 'Overpass', 'Segoe UI', system-ui, sans-serif; font-size: 12px; background: linear-gradient(180deg, #0f1620, #0b0f14);
   border-left: 1px solid rgba(107, 107, 255, .35); -webkit-app-region: drag;
 }
 .app.fullscreen .bt .ctl { padding-top: 6px; }

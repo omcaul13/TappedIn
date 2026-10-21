@@ -1,6 +1,6 @@
 # TappedIn
 
-A multi-game "red zone" channel for college football, the NFL, college and pro basketball, the NHL, MLB, soccer and tennis, on the TV service you already have. One app window shows up to four channels in a grid, each screen on its own sport. A director watches ESPN's live game data and changes each screen's channel:
+Up to four live games in one window, and a better game every commercial break: college football, the NFL, college and pro basketball, the NHL, MLB, soccer and tennis, on the TV service you already have. One app window shows up to four channels in a grid, each screen on its own sport. A director watches ESPN's live game data and changes each screen's channel:
 
 - **Long commercial break on a screen's game:** the screen fills in with the best live game: the same sport first (red zone, power play, clutch time…), then a sport another screen is watching, then any sport.
 - **Play resumes:** the screen goes back to its game.
@@ -24,7 +24,7 @@ TappedIn isn't affiliated with or endorsed by any TV service, school, league or 
 | v0.0.6 | **Setup for everyone:** one-click installer, first-run setup, TV service settings, diagnostics | ✅ setup run live on Xfinity On Campus 10/18 (sign-in, scan 17 networks, playback, 4 streams); installer checked in check-only mode |
 | v0.0.7 | **Multi-sport:** sport modules (NFL, men's and women's college basketball, NBA, WNBA, NHL, MLB, MLS, Premier League, Champions League, La Liga), sport picker, 3-tier fill-ins | ✅ built and tested on recorded and rebuilt days (10/18); college football unchanged (identical decisions on its recorded days); not yet watched live with streams |
 | v0.0.8 | **Tennis** (ATP, WTA), **per-screen fullscreen**, the **big ticker** (the CFB ticker, built in, every sport) and the **mini ticker** | ✅ built and tested on recorded data and replays (10/19); not yet watched live with streams |
-| v0.0.9 | **TappedIn:** renamed from RedZone, one-download Windows installer (TappedIn-Setup.exe), new look | ✅ merged (PRs #4–#7); first installer build is v0.1.0 |
+| v0.0.9 | **TappedIn:** the app's new name, one-download Windows installer (TappedIn-Setup.exe), new look | ✅ merged (PRs #4–#7); first installer build is v0.1.0 |
 
 ## Supported sports
 

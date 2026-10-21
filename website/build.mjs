@@ -56,6 +56,8 @@ export function build({ out = join(here, 'dist'), providers, email = REPORT_EMAI
   const fill = {
     SERVICES: servicesHtml(loadServices(providers)),
     SPORTS: sportsHtml(sports),
+    SPORT_COUNT: String(sports.length),
+    LEAGUE_COUNT: String(sports.reduce((n, g) => n + g.leagues.length, 0)),
     BUG_MAILTO: esc(bug),
     REPORT_EMAIL: esc(email),
     YEAR: String(new Date().getFullYear()),

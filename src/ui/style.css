@@ -29,7 +29,8 @@
 }
 * { box-sizing: border-box; }
 body {
-  font-family: 'Inter', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+  /* 'Overpass Dot' (build.ts) is only the middle dot: Overpass's own has no width. */
+  font-family: 'Overpass Dot', 'Overpass', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
   font-size: 13px;
   color: var(--text);
   -webkit-font-smoothing: antialiased;

@@ -32,7 +32,7 @@ dead local port; the top bar then shows a red "Xfinity sign-in failed" chip for 
 Sunday 10/18 18:30 on, four NFL/MLB homes (S1 TB @ CLE MLB auto-picked, S2 ARI @ LAR, S3 BUF @ LV, S4 LAC @ KC, the last two picked
 by hand). Every NFL break on S2, S3 and S4 fills with `TB @ CLE [DUPLICATE: only option]`, the game S1 already shows. At 18:54
 S1, S2 and S3 all showed TB @ CLE at once. Duplicates are on by default (`director.allowDuplicates: true`), so with a thin
-watchable slate the "RedZone" becomes three copies of one ballgame. For a multi-sport fan, three identical screens is worse than
+watchable slate the grid becomes three copies of one ballgame. For a multi-sport fan, three identical screens is worse than
 three commercials: at least the commercials end on their own game. Suggest: at most one duplicate of a given game, or default
 `allowDuplicates` to false, or prefer leaving the screen home.
 
@@ -76,8 +76,8 @@ in-screen picker page, which is still visible dimmed behind it with its own coun
 ### An NHL intermission plays an 18-minute highlights reel while live games are on (high for me) - `09-nhl-intermission-reel-while-cfb-red-zone.png`
 10/17 synth, S1 = BUF @ MTL (NHL Network): `19:50:29 [S1] HALFTIME ... (BUF 1-2 MTL End of 1st)` to `20:09:13 HALFTIME_OVER`, and
 again 20:49 to 21:08. That's ~19 minutes each time of the reel ("highlight 1 of 32", clips of the game I'm watching), while 11
-college football games were live and S2 showed UK @ OU at 3rd & goal from the 2. This is exactly the case I bought a
-multi-sport RedZone for: a hockey intermission is the longest break of the night and should be filled with the best live game
+college football games were live and S2 showed UK @ OU at 3rd & goal from the 2. This is exactly the case I want
+a multi-sport app for: a hockey intermission is the longest break of the night and should be filled with the best live game
 (another sport), with the reel only when nothing is in play. At least make it a setting ("At halftime/intermission: live game
 first / highlights").
 

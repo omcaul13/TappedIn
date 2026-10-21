@@ -82,7 +82,7 @@ export function startServer(port: number, handlers: ServerHandlers): Promise<Loc
         return send(500, 'text/javascript', `document.body.textContent=${JSON.stringify(`UI build failed: ${String(err)}`)}`);
       }
     }
-    if (url.pathname === '/ui/inter.woff2') return send(200, 'font/woff2', uiFont());
+    if (url.pathname === '/ui/overpass.woff2') return send(200, 'font/woff2', uiFont());
     const barlow = /^\/ui\/barlow-condensed-(\d00)\.woff2$/.exec(url.pathname);
     const barlowFont = barlow ? tickerFont(Number(barlow[1])) : null;
     if (barlowFont) return send(200, 'font/woff2', barlowFont);

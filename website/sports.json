@@ -6,7 +6,7 @@
       { "id": "nfl", "name": "NFL" }
     ],
     "switches": "Ends of quarters, kickoffs after scores, injuries, the NFL's two-minute warning, and timeouts once the quiet shows a TV break.",
-    "hot": "Red zone, two-minute drill, overtime"
+    "hot": "A drive in the red zone, the two-minute drill, overtime"
   },
   {
     "family": "Basketball",

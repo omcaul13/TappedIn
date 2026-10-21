@@ -23,7 +23,7 @@ export function adviseOnStream(state: StreamState, attempts: number, retrySecond
     case 'STREAM_LIMIT':
       return { action: 'dataTile', retryAfterSeconds: null, title: `${shortName} stream limit reached`, hint: 'Showing live game data on this screen instead. Video returns to the most exciting games.' };
     case 'LOGIN_REQUIRED':
-      return { action: 'fail', retryAfterSeconds: retrySeconds * 2, title: `Signed out of ${shortName}`, hint: 'RedZone signs in again on its own and this screen retries. If it keeps failing, use Settings → TV service (Chrome tiles: run "npm run login").' };
+      return { action: 'fail', retryAfterSeconds: retrySeconds * 2, title: `Signed out of ${shortName}`, hint: 'TappedIn signs in again on its own and this screen retries. If it keeps failing, use Settings → TV service (Chrome tiles: run "npm run login").' };
     case 'CHANNEL_UNAVAILABLE':
       return { action: 'fail', retryAfterSeconds: retrySeconds * 5, title: 'Channel not available', hint: shortName === 'Xfinity' ? 'Xfinity says this channel can\'t play here. Live TV needs the campus network; check the channel number in the config.' : `${shortName} says this channel can't play here. It may not be in your plan, or may only play on your home network; check the channel in your lineup.` };
     case 'DRM_ERROR':

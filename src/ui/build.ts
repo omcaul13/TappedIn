@@ -38,13 +38,15 @@ export async function uiBundle(): Promise<string> {
 export function uiPage(): string {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>TappedIn</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<style>@font-face{font-family:'Inter';font-style:normal;font-weight:100 900;font-display:swap;src:url(/ui/inter.woff2) format('woff2')}
+<style>@font-face{font-family:'Overpass';font-style:normal;font-weight:100 900;font-display:swap;src:url(/ui/overpass.woff2) format('woff2')}
+@font-face{font-family:'Overpass Dot';src:local('Segoe UI'),local('Helvetica Neue'),local('Arial');unicode-range:U+00B7}
 ${TICKER_WEIGHTS.map((w) => `@font-face{font-family:'Barlow Condensed';font-style:normal;font-weight:${w};font-display:swap;src:url(/ui/barlow-condensed-${w}.woff2) format('woff2')}`).join('')}
 html,body{margin:0;height:100%;background:transparent;overflow:hidden}</style>
 </head><body><div id="app"></div><script type="module" src="/ui.js"></script></body></html>`;
 }
 
-const FONT = path.join(DIR, '..', '..', 'node_modules', '@fontsource-variable', 'inter', 'files', 'inter-latin-wght-normal.woff2');
+// Overpass (SIL Open Font License), the body font: Highway Gothic's road-sign roots match the tickers' Barlow Condensed.
+const FONT = path.join(DIR, '..', '..', 'node_modules', '@fontsource-variable', 'overpass', 'files', 'overpass-latin-wght-normal.woff2');
 export function uiFont(): Buffer {
   return readFileSync(FONT);
 }

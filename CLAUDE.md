@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-TappedIn: a multi-sport "red zone"-style channel (college football first; NFL, men's/women's college basketball, NBA, WNBA, NHL, MLB, soccer, ATP/WTA tennis). One castLabs Electron window shows 1–4 channels from the user's TV service (Xfinity On Campus is the tested one; others are experimental provider adapters), each screen on its own sport, and a director switches each screen's channel based on ESPN live data (long break → best other live game by 3 tiers: same sport, another screen's sport, any sport; halftime/intermission → highlights reel; final → game picker). README.md is the detailed user-facing doc (modes, switching rules, measured results); read it before changing switching behavior.
+TappedIn: up to four live games in one window that switch to a better game during commercial breaks (college football first; NFL, men's/women's college basketball, NBA, WNBA, NHL, MLB, soccer, ATP/WTA tennis). One castLabs Electron window shows 1–4 channels from the user's TV service (Xfinity On Campus is the tested one; others are experimental provider adapters), each screen on its own sport, and a director switches each screen's channel based on ESPN live data (long break → best other live game by 3 tiers: same sport, another screen's sport, any sport; halftime/intermission → highlights reel; final → game picker). README.md is the detailed user-facing doc (modes, switching rules, measured results); read it before changing switching behavior.
 
 ## Commands
 
