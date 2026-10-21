@@ -117,8 +117,10 @@ describe('Paramount+', () => {
     const lineup = matchLineup(rows);
     expect(lineup.CBS?.ref).toBe('wbz');
     expect(Object.entries(lineup).filter(([, c]) => c.number !== null).map(([k]) => k)).toEqual(['CBS']);
-    expect(t.watchUrl!.replace('{ref}', 'wbz')).toBe('https://www.paramountplus.com/live-tv/stream/wbz/');
-    expect(createAdapter('paramount-plus').onChannel('https://www.paramountplus.com/live-tv/stream/wbz/?x=1', ch('wbz'))).toBe(true);
+    // /live-tv/stream/wbz/ stalls (it asks Google's ad server for a 24/7 stream); the local path plays.
+    expect(t.watchUrl!.replace('{ref}', 'wbz')).toBe('https://www.paramountplus.com/live-tv/stream/local/wbz/');
+    expect(createAdapter('paramount-plus').onChannel('https://www.paramountplus.com/live-tv/stream/local/wbz/?x=1', ch('wbz'))).toBe(true);
+    expect(createAdapter('paramount-plus').onChannel('https://www.paramountplus.com/live-tv/stream/local/wcbs/', ch('wbz'))).toBe(false);
   });
 });
 
