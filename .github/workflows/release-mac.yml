@@ -1,18 +1,19 @@
 # Builds the universal Mac app (TappedIn.dmg + TappedIn-mac.zip) and attaches it to the same GitHub
 # Release as the Windows installer (release.yml, which this leaves alone).
-#   Push a tag like v0.2.0  -> VMP-signed for Widevine (EVS secrets), attached to the v0.2.0 release
+# It does NOT run on every tag: macOS builds are slow and cost 10x, so a release builds the Mac app only
+# when someone asks for it:
+#   gh workflow run release-mac.yml --ref v0.2.0
+#                           -> VMP-signed for Widevine (EVS secrets), attached to the v0.2.0 release
 #                              once release.yml has created it, then published on the website (R2).
-#   Run it by hand, or a PR -> a test build without the VMP signature (video won't play), as a workflow artifact.
-#   that changes the Mac      (PRs only when they touch the Mac build or the Electron shell: macOS minutes
-#   build                     cost 10x in a private repo.)
+#   Run it on a branch, or  -> a test build without the VMP signature (video won't play), as a workflow artifact.
+#   a PR that changes the     (PRs only when they touch the Mac build or the Electron shell.)
+#   Mac build
 # Apple signing is chosen only by which secrets exist (docs/mac-signing.md):
 #   no MAC_CERT_P12  -> Mode A: ad hoc signature, no notarization (users click "Open Anyway" once)
 #   MAC_CERT_P12 set -> Mode B: Developer ID + hardened runtime, notarized and stapled; auto-updates on
 name: Release Mac app
 
 on:
-  push:
-    tags: ['v*']
   pull_request:
     paths: ['installer/mac/**', '.github/workflows/release-mac.yml', 'electron/**']
   workflow_dispatch:
@@ -30,7 +31,8 @@ jobs:
     # universal either way; the smoke test skips arm64 where it can't run. Switch back to macos-latest here.
     runs-on: ${{ inputs.runner || 'macos-15-intel' }}
     env:
-      SIGNED: ${{ github.event_name == 'push' }}
+      # A run started on a tag is that release's Mac app; anything else is a test build.
+      SIGNED: ${{ github.ref_type == 'tag' }}
       MAC_CERT_P12: ${{ secrets.MAC_CERT_P12 }}
     steps:
       - uses: actions/checkout@v4

@@ -37,7 +37,7 @@ The Functions serve them under the site's own address, with resumable downloads:
 
 A missing object gives a 503 ("try again in a few minutes") or a 404 from `/api/latest`; the page then keeps its static text and links.
 
-On every `v*` tag, `.github/workflows/release.yml` builds the signed installer, attaches it to the GitHub release, then uploads the Windows objects to R2; the Mac release workflow uploads the Mac ones. The site never needs editing for a new version.
+On every `v*` tag, `.github/workflows/release.yml` builds the signed installer, attaches it to the GitHub release, then uploads the Windows objects to R2; the Mac release workflow uploads the Mac ones when it's run for that tag (`gh workflow run release-mac.yml --ref v0.2.0`; it doesn't start on its own, so the site keeps the last Mac app until then). The site never needs editing for a new version.
 
 ## One-time setup (Cloudflare)
 

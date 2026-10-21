@@ -148,7 +148,7 @@ These steps go away once TappedIn is signed and notarized by Apple.
 
 **Keys on a Mac:** the same single-key shortcuts as on Windows, plus **⌘,** for settings, **⌃⌘F** (or **F**) for full screen in its own Space, **⌘Q** to quit.
 
-**Building the Mac app** (maintainers, on a Mac): `bash installer/mac/build-mac.sh`. Add `--unsigned` for a test build where video won't play. Pushing a `v*` tag also builds it in GitHub Actions (`release-mac.yml`) and attaches `TappedIn.dmg` to the same release as the Windows installer. The signing modes, every secret and how to get it are in [docs/mac-signing.md](docs/mac-signing.md); the manual checklist is [docs/mac-testing.md](docs/mac-testing.md).
+**Building the Mac app** (maintainers, on a Mac): `bash installer/mac/build-mac.sh`. Add `--unsigned` for a test build where video won't play. A release doesn't build it on its own (macOS builds are slow): `gh workflow run release-mac.yml --ref v0.2.0` builds it in GitHub Actions for that tag, attaches `TappedIn.dmg` to the same release as the Windows installer and publishes it on the website. The signing modes, every secret and how to get it are in [docs/mac-signing.md](docs/mac-signing.md); the manual checklist is [docs/mac-testing.md](docs/mac-testing.md).
 
 ## First-run setup
 

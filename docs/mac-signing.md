@@ -1,6 +1,6 @@
 # Signing the Mac app
 
-`release-mac.yml` builds `TappedIn.dmg` (universal: Apple Silicon + Intel) on every `v*` tag. Apple signing works in one of two modes. **Which secrets exist decides the mode**: nothing in the code or workflow changes when you switch.
+`release-mac.yml` builds `TappedIn.dmg` (universal: Apple Silicon + Intel) for a release when it's run on that tag (`gh workflow run release-mac.yml --ref v0.2.0`); a tag alone doesn't start it. Apple signing works in one of two modes. **Which secrets exist decides the mode**: nothing in the code or workflow changes when you switch.
 
 | | Mode A (now) | Mode B (with an Apple Developer account) |
 |---|---|---|
