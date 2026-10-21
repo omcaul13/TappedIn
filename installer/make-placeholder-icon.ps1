@@ -1,13 +1,19 @@
-# Draws the placeholder TappedIn icon (electron/tappedin.ico) to match BrandGlyph in src/ui/icons.tsx:
-# a cream signal (dot + two waves) on a forest-green rounded tile. Replace the .ico with the real logo
-# when it's ready; this script is only for the placeholder. Windows PowerShell 5.1.
+# Draws the placeholder TappedIn icon to match BrandGlyph in src/ui/icons.tsx: a cream signal (dot + two
+# waves) on a forest-green rounded tile. Writes electron/tappedin.ico (Windows) and installer/mac/icon-1024.png
+# (the Mac app icon; build-mac.sh makes the .icns from it). Replace both with the real logo when it's ready;
+# this script is only for the placeholder. Windows PowerShell 5.1.
 Add-Type -AssemblyName System.Drawing
-$out = Join-Path (Split-Path -Parent $PSScriptRoot) 'electron\tappedin.ico'
+$root = Split-Path -Parent $PSScriptRoot
+$out = Join-Path $root 'electron\tappedin.ico'
+$macOut = Join-Path $root 'installer\mac\icon-1024.png'
 
-function New-IconPng([int]$S) {
-    $bmp = New-Object System.Drawing.Bitmap $S, $S
+# $Pad leaves a transparent margin around the tile (macOS icons draw an 824 px tile on a 1024 px canvas).
+function New-IconPng([int]$Size, [int]$Pad = 0) {
+    $bmp = New-Object System.Drawing.Bitmap $Size, $Size
     $g = [System.Drawing.Graphics]::FromImage($bmp)
     $g.SmoothingMode = 'AntiAlias'
+    $g.TranslateTransform($Pad, $Pad)
+    $S = $Size - 2 * $Pad
     $r = [single]($S * 0.22)
     $tile = New-Object System.Drawing.Drawing2D.GraphicsPath
     $tile.AddArc(0, 0, 2 * $r, 2 * $r, 180, 90); $tile.AddArc($S - 2 * $r, 0, 2 * $r, 2 * $r, 270, 90)
@@ -49,3 +55,6 @@ for ($i = 0; $i -lt $sizes.Count; $i++) {
 foreach ($p in $pngs) { $w.Write($p) }
 $w.Close()
 Write-Host "Wrote $out"
+
+[System.IO.File]::WriteAllBytes($macOut, (New-IconPng 1024 100))
+Write-Host "Wrote $macOut"

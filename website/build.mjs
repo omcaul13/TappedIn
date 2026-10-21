@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 
 /** Where the footer's "Report a bug" link sends mail. */
-export const REPORT_EMAIL = 'REPLACE-ME@example.com';
+export const REPORT_EMAIL = 'tappedinsupport@gmail.com';
 
 /** The production address, for canonical links and link previews (they need absolute URLs). */
 export const SITE_URL = 'https://tappedin-4ot.pages.dev';
