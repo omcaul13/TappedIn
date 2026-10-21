@@ -1,10 +1,11 @@
+import type { DiagResult } from '../../src/setup/diagnostics';
 import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { loadProviderConfig, previewOverride, saveOverride } from '../../src/providers/registry';
 import { evaluateHide, fieldsFor, getPath, runStep, type DiagDeps } from '../../src/setup/diagnostics';
-import { buildExport } from '../../src/setup/export';
+import { bugMailto, REPORT_EMAIL } from '../../src/setup/report';
 
 const viewport = { w: 960, h: 540 };
 
@@ -87,16 +88,15 @@ describe('overrides from diagnostics', () => {
   });
 });
 
-describe('export', () => {
+describe('report a bug', () => {
+  const mail = (results: DiagResult[], override: Record<string, unknown> = {}) =>
+    decodeURIComponent(bugMailto({ providerId: 'sling', providerName: 'Sling TV', appVersion: '0.1.2', results, override }));
+
   it('strips query strings, fragments and page text', () => {
-    const out = buildExport({
-      provider: { id: 'sling', name: 'Sling TV', status: 'experimental' },
-      override: { tuning: { watchUrl: 'https://watch.sling.com/1/channel/{ref}/watch' } },
-      results: [{ step: 'signin', pass: false, summary: 'Signed out at https://idp.edu/sso?code=abc#t=1', facts: { url: 'https://idp.edu/sso?code=abc#t=1', bodyText: 'Hello Owen', isApp: false }, fields: [] }],
-      appVersion: '0.1.0',
-      gitCommit: 'abc1234',
-    });
-    const text = JSON.stringify(out);
+    const text = mail(
+      [{ step: 'signin', pass: false, summary: 'Signed out at https://idp.edu/sso?code=abc#t=1', facts: { url: 'https://idp.edu/sso?code=abc#t=1', bodyText: 'Hello Owen', isApp: false }, fields: [] }],
+      { tuning: { watchUrl: 'https://watch.sling.com/1/channel/{ref}/watch' } },
+    );
     expect(text).not.toMatch(/code=abc/);
     expect(text).not.toMatch(/#t=1/);
     expect(text).not.toMatch(/Hello Owen/);
@@ -106,13 +106,18 @@ describe('export', () => {
 
   it('strips session ids carried in the path (";jsessionid=", as school sign-in pages use)', () => {
     const url = 'https://shib.example.edu/idp/profile/SAML2/Redirect/SSO;jsessionid=node0abc123?execution=e1s1';
-    const out = JSON.stringify(buildExport({ provider: { id: 'x', name: 'X', status: 'experimental' }, override: {}, results: [{ step: 'signin', pass: false, summary: `ended at ${url}`, facts: { url }, fields: [] }], appVersion: '0.1.0', gitCommit: null }));
-    expect(out).not.toMatch(/node0abc123/);
-    expect(out).toMatch(/https:\/\/shib\.example\.edu\/idp\/profile\/SAML2\/Redirect\/SSO"/);
+    const text = mail([{ step: 'signin', pass: false, summary: `ended at ${url}`, facts: { url }, fields: [] }]);
+    expect(text).not.toMatch(/node0abc123/);
+    expect(text).toMatch(/https:\/\/shib\.example\.edu\/idp\/profile\/SAML2\/Redirect\/SSO\n/);
   });
 
-  it('includes the provider, the override and each step result', () => {
-    const out = buildExport({ provider: { id: 'sling', name: 'Sling TV', status: 'experimental' }, override: { a: 1 }, results: [{ step: 'tune', pass: true, summary: 'ok', facts: {}, fields: [] }], appVersion: '0.1.0', gitCommit: null }) as Record<string, unknown>;
-    expect(out).toMatchObject({ provider: { id: 'sling' }, override: { a: 1 }, results: [{ step: 'tune', pass: true }] });
+  it('goes to the website address with the service, version, each step result and the fixes', () => {
+    const href = bugMailto({ providerId: 'sling', providerName: 'Sling TV', appVersion: '0.1.2', results: [{ step: 'tune', pass: true, summary: 'ok', facts: {}, fields: [] }], override: { a: 1 } });
+    expect(href.startsWith(`mailto:${REPORT_EMAIL}?subject=`)).toBe(true);
+    const text = decodeURIComponent(href);
+    expect(text).toContain('Sling TV (sling)');
+    expect(text).toContain('TappedIn version: 0.1.2');
+    expect(text).toContain('PASS tune: ok');
+    expect(text).toContain('My fixes: {"a":1}');
   });
 });

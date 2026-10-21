@@ -504,7 +504,11 @@ app.whenReady().then(async () => {
       else win.setFullScreen(false);
     }
   });
-  ui.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  // Only mailto: leaves the app (Diagnostics' "Report a bug"), in the user's mail app.
+  ui.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('mailto:')) shell.openExternal(url);
+    return { action: 'deny' };
+  });
   ui.webContents.loadURL(value('ui', 'http://localhost:7480/ui'));
   win.on('resize', layout);
   win.on('enter-full-screen', () => ui.webContents.send('rz:fullscreen', true));

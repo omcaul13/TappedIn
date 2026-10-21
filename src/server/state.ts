@@ -135,7 +135,7 @@ export interface DiagDTO {
   /** The saved user override for this provider. */
   override: Record<string, unknown>;
   running: string | null;
-  exportPath: string | null;
+  appVersion: string;
 }
 
 export interface ServiceDTO {

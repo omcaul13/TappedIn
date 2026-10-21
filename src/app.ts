@@ -20,9 +20,7 @@ import { demoDeps } from './setup/demo';
 import { applyMapping, lineupFromScan, mappingRows } from './setup/lineupEdit';
 import { carriedChannels, SetupRunner, type SetupDeps } from './setup/runner';
 import { DIAG_STEPS, fieldsFor, getPath, HIDE_PROBE_JS, runStep, type DiagResult, type DiagStep } from './setup/diagnostics';
-import { buildExport, writeExport } from './setup/export';
 import { compileRegex } from './providers/types';
-import { execFileSync } from 'node:child_process';
 import { loadSetup, migrateOwner, needsSetup, saveSetup, type SetupState } from './setup/state';
 import { createAdapter, listProviders, previewOverride, readOverrideFile, saveOverride, STATE_DIR } from './providers/registry';
 import type { ProviderAdapter } from './providers/types';
@@ -138,7 +136,7 @@ export class App {
   /** First-run setup in progress, else null. */
   private setupRunner: SetupRunner | null = null;
   /** Diagnostics mode, when open. */
-  private diag: { results: Partial<Record<DiagStep, DiagResult>>; running: string | null; exportPath: string | null } | null = null;
+  private diag: { results: Partial<Record<DiagStep, DiagResult>>; running: string | null } | null = null;
   private browser: import('playwright-core').Browser | null = null;
   /** First-run setup: done or not, and what it found. */
   private setupState: SetupState;
@@ -524,7 +522,6 @@ export class App {
       case '/api/diag/run':
       case '/api/diag/preview':
       case '/api/diag/save':
-      case '/api/diag/export':
         return this.diagAction(p.slice('/api/diag/'.length), body);
       case '/api/service/switch':
       case '/api/service/logout':
@@ -668,7 +665,7 @@ export class App {
     const c = this.adapter.config;
     const values: Record<string, unknown> = {};
     for (const step of DIAG_STEPS) for (const f of fieldsFor(step, c)) values[f] = getPath(c, f);
-    return { providerId: c.id, providerName: c.name, status: c.status, results: this.diag.results, values, override: readOverrideFile(c.id), running: this.diag.running, exportPath: this.diag.exportPath };
+    return { providerId: c.id, providerName: c.name, status: c.status, results: this.diag.results, values, override: readOverrideFile(c.id), running: this.diag.running, appVersion: appVersion() };
   }
 
   private async diagAction(action: string, body: Record<string, unknown>): Promise<PostResult> {
@@ -677,7 +674,7 @@ export class App {
       case 'open':
         if (!this.diag) {
           if (!this.setupRunner) this.stopNormal(); // auto-switching pauses: the steps use screen 1
-          this.diag = { results: {}, running: null, exportPath: null };
+          this.diag = { results: {}, running: null };
         }
         this.pushState();
         return { ok: true };
@@ -723,17 +720,6 @@ export class App {
         await this.reloadProvider();
         this.info(`diagnostics: saved your fixes for ${this.adapter.config.name} in .state/providers/${id}.json`);
         return { ok: true, message: 'saved' };
-      }
-      case 'export': {
-        if (!this.diag) return { ok: false, message: 'open diagnostics first' };
-        const c = this.adapter.config;
-        const data = buildExport({ provider: { id: c.id, name: c.name, status: c.status }, override: readOverrideFile(c.id), results: Object.values(this.diag.results), appVersion: appVersion(), gitCommit: gitCommit() });
-        const { documents } = await this.shell.paths();
-        const file = writeExport(data, documents, c.id);
-        this.diag.exportPath = file;
-        await this.shell.reveal(file).catch((e) => this.info(`couldn't open the folder: ${e}`));
-        this.pushState();
-        return { ok: true, message: file };
       }
     }
     return { ok: false, message: 'unknown diagnostics action' };
@@ -1259,13 +1245,5 @@ function appVersion(): string {
     return JSON.parse(readFileSync(path.join(PROJECT_ROOT, 'package.json'), 'utf8')).version ?? 'unknown';
   } catch {
     return 'unknown';
-  }
-}
-
-function gitCommit(): string | null {
-  try {
-    return execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: PROJECT_ROOT, encoding: 'utf8', windowsHide: true }).trim() || null;
-  } catch {
-    return null;
   }
 }

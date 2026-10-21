@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'preact/hooks';
 import type { DiagResult } from '../setup/diagnostics';
+import { bugMailto } from '../setup/report';
 import { StatusChip } from './onboarding';
 import { post, type AppState } from './util';
 
 // Diagnostics mode: run each part of the service's adapter on its own, see what it saw, fix the
-// config values it uses, and export the fixes to a file for the project owner. Screen 1 stays
+// config values it uses, and email the results and fixes to the project owner. Screen 1 stays
 // uncovered on the left so you can watch the tune, playback and hiding steps happen.
 
 const STEPS: { id: 'signin' | 'scan' | 'tune' | 'playback' | 'hide'; title: string; what: string }[] = [
@@ -165,13 +166,12 @@ export function Diagnostics({ st, onError }: { st: AppState; onError(m: string):
           </div>
         )}
 
-        <h5>Send your fixes</h5>
-        <p class="note">Exports your fixes and these results to a file in Documents\TappedIn. It has no passwords, cookies or page text, and addresses are cut to the site and page. Send it to the project owner so everyone gets the fix.</p>
+        <h5>Report a bug</h5>
+        <p class="note">Opens an email to the project owner with your service, these results and your fixes, so everyone gets the fix. It has no passwords, cookies or page text, and addresses are cut to the site and page. Check it before you send.</p>
         <div class="actions">
-          <button class="btn primary" onClick={() => run('/api/diag/export')}>
-            Export config
-          </button>
-          {d.exportPath && <span class="note">Saved {d.exportPath}</span>}
+          <a class="btn primary" href={bugMailto({ providerId: d.providerId, providerName: d.providerName, appVersion: d.appVersion, results: Object.values(d.results), override: d.override })} target="_blank" rel="noreferrer">
+            Report a bug
+          </a>
         </div>
       </aside>
     </div>

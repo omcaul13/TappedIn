@@ -195,7 +195,7 @@ For a service that doesn't work right (most likely an experimental one), from se
 
 **Fixing a step.** When a step fails, the settings it depends on (page addresses, selectors, patterns) appear right there. Change them and press **Save & retry**. Fixes are checked before saving and kept in `.state/providers/<id>.json`, on top of the built-in `config/providers/<id>.json`.
 
-**Sharing the fix.** **Export config** writes your fixes and the results to `Documents\TappedIn`. The file has no passwords, cookies or page text, and addresses are cut to the site and page. Send it in so everyone gets the fix ([CONTRIBUTING.md](CONTRIBUTING.md)).
+**Sharing the fix.** **Report a bug** opens an email to the project owner with your service, the results and your fixes. It has no passwords, cookies or page text, and addresses are cut to the site and page. Send it so everyone gets the fix ([CONTRIBUTING.md](CONTRIBUTING.md)).
 
 ## Running it
 

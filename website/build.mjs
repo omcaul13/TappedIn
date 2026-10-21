@@ -61,7 +61,7 @@ export function build({ out = join(here, 'dist'), providers, email = REPORT_EMAI
   const sports = JSON.parse(readFileSync(join(here, 'sports.json'), 'utf8'));
   const bug = `mailto:${email}?subject=${encodeURIComponent('TappedIn bug report')}&body=${encodeURIComponent(
     'What happened:\n\n\nWhat you expected:\n\n\nYour TV service:\n\nTappedIn version (from the installer file name, if you know it):\n\n' +
-      "If it's a problem with your TV service, please attach the file from Diagnostics > Export config (it's in Documents\\TappedIn). It has no passwords or cookies.\n",
+      "If it's a problem with your TV service, the Report a bug button in Diagnostics (Settings > TV service) writes this email for you with the test results and your fixes.\n",
   )}`;
   const fill = {
     SERVICES: servicesHtml(loadServices(providers)),

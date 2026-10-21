@@ -45,12 +45,12 @@ When a step fails, the settings it depends on appear right under it. They're the
 
 ## 3. Send the fix
 
-Press **Export config**. TappedIn writes `tappedin-<service>-<date>.json` to `Documents\TappedIn` and opens the folder.
+Press **Report a bug**. TappedIn opens an email to the project owner in your mail app.
 
-- **What it contains:** your fixes, each step's pass or fail, and what each step saw.
+- **What it contains:** the service, your TappedIn version, each step's pass or fail with what it saw, and your fixes.
 - **What it never contains:** your password, cookies, page text, or the parts of web addresses after `?` or `#` (that's where sign-in codes live).
 
-Open the file in Notepad before sending if you'd like to check. Then attach it to an issue on the project's GitHub page, or send it to the project owner.
+Add what happened, check the email, and send it.
 
 ## Testing without the full app
 
