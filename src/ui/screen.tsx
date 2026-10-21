@@ -49,6 +49,8 @@ export function Screen({ st, sc, games, now, fullscreen, hiddenByFullscreen, can
   const onOther = !!on && !!home && on.id !== home.id;
   const badge = screenBadge(sc, home);
   const locked = sc.mode === 'LOCKED';
+  // No game yet: the game picker fills the screen instead of a blank page.
+  const empty = !home && !sc.switching && sc.mode === 'IDLE';
 
   // Re-render twice a second so the overlay hides on time; flash it after the screen changes.
   useEffect(() => {
@@ -109,6 +111,11 @@ export function Screen({ st, sc, games, now, fullscreen, hiddenByFullscreen, can
         </div>
       )}
       {sc.mode === 'GAME_OVER' && sc.picker && <GameOver st={st} sc={sc} games={games} now={now} run={run} />}
+      {empty && (
+        <div class="card fillpick">
+          <GameMenu st={st} sc={sc} games={games} onClose={() => {}} run={run} fill />
+        </div>
+      )}
 
       <div class={`ov${visible ? '' : ' hidden'}`}>
         <div class="head">
@@ -160,7 +167,7 @@ export function Screen({ st, sc, games, now, fullscreen, hiddenByFullscreen, can
             </span>
           </div>
         )}
-        {menuOpen && <GameMenu st={st} sc={sc} games={games} onClose={() => setMenuOpen(false)} run={run} />}
+        {menuOpen && !empty && <GameMenu st={st} sc={sc} games={games} onClose={() => setMenuOpen(false)} run={run} />}
         <Tag sc={sc} home={home} on={on} onOther={onOther} />
       </div>
     </div>
@@ -251,8 +258,8 @@ function GameRow({ g, current, tag, onPick, disabledReason }: { g: GameDTO; curr
   );
 }
 
-/** Sports first, then games: the screen's sport (or one you pick) on top, other sports grouped below. */
-function GameMenu({ st, sc, games, onClose, run }: { st: AppState; sc: ScreenDTO; games: Map<string, GameDTO>; onClose(): void; run(p: Promise<{ ok: boolean; message?: string }>, always?: boolean): void }) {
+/** Sports first, then games: the screen's sport (or one you pick) on top, other sports grouped below. `fill`: drawn filling an empty screen. */
+function GameMenu({ st, sc, games, onClose, run, fill = false }: { st: AppState; sc: ScreenDTO; games: Map<string, GameDTO>; onClose(): void; run(p: Promise<{ ok: boolean; message?: string }>, always?: boolean): void; fill?: boolean }) {
   const firstSport = sc.sport ?? st.sports.find((x) => x.enabled && x.live > 0)?.id ?? st.sports.find((x) => x.enabled && x.games > 0)?.id ?? null;
   const [step, setStep] = useState<'sports' | 'games'>(firstSport ? 'games' : 'sports');
   const [sport, setSport] = useState(firstSport);
@@ -262,7 +269,8 @@ function GameMenu({ st, sc, games, onClose, run }: { st: AppState; sc: ScreenDTO
   // Preact's autoFocus only works on page load: focus the search box whenever the game list appears.
   const search = useRef<HTMLInputElement>(null);
   useEffect(() => {
-    search.current?.focus();
+    // Several empty screens each show one: none takes the keyboard on its own.
+    if (!fill) search.current?.focus();
   }, [step]);
   useEffect(() => {
     const down = (e: MouseEvent) => {
@@ -290,7 +298,7 @@ function GameMenu({ st, sc, games, onClose, run }: { st: AppState; sc: ScreenDTO
   if (step === 'sports') {
     const sports = st.sports.filter((x) => x.enabled);
     return (
-      <div class="menu" ref={ref}>
+      <div class={`menu${fill ? ' fill' : ''}`} ref={ref}>
         <h4 style={{ margin: '10px 12px 6px' }}>Pick a sport for screen {sc.id}</h4>
         <div class="sportgrid">
           {sports.map((x) => {
@@ -331,7 +339,7 @@ function GameMenu({ st, sc, games, onClose, run }: { st: AppState; sc: ScreenDTO
   const cur = st.sports.find((x) => x.id === sport);
   const others = st.sports.filter((x) => x.id !== sport && x.enabled).map((x) => ({ x, list: all.filter((g) => g.sport === x.id && match(g)) })).filter((o) => o.list.length);
   return (
-    <div class="menu" ref={ref}>
+    <div class={`menu${fill ? ' fill' : ''}`} ref={ref}>
       <div class="menuhead">
         <button class="btn" onClick={() => setStep('sports')} title="Pick another sport">
           ← Sports

@@ -111,8 +111,8 @@ function buildHideJs() {
 loadProvider(PROVIDER_FILE);
 
 const isApp = (url) => R.isApp(url);
-const marker = (label) =>
-  `data:text/html,${encodeURIComponent(`<title>${label}</title><body style="margin:0;background:#000;color:#334155;font:600 15px system-ui;display:grid;place-items:center;height:100vh">${label}</body>`)}`;
+// The title is how src/shell.ts finds each view; the page stays blank so the UI's game picker shows over it.
+const marker = (label) => `data:text/html,${encodeURIComponent(`<title>${label}</title><body style="margin:0;background:#000"></body>`)}`;
 
 /** Chrome's identifier without "Electron/…" (some services, Xfinity included, send Electron to an "update your browser" page). */
 let ORIGINAL_UA = null;

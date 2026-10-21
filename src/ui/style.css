@@ -223,6 +223,9 @@ img { display: block; }
 .bar { width: 160px; height: 3px; border-radius: 2px; background: rgba(255, 255, 255, 0.15); overflow: hidden; }
 .bar i { display: block; height: 100%; background: var(--accent); transition: width 0.25s linear; }
 
+.fillpick { place-items: stretch; padding: 46px 12px 12px; background: rgba(5, 7, 10, 0.94); }
+.menu.fill { position: relative; top: auto; left: auto; width: auto; max-height: none; min-height: 0; z-index: auto; }
+.menu.fill .list, .menu.fill .sportgrid { flex: 1; min-height: 0; align-content: start; }
 .gameover { place-items: stretch; padding: 46px 12px 12px; text-align: left; background: rgba(5, 7, 10, 0.94); }
 .gameover .box { display: flex; flex-direction: column; min-height: 0; max-width: 620px; width: 100%; justify-self: center; background: var(--panel-solid); border: 1px solid var(--line-strong); border-radius: 12px; overflow: hidden; }
 .gameover .hd { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
