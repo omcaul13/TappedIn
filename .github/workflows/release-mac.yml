@@ -16,13 +16,17 @@ on:
   pull_request:
     paths: ['installer/mac/**', '.github/workflows/release-mac.yml', 'electron/**']
   workflow_dispatch:
+    inputs:
+      runner:
+        description: 'Runner label (macos-latest is Apple Silicon; try macos-15-intel when that pool is full)'
+        default: macos-latest
 
 permissions:
   contents: write
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: ${{ inputs.runner || 'macos-latest' }}
     env:
       SIGNED: ${{ github.event_name == 'push' }}
       MAC_CERT_P12: ${{ secrets.MAC_CERT_P12 }}
