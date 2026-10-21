@@ -65,7 +65,7 @@ describe('website build', async () => {
 });
 
 describe('scroll story', async () => {
-  const { sceneProgress, stepAt } = await site('src/scroll.js');
+  const { sceneProgress, stepAt, stepScrollY } = await site('src/scroll.js');
 
   it('runs a tall scene from its top at the top to its bottom at the bottom', () => {
     expect(sceneProgress(100, 3000, 1000)).toBe(0); // not reached yet
@@ -91,6 +91,16 @@ describe('scroll story', async () => {
     expect(stepAt(0.99, 4)).toBe(3);
     expect(stepAt(1, 4)).toBe(3);
     expect(stepAt(1, 1)).toBe(0);
+  });
+
+  it('jumps to the middle of a step, and the step there is the one asked for', () => {
+    // A 4-step scene at y=2000, 5000 px tall, 1000 px viewport: 4000 px of run, 1000 per step.
+    expect(stepScrollY(0, 4, 2000, 5000, 1000)).toBe(2500);
+    expect(stepScrollY(3, 4, 2000, 5000, 1000)).toBe(5500);
+    for (let i = 0; i < 4; i++) {
+      const y = stepScrollY(i, 4, 2000, 5000, 1000);
+      expect(stepAt(sceneProgress(2000 - y, 5000, 1000), 4)).toBe(i);
+    }
   });
 });
 
