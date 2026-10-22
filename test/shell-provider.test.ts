@@ -140,3 +140,23 @@ describe('config paths per OS', () => {
     expect(parseConfig({}).chrome.executablePath).toBe(String.raw`C:\Program Files\Google\Chrome\Application\chrome.exe`);
   });
 });
+
+describe('is the debugging port already taken?', () => {
+  it('a TappedIn window that hangs (accepts, never answers) holds the port on a Mac; Windows is unchanged', async () => {
+    const { createServer } = await import('node:net');
+    const { debugPortOpen } = await import('../src/shell');
+    const hung = createServer(() => {}); // accepts connections, never replies
+    await new Promise<void>((r) => hung.listen(0, '127.0.0.1', r));
+    const port = (hung.address() as { port: number }).port;
+    try {
+      expect(await debugPortOpen(port, 'darwin')).toBe(true);
+      expect(await debugPortOpen(port, 'win32')).toBe(false);
+    } finally {
+      hung.close();
+    }
+    // Nothing listening: free. (A Windows host takes ~2 s to refuse a connection, past the 0.8 s timeout, so
+    // the Mac rule is only checked where it runs: the macOS CI runner.)
+    expect(await debugPortOpen(port, 'win32')).toBe(false);
+    if (process.platform !== 'win32') expect(await debugPortOpen(port, 'darwin')).toBe(false);
+  });
+});
