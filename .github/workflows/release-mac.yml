@@ -130,6 +130,28 @@ jobs:
           done
           [ -z "${failed:-}" ]
 
+      # The way a user opens it: Finder (LaunchServices: cwd /, a bare environment) from the mounted,
+      # read-only disk image, with a fresh Application Support folder (first run).
+      - name: Smoke test (opened from the .dmg like a user)
+        if: always()
+        run: |
+          data="$HOME/Library/Application Support/TappedIn"
+          rm -rf "$data"
+          mkdir -p smoke
+          hdiutil attach dist/TappedIn.dmg -nobrowse -readonly -mountpoint /Volumes/TappedIn
+          open /Volumes/TappedIn/TappedIn.app
+          sleep 25
+          screencapture -x smoke/screen-dmg.png || true
+          ok=0
+          node installer/mac/smoke-ui.mjs /Volumes/TappedIn/TappedIn.app smoke dmg && ok=1
+          cp "$data/logs/launcher.log" smoke/launcher-dmg.log || true
+          ps -axo pid,ppid,stat,command | grep -i tappedin | grep -v grep > smoke/processes-dmg.txt || true
+          pkill -f "TappedIn.app/Contents" || true
+          sleep 3
+          hdiutil detach /Volumes/TappedIn -force || true
+          [ "$ok" = 1 ] && echo "- opened from the .dmg: the window shows the TappedIn UI" >> "$GITHUB_STEP_SUMMARY"
+          [ "$ok" = 1 ]
+
       - name: Upload what the smoke test saw
         if: always()
         uses: actions/upload-artifact@v4

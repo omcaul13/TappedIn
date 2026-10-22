@@ -6,7 +6,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 const [app, out, label] = process.argv.slice(2);
-const require = createRequire(path.join(app, 'Contents/Resources/app/package.json'));
+const require = createRequire(path.resolve(app, 'Contents/Resources/app/package.json'));
 const { chromium } = require('playwright-core');
 mkdirSync(out, { recursive: true });
 
