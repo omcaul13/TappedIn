@@ -140,7 +140,12 @@ jobs:
           mkdir -p smoke
           hdiutil attach dist/TappedIn.dmg -nobrowse -readonly -mountpoint /Volumes/TappedIn
           open /Volumes/TappedIn/TappedIn.app
-          sleep 25
+          # A first start reads everything from the compressed image: slow on the Intel runner.
+          for i in $(seq 60); do
+            sleep 2
+            curl -fs --max-time 3 http://localhost:7480/api/state >/dev/null && break
+          done
+          sleep 15
           screencapture -x smoke/screen-dmg.png || true
           ok=0
           node installer/mac/smoke-ui.mjs /Volumes/TappedIn/TappedIn.app smoke dmg && ok=1
