@@ -51,6 +51,11 @@ describe('audio', () => {
     expect(audioStep(s, screens, views, T0 + sec(60), cfg).decision).toBeNull();
     expect(audioStep(s, screens, views, T0 + sec(121), cfg).decision).toMatchObject({ to: 2 });
   });
+
+  it('mute (screen 0) in auto mode stays muted after the pin runs out', () => {
+    const s = setAudioFocus(setAudioMode(createAudio(cfg), 'auto'), 0, T0, cfg).state;
+    expect(audioStep(s, screens, views, T0 + sec(600), cfg).decision).toBeNull();
+  });
 });
 
 describe('config', () => {
@@ -99,5 +104,14 @@ describe('sound mode in settings.json', async () => {
     expect(withOverrides(parseConfig({}), o).audio.mode).toBe('auto');
     expect(withOverrides(parseConfig({ audio: { mode: 'auto' } }), {}).audio.mode).toBe('auto');
     expect(() => parseOverrides({ audioMode: 'loud' })).toThrow();
+  });
+});
+
+describe('per-sport sensitivity in settings.json', async () => {
+  const { parseOverrides, sportSensitivity, withOverrides } = await import('../src/config');
+  it('"Same as Switching" ("global") clears a sensitivity set in the config file', () => {
+    const file = parseConfig({ sports: { overrides: { nba: { sensitivity: 'high' } } } });
+    expect(sportSensitivity(withOverrides(file, {}), 'nba')).toBe('high');
+    expect(sportSensitivity(withOverrides(file, parseOverrides({ sportSensitivity: { nba: 'global' } })), 'nba')).toBe(file.switching.sensitivity);
   });
 });

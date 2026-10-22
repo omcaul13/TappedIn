@@ -15,10 +15,10 @@ export const RegexSource = z.string().refine((s) => {
   }
 }, 'not a valid regular expression');
 
-/** "abc" → /abc/i; "/abc/" → /abc/; "/abc/g" → /abc/g. */
+/** "abc" → /abc/i; "/abc/" → /abc/; "/abc/gi" → /abc/i (g and y are dropped: they make a reused regex skip matches). */
 export function compileRegex(src: string, defaultFlags = 'i'): RegExp {
   const m = /^\/(.*)\/([dgimsuvy]*)$/s.exec(src);
-  return m ? new RegExp(m[1], m[2]) : new RegExp(src, defaultFlags);
+  return m ? new RegExp(m[1], m[2].replace(/[gy]/g, '')) : new RegExp(src, defaultFlags);
 }
 
 export const ProviderStatusSchema = z.enum(['stable', 'experimental', 'unsupported']);

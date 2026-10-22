@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import type { Page } from 'playwright-core';
+import { describe, expect, it, vi } from 'vitest';
 import { loadProviderConfig } from '../src/providers/registry';
-import { DEFAULT_RULES, errorRules, HealthTracker, type FrameProbe, type VideoProbe } from '../src/windows/health';
+import { DEFAULT_RULES, errorRules, HealthTracker, probePage, type FrameProbe, type VideoProbe } from '../src/windows/health';
 import { adviseOnStream } from '../src/windows/policy';
 
 const frame = (v: Partial<VideoProbe> | null, extra: Partial<FrameProbe> = {}): FrameProbe => ({
@@ -68,5 +69,20 @@ describe('stall detection', () => {
     t.update([frame({ currentTime: 6 })], 6000);
     const states = [12000, 18000, 24000].map((now) => t.update([frame({ currentTime: 6 })], now).state);
     expect(states).toEqual(['BUFFERING', 'STALLED', 'STALLED']);
+  });
+});
+
+describe('probePage', () => {
+  it('skips a frame that never answers (a hung renderer) instead of waiting forever', async () => {
+    vi.useFakeTimers();
+    try {
+      const ok = { evaluate: async () => ({ isTop: true, url: 'x', videos: [], errorLines: [] }) };
+      const hung = { evaluate: () => new Promise(() => {}) };
+      const p = probePage({ frames: () => [hung, ok] } as unknown as Page);
+      await vi.advanceTimersByTimeAsync(3500);
+      expect(await p).toHaveLength(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

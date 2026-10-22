@@ -44,6 +44,9 @@ const app = new App(loadConfig(), {
   shell: flags.chrome === true ? 'chrome' : 'electron',
 });
 
+// A stray background error must not close four streams mid-game: log it and keep running.
+process.on('unhandledRejection', (err) => console.error(`unexpected error (TappedIn keeps running): ${err instanceof Error ? (err.stack ?? err.message) : err}`));
+
 let stopping = false;
 process.on('SIGINT', () => {
   if (stopping) process.exit(1);

@@ -116,13 +116,8 @@ function Basic({ st, set, open }: { st: AppState; set: Set; open(page: 'advanced
 
 /** Each followed sport's own sensitivity ("Same as Switching" by default). */
 function PerSport({ st, set }: { st: AppState; set: Set }) {
-  const levels = Object.fromEntries(st.sports.filter((x) => x.sensitivity).map((x) => [x.id, x.sensitivity]));
-  const choose = (id: string, v: string) => {
-    const next = { ...levels };
-    if (v) next[id] = v as 'low';
-    else delete next[id];
-    set({ sportSensitivity: next });
-  };
+  // Only the sport that changed: "Same as Switching" is 'global', which also overrides the config file.
+  const choose = (id: string, v: string) => set({ sportSensitivity: { [id]: (v || 'global') as 'low' | 'medium' | 'high' | 'global' } });
   return (
     <div class="persport">
       {st.sports

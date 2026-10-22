@@ -83,6 +83,8 @@ export interface Decision {
   gameId?: string;
   /** Fill-in tier: 1 same sport, 2 a sport another screen is watching, 3 any other sport. */
   tier?: Tier;
+  /** An automatic switch that doesn't wait out the dwell on purpose (a game on two screens, the auto-pick, a halftime that ran long). */
+  dwellExempt?: boolean;
 }
 
 export type UserAction =
@@ -273,7 +275,7 @@ export function directorStep(prev: DirectorState, views: Map<string, GameView>, 
         sc.gameOver = null;
         commands.push({ type: 'hideGameOver', screen: sc.id });
         tune(sc, best.view);
-        decide(sc, 'AUTO_PICK', from, [`no pick within ${cfg.gameOverAutoPickSeconds}s`, `new home: ${best.view.game.shortName} (${best.why})`], { candidates: topList(ranked), duplicate, gameId: best.view.game.id, tier: best.tier });
+        decide(sc, 'AUTO_PICK', from, [`no pick within ${cfg.gameOverAutoPickSeconds}s`, `new home: ${best.view.game.shortName} (${best.why})`], { candidates: topList(ranked), duplicate, gameId: best.view.game.id, tier: best.tier, dwellExempt: true });
       }
       continue;
     }
@@ -289,7 +291,7 @@ export function directorStep(prev: DirectorState, views: Map<string, GameView>, 
           sc.mode = 'HOME';
           sc.halftimeSince = null;
           tune(sc, home);
-          decide(sc, 'HALFTIME_OVER', from, [`halftime longer than ${halftimeMax}s; going back to the home game`], { gameId: home.game.id });
+          decide(sc, 'HALFTIME_OVER', from, [`halftime longer than ${halftimeMax}s; going back to the home game`], { gameId: home.game.id, dwellExempt: true });
         }
         continue;
       }
@@ -353,13 +355,13 @@ export function directorStep(prev: DirectorState, views: Map<string, GameView>, 
           }
           if (best) {
             tune(sc, best.view);
-            decide(sc, 'FILL_REPLACE', from, [why, pickReason(best), ...homeReasons], { candidates: topList(ranked), duplicate, gameId: best.view.game.id, tier: best.tier });
+            decide(sc, 'FILL_REPLACE', from, [why, pickReason(best), ...homeReasons], { candidates: topList(ranked), duplicate, gameId: best.view.game.id, tier: best.tier, dwellExempt: clash });
           } else if (!home.channel) {
             note(sc, 'NO_CANDIDATE', 'home-unavailable', [`${why}, and home ${home.game.shortName} is not in your lineup`]);
           } else {
             sc.mode = 'HOME';
             tune(sc, home);
-            decide(sc, 'RETURN_HOME', from, [`${why} and nothing else is in play`, ...homeReasons], { gameId: home.game.id, duplicate: shownOnOtherScreen(state.screens, sc.id, home.game.id) });
+            decide(sc, 'RETURN_HOME', from, [`${why} and nothing else is in play`, ...homeReasons], { gameId: home.game.id, duplicate: shownOnOtherScreen(state.screens, sc.id, home.game.id), dwellExempt: clash });
           }
           continue;
         }
@@ -421,8 +423,9 @@ export function applyAction(prev: DirectorState, action: UserAction, views: Map<
     sc.lastSwitchAt = now;
     sc.lastNote = null;
   };
+  // A game-over screen stays GAME_OVER (a lock/unlock must not bring back a pop-up you dismissed).
   const modeForShowing = (): ScreenMode =>
-    sc.showing.kind === 'halftime' ? 'HALFTIME_REEL' : sc.showing.kind === 'game' && sc.showing.gameId !== sc.homeGameId ? 'FILL_IN' : sc.homeGameId ? 'HOME' : 'IDLE';
+    sc.gameOver ? 'GAME_OVER' : sc.showing.kind === 'halftime' ? 'HALFTIME_REEL' : sc.showing.kind === 'game' && sc.showing.gameId !== sc.homeGameId ? 'FILL_IN' : sc.homeGameId ? 'HOME' : 'IDLE';
 
   switch (action.type) {
     case 'setHome':

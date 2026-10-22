@@ -256,9 +256,9 @@ export const MARK_ROW = `async ({ l, target, ref }) => {
     return el ? el.getAttribute(spec.attr) : null;
   };
   const idOf = (text) => {
-    if (!text || !l.ref.pattern) return text;
+    if (!text || !l.ref.pattern) return text ? text.trim() : text; // as refFromText saved it
     const re = /^\\/(.*)\\/([dgimsuvy]*)$/s.exec(l.ref.pattern);
-    const m = (re ? new RegExp(re[1], re[2]) : new RegExp(l.ref.pattern)).exec(text);
+    const m = (re ? new RegExp(re[1], re[2].replace(/[gy]/g, '')) : new RegExp(l.ref.pattern)).exec(text);
     return m ? m[1] : null;
   };
   for (const old of document.querySelectorAll('[${MARK}]')) old.removeAttribute('${MARK}');

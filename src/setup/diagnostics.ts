@@ -1,6 +1,6 @@
 import { matchLineup } from '../providers/networks';
 import type { DiscoveredChannel, ProviderConfig } from '../providers/types';
-import type { StreamState } from '../windows/health';
+import { ALL_VIDEOS_JS, type StreamState } from '../windows/health';
 import { lineupFromScan } from './lineupEdit';
 
 // Diagnostics for an adapter (mainly the experimental ones): run each part on its own, see what it
@@ -104,7 +104,7 @@ export async function runStep(step: DiagStep, d: DiagDeps): Promise<DiagResult> 
       }
       case 'playback': {
         const r = await d.watch();
-        return r.state === 'PLAYING' ? result(true, 'The video is playing.', r) : result(false, `Not playing: ${r.state} (${r.detail}).`, r);
+        return r.state === 'PLAYING' ? result(true, 'The video is playing.', r) : result(false, `Not playing: ${r.state}.`, r) /* detail is page text: facts only, never the report */;
       }
       case 'hide': {
         const p = await d.hideProbe();
@@ -119,9 +119,7 @@ export async function runStep(step: DiagStep, d: DiagDeps): Promise<DiagResult> 
 
 /** Runs in the player page: is the hide script on, and how big is the visible playing video? */
 export const HIDE_PROBE_JS = (playerSource: string, playerFlags: string) => `(() => {
-  const vids = [];
-  const walk = (r) => { for (const v of r.querySelectorAll('video')) vids.push(v); for (const el of r.querySelectorAll('*')) if (el.shadowRoot) walk(el.shadowRoot); };
-  walk(document);
+  const vids = (${ALL_VIDEOS_JS})(document);
   const playing = vids.filter((v) => !v.paused && v.readyState >= 2);
   const v = (playing.length ? playing : vids).sort((a, b) => b.clientWidth * b.clientHeight - a.clientWidth * a.clientHeight)[0];
   let video = null;

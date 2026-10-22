@@ -93,9 +93,7 @@ function buildHideJs() {
     const player = playerRe.test(location.href);
     document.documentElement.classList.toggle('rz-hide', player);
     if (!player) return;
-    const vids = [];
-    const walk = (r) => { for (const v of r.querySelectorAll('video')) vids.push(v); for (const el of r.querySelectorAll('*')) if (el.shadowRoot) walk(el.shadowRoot); };
-    walk(document);
+    const vids = (${SP.videosJs})(document);
     const area = (v) => v.clientWidth * v.clientHeight;
     const playing = vids.filter((v) => !v.paused && v.readyState >= 2);
     const v = (playing.length ? playing : vids).sort((a, b) => area(b) - area(a))[0];

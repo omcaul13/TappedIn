@@ -148,7 +148,7 @@ export function halftimePage(screen: number, cardSeconds = 8): string {
   </script></body></html>`;
 }
 
-export function idlePage(screen: number, note: string): string {
+export function idlePage(screen: number, note = "Waiting for a home game. Pick one from this screen's game list."): string {
   return `<!doctype html><html><head><meta charset="utf-8"><title>TappedIn S${screen}</title><style>${BASE_CSS}
   body{display:grid;place-items:center;text-align:center}div{color:var(--dim)}b{display:block;font-size:28px;color:var(--text);margin-bottom:6px}
   </style></head><body><div><b>Screen ${screen}</b>${note.replace(/[<>&]/g, '')}</div></body></html>`;

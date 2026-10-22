@@ -452,8 +452,8 @@ export const SETTINGS_FILE = path.join(DATA_ROOT, '.state', 'settings.json');
 const OverridesSchema = z
   .object({
     sensitivity: z.enum(['low', 'medium', 'high']).optional(),
-    /** Per-sport sensitivity from the settings drawer ("Same as global" = absent). */
-    sportSensitivity: z.record(z.string(), SensitivitySchema).optional(),
+    /** Per-sport sensitivity from the settings drawer; 'global' clears the config file's value for that sport. */
+    sportSensitivity: z.record(z.string(), z.union([SensitivitySchema, z.literal('global')])).optional(),
     /** Each screen's sport, remembered across starts. */
     screenSports: z.array(z.string()).max(4).optional(),
     enabledSports: z.array(z.string()).optional(),
@@ -500,11 +500,15 @@ export function loadOverrides(file = SETTINGS_FILE, warn: (msg: string) => void 
   return kept as SettingsOverrides;
 }
 
-export function saveOverrides(o: SettingsOverrides, file = SETTINGS_FILE): void {
+/** Write then rename, so a crash mid-write never leaves half a file. */
+export function writeJsonAtomic(file: string, data: unknown): void {
   mkdirSync(path.dirname(file), { recursive: true });
-  // Write then rename, so a crash mid-write never leaves half a file.
-  writeFileSync(`${file}.tmp`, JSON.stringify(o, null, 2));
+  writeFileSync(`${file}.tmp`, JSON.stringify(data, null, 2));
   renameSync(`${file}.tmp`, file);
+}
+
+export function saveOverrides(o: SettingsOverrides, file = SETTINGS_FILE): void {
+  writeJsonAtomic(file, o);
 }
 
 export function withOverrides(cfg: Config, o: SettingsOverrides): Config {
@@ -512,7 +516,9 @@ export function withOverrides(cfg: Config, o: SettingsOverrides): Config {
   if (o.sensitivity) c.switching.sensitivity = o.sensitivity;
   for (const [id, sens] of Object.entries(o.sportSensitivity ?? {})) {
     if (!(SPORT_IDS as string[]).includes(id)) continue;
-    c.sports.overrides[id] = { ...c.sports.overrides[id], sensitivity: sens };
+    if (sens === 'global') {
+      if (c.sports.overrides[id]) delete c.sports.overrides[id].sensitivity;
+    } else c.sports.overrides[id] = { ...c.sports.overrides[id], sensitivity: sens };
   }
   if (o.enabledSports) c.sports.enabled = o.enabledSports.filter((id) => (SPORT_IDS as string[]).includes(id));
   if (o.dwellSeconds !== undefined) c.director.dwellSeconds = o.dwellSeconds;

@@ -64,6 +64,12 @@ describe('steps', () => {
     expect((await runStep('playback', deps({ watch: async () => ({ state: 'STREAM_LIMIT', detail: 'maximum number of devices' }) }))).pass).toBe(false);
   });
 
+  it("a failed playback's summary (which goes in the bug report) has no page text", async () => {
+    const r = await runStep('playback', deps({ watch: async () => ({ state: 'STREAM_LIMIT', detail: 'owen@school.edu has reached the maximum number of devices' }) }));
+    expect(r.summary).not.toContain('owen@school.edu');
+    expect(decodeURIComponent(bugMailto({ providerId: 'x', providerName: 'X', appVersion: '0', results: [r], override: {} }))).not.toContain('owen@school.edu');
+  });
+
   it('a step that throws fails with the error instead of crashing', async () => {
     const r = await runStep('scan', deps({ discover: async () => Promise.reject(new Error('guide did not load')) }));
     expect(r).toMatchObject({ pass: false, summary: expect.stringMatching(/guide did not load/) });

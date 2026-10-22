@@ -124,8 +124,10 @@ export function baseballExcitement(g: GameSnapshot): Excitement {
   const live = g.live?.family === 'baseball' ? g.live : null;
   const late = inning >= 7;
   const extras = inning >= 10;
-  const risp = !!live && (live.onSecond || live.onThird) && live.half !== 'middle' && live.half !== 'end';
-  const loaded = !!live && live.onFirst && live.onSecond && live.onThird;
+  // Between half-innings ESPN can still list the last runners: they don't count.
+  const between = !live || live.half === 'middle' || live.half === 'end';
+  const risp = !between && (live.onSecond || live.onThird);
+  const loaded = !between && live.onFirst && live.onSecond && live.onThird;
   // No-hitter watch: through 6+ innings, a team still without a hit.
   const noHit = inning >= 6 && live && (live.homeHits === 0 || live.awayHits === 0) ? (live.homeHits === 0 ? g.away.abbr : g.home.abbr) : null;
   const hot = noHit
@@ -137,7 +139,7 @@ export function baseballExcitement(g: GameSnapshot): Excitement {
         : risp && (late || margin <= 2)
           ? { label: 'runners in scoring position', phrase: 'has runners in scoring position' }
           : null;
-  const bonus = noHit ? 30 : extras ? 20 : loaded ? 20 : risp ? (late ? 25 : 15) : 0;
+  const bonus = noHit ? 30 : extras && margin <= 1 ? 20 : loaded ? 20 : risp ? (late ? 25 : 15) : 0;
   const score = normalizedScore(margin, 5, halvesDone(g) / 18, bonus, false);
   const why = [hot?.label ?? null, `margin ${margin}`, g.detail].filter(Boolean).join(', ');
   return { score, hot, why };

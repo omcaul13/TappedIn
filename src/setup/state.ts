@@ -1,7 +1,7 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
-import type { Config } from '../config';
+import { writeJsonAtomic, type Config } from '../config';
 import { STATE_DIR } from '../providers/registry';
 
 // Whether this install has been through the first-run setup (pick a service, sign in, check the
@@ -32,8 +32,7 @@ export function loadSetup(stateDir = STATE_DIR): SetupState {
 }
 
 export function saveSetup(s: SetupState, stateDir = STATE_DIR): void {
-  mkdirSync(stateDir, { recursive: true });
-  writeFileSync(file(stateDir), JSON.stringify(SetupStateSchema.parse(s), null, 2));
+  writeJsonAtomic(file(stateDir), SetupStateSchema.parse(s));
 }
 
 /** First-run setup is needed until it's completed for the service the config asks for. */

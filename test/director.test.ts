@@ -427,6 +427,19 @@ describe('director', () => {
     expect(w.screen(1).mode).toBe('GAME_OVER');
     expect(w.step(T0 + sec(400)).commands).toEqual([]);
   });
+
+  it('lock then unlock during the game-over pop-up keeps "Not now"', () => {
+    const w = world();
+    w.act({ type: 'setHome', screen: 1, gameId: 'h1' }, T0);
+    w.set('h1', 'FINAL', T0);
+    w.step(T0 + sec(30));
+    w.act({ type: 'cancelAutoPick', screen: 1 }, T0 + sec(40));
+    w.act({ type: 'lock', screen: 1 }, T0 + sec(50));
+    w.act({ type: 'unlock', screen: 1 }, T0 + sec(55));
+    expect(w.screen(1).mode).toBe('GAME_OVER');
+    w.step(T0 + sec(60));
+    expect(w.step(T0 + sec(400)).commands).toEqual([]);
+  });
 });
 
 describe('director: missing data after the final', () => {

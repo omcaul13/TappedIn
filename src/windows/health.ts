@@ -9,6 +9,8 @@ import { compileRegex, type ProviderConfig } from '../providers/types';
 
 const INJECT_DIR = path.join(import.meta.dirname, 'inject');
 export const PROBE_JS = readFileSync(path.join(INJECT_DIR, 'probe.js'), 'utf8');
+/** `(root) => HTMLVideoElement[]`, shadow roots included: the one copy every page script uses. */
+export const ALL_VIDEOS_JS = readFileSync(path.join(INJECT_DIR, 'videos.js'), 'utf8').trim();
 
 export interface VideoProbe {
   rect: { x: number; y: number; w: number; h: number };
@@ -64,14 +66,21 @@ export interface Health {
   frames: number;
 }
 
+const PROBE_TIMEOUT_MS = 3000;
+
 export async function probePage(page: Page, patterns: string[] = DEFAULT_RULES.probePatterns): Promise<FrameProbe[]> {
   const out: FrameProbe[] = [];
-  const js = `(${PROBE_JS})(${JSON.stringify(patterns)})`;
+  const js = `(${PROBE_JS})(${JSON.stringify(patterns)}, ${ALL_VIDEOS_JS})`;
   for (const frame of page.frames()) {
+    let timer: NodeJS.Timeout | undefined;
     try {
-      out.push((await frame.evaluate(js)) as FrameProbe);
+      // A hung renderer never answers: give up on that frame instead of stalling every screen's checks.
+      const hung = new Promise<never>((_, reject) => (timer = setTimeout(() => reject(new Error('frame did not answer')), PROBE_TIMEOUT_MS)));
+      out.push((await Promise.race([frame.evaluate(js), hung])) as FrameProbe);
     } catch {
-      // Frame navigated or detached mid-probe; skip it this round.
+      // Frame navigated, detached or hung mid-probe; skip it this round.
+    } finally {
+      clearTimeout(timer);
     }
   }
   return out;
@@ -202,7 +211,7 @@ function safeHost(u: string): string {
 }
 
 export async function setMuted(page: Page, muted: boolean): Promise<void> {
-  const js = `(() => { const vs = []; const walk = (r) => { for (const v of r.querySelectorAll('video')) vs.push(v); for (const el of r.querySelectorAll('*')) if (el.shadowRoot) walk(el.shadowRoot); }; walk(document); for (const v of vs) v.muted = ${muted}; return vs.length; })()`;
+  const js = `(() => { const vs = (${ALL_VIDEOS_JS})(document); for (const v of vs) v.muted = ${muted}; return vs.length; })()`;
   for (const frame of page.frames()) {
     try {
       await frame.evaluate(js);

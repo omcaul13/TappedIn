@@ -18,7 +18,7 @@
     "partition": "persist:cox-contour-campus",
     "userAgent": "chrome",
     "appUrl": "^https://(watchtv|campus)\\.cox\\.com/",
-    "playerUrl": "/live/",
+    "playerUrl": "/\\/live\\//",
     "hideCss": ""
   },
   "signin": {

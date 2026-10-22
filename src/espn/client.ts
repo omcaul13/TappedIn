@@ -90,8 +90,19 @@ export class EspnClient {
   }
 }
 
+const ET_DAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
+
+/** The calendar day (YYYY-MM-DD) in US Eastern time. */
+export function etDay(at: number | Date = Date.now()): string {
+  return ET_DAY.format(at);
+}
+
 /** ESPN game-day key (YYYYMMDD) in US Eastern time, which is how ESPN buckets the CFB slate. */
 export function espnDateKey(d = new Date()): string {
-  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
-  return parts.replaceAll('-', '');
+  return etDay(d).replaceAll('-', '');
+}
+
+/** The slate a running app follows: ESPN's day until 06:00 ET, so games that run past midnight stay on their own day. */
+export function slateDateKey(now = Date.now()): string {
+  return espnDateKey(new Date(now - 6 * 3600_000));
 }

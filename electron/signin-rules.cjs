@@ -4,7 +4,7 @@
 /** "abc" → /abc/i; "/abc/" → /abc/ (same convention as src/providers/types.ts compileRegex). */
 function compile(src) {
   const m = /^\/(.*)\/([dgimsuvy]*)$/s.exec(src);
-  return m ? new RegExp(m[1], m[2]) : new RegExp(src, 'i');
+  return m ? new RegExp(m[1], m[2].replace(/[gy]/g, '')) : new RegExp(src, 'i');
 }
 
 function rules(sp) {

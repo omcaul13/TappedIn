@@ -1,15 +1,9 @@
 // Evaluated inside every frame of a tile window as `(<this file>)(patterns)`. Plain JS (not TypeScript)
 // so nothing is transformed before it reaches the page. `patterns` are the provider's error-text
 // regexes (config/providers/<id>.json errors.probePatterns). Returns a JSON-safe health snapshot.
-(ERROR_PATTERNS) => {
-
-  // Walk open shadow roots too: some players render <video> inside web components.
-  const videos = [];
-  const walk = (root) => {
-    for (const v of root.querySelectorAll('video')) videos.push(v);
-    for (const el of root.querySelectorAll('*')) if (el.shadowRoot) walk(el.shadowRoot);
-  };
-  walk(document);
+// `allVideos` is inject/videos.js (every <video>, shadow roots included).
+(ERROR_PATTERNS, allVideos) => {
+  const videos = allVideos(document);
 
   const describe = (el) => {
     const cls = typeof el.className === 'string' ? el.className.trim().split(/\s+/).slice(0, 3).join('.') : '';

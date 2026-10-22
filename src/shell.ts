@@ -6,6 +6,7 @@ import { createInterface } from 'node:readline';
 import { chromium, type Browser, type Page } from 'playwright-core';
 import { DATA_ROOT, PROJECT_ROOT, type Config } from './config';
 import type { ProviderConfig } from './providers/types';
+import { ALL_VIDEOS_JS } from './windows/health';
 
 // Starts the one-window app shell (electron/main.cjs) and finds its video views over the local
 // debugging port, so the window controller can drive them like the Chrome tiles. The shell knows
@@ -140,6 +141,8 @@ export interface ShellProvider {
   playerUrl: string;
   hideCss: string;
   hidePollMs: number;
+  /** inject/videos.js, so the hide script finds videos the same way as the app's probes. */
+  videosJs: string;
   signin: ProviderConfig['signin'];
 }
 
@@ -154,6 +157,7 @@ export function shellProvider(p: ProviderConfig): ShellProvider {
     playerUrl: p.shell.playerUrl,
     hideCss: p.shell.hideCss,
     hidePollMs: p.timing.hidePollMs,
+    videosJs: ALL_VIDEOS_JS,
     signin: p.signin,
   };
 }

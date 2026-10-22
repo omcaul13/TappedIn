@@ -85,3 +85,12 @@ describe('MLB excitement', () => {
     expect(mlb.excitement(g(8, 1, 0, live({ awayHits: 0 }))).score).toBeGreaterThan(mlb.excitement(g(2, 9, 0, live({}))).score);
   });
 });
+
+describe('MLB excitement between half-innings', () => {
+  const base = { family: 'baseball' as const, lastPlay: null, outs: 3, balls: 0, strikes: 0, onFirst: true, onSecond: true, onThird: true, homeHits: 5, awayHits: 5 };
+  const game = (half: 'top' | 'middle') => snap({ id: 'b', sport: 'mlb', period: 5, detail: half === 'top' ? 'Top 5th' : 'Mid 5th', live: { ...base, half } });
+  it("runners ESPN still lists after the third out aren't 'bases loaded'", () => {
+    expect(mlb.excitement(game('top')).hot?.label).toBe('bases loaded');
+    expect(mlb.excitement(game('middle')).hot).toBeNull();
+  });
+});

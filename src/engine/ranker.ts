@@ -74,10 +74,11 @@ function tierOf(sport: SportId, opts: RankOptions): Tier {
   return opts.otherSports?.has(sport) ? 2 : 3;
 }
 
-export function compareCandidates(a: RankedCandidate, b: RankedCandidate): number {
+/** `sportOrder`: use the sport's own order within tier 1 (off when tier 1 mixes sports: mixing it with scores could go in a circle). */
+function compareCandidates(a: RankedCandidate, b: RankedCandidate, sportOrder: boolean): number {
   if (a.tier !== b.tier) return a.tier - b.tier;
   // The sport's own order only within the screen's sport; tiers 2 and 3 go by the normalized score.
-  if (a.tier === 1 && a.sport === b.sport) return sportOf(a.sport).compare(a, b);
+  if (sportOrder && a.tier === 1 && a.sport === b.sport) return sportOf(a.sport).compare(a, b);
   return b.excitement.score - a.excitement.score || a.view.game.id.localeCompare(b.view.game.id);
 }
 
@@ -102,6 +103,8 @@ export function rankCandidates(views: Iterable<GameView>, opts: RankOptions): { 
   const pool = fresh.length ? fresh : eligible;
   const duplicateFallback = fresh.length === 0 && eligible.length > 0;
 
-  pool.sort((a, b) => compareCandidates(a, b) || Number(a.shownElsewhere) - Number(b.shownElsewhere));
+  // No home sport puts every game in tier 1: the sport's own order only if they're all one sport.
+  const sportOrder = !!opts.homeSport || new Set(pool.map((c) => c.sport)).size <= 1;
+  pool.sort((a, b) => compareCandidates(a, b, sportOrder) || Number(a.shownElsewhere) - Number(b.shownElsewhere));
   return { ranked: pool, duplicateFallback };
 }

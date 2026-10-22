@@ -22,13 +22,14 @@ export interface DataSink {
 // Live polling
 
 export interface LiveSourceOptions {
-  date: string;
+  /** ESPN day to poll (YYYYMMDD), asked again on every poll so a session can run past midnight. */
+  date: () => string;
   /** Games to fetch play-by-play for, most important first (from Engine.interestingGameIds). */
   interesting: () => string[];
   /** Games on screen (homes and what screens show): fetched every hotSummarySeconds instead. */
   onScreen?: () => string[];
   /** Also record every response, so a live session can be replayed later. */
-  recordDir?: string | null;
+  recordDir?: ((date: string) => string) | null;
   /** Sports you don't follow that something else wants (a ticker set to "all sports"): polled at the idle rate, never for play-by-play. */
   alsoPoll?: () => readonly SportId[];
 }
@@ -102,14 +103,16 @@ export class LiveSource {
   }
 
   private record(rec: RecordLine, file: 'scoreboard' | 'summaries'): void {
-    if (this.opts.recordDir) appendRecord(recordingFiles(this.opts.recordDir)[file], rec);
+    if (this.opts.recordDir) appendRecord(recordingFiles(this.opts.recordDir(this.opts.date()))[file], rec);
   }
 
   private async scoreboardLoop(sport: SportId): Promise<void> {
     // Stagger the first polls so a dozen sports don't all ask ESPN at once.
     await this.sleep(SPORT_IDS.indexOf(sport) * 700);
+    // Kept across polls: a failed poll keeps the last cadence (a live game must not drop to the idle rate).
+    let base = this.cfg.espn.scoreboardIdleSeconds;
     while (!this.stopped) {
-      let base = this.cfg.espn.scoreboardIdleSeconds;
+      const date = this.opts.date();
       const followed = enabledSports(this.cfg).includes(sport);
       if (!followed) this.liveSports.delete(sport);
       if (!followed && !this.opts.alsoPoll?.().includes(sport)) {
@@ -119,8 +122,8 @@ export class LiveSource {
       if (!followed) {
         // Only for the ticker: the scores, at the idle rate, nothing else.
         try {
-          const res = await this.client.scoreboard(this.opts.date, sportOf(sport).espn);
-          await this.ranks.attach(sport, this.opts.date, res.body);
+          const res = await this.client.scoreboard(date, sportOf(sport).espn);
+          await this.ranks.attach(sport, date, res.body);
           this.sink.scoreboard(res.body, Date.parse(res.fetchedAt), sport);
         } catch (err) {
           this.sink.error?.(`${sportOf(sport).short} scoreboard (ticker)`, err);
@@ -129,8 +132,8 @@ export class LiveSource {
         continue;
       }
       try {
-        const res = await this.client.scoreboard(this.opts.date, sportOf(sport).espn);
-        await this.ranks.attach(sport, this.opts.date, res.body);
+        const res = await this.client.scoreboard(date, sportOf(sport).espn);
+        await this.ranks.attach(sport, date, res.body);
         const at = Date.parse(res.fetchedAt);
         const snaps = this.sink.scoreboard(res.body, at, sport) ?? [];
         for (const g of snaps) this.sportOfGame.set(g.id, sport);

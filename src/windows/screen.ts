@@ -81,7 +81,18 @@ export class ScreenWindow {
   ref: ChannelRef | null = null;
 
   async tuneChannel(ch: ChannelRef): Promise<TuneOutcome> {
-    const out = await this.tuner.tune(this.page, ch);
+    let out: TuneOutcome;
+    try {
+      out = await this.tuner.tune(this.page, ch);
+    } catch (err) {
+      // The page may already be on the service (it navigated, then the tune failed): treat it as video, on
+      // no known channel, so health checks, muting and the next showLocal() see what is really there.
+      this.render = 'video';
+      this.channel = null;
+      this.ref = null;
+      this.localUrl = null;
+      throw err;
+    }
     this.render = 'video';
     this.channel = ch.number;
     this.ref = ch;
@@ -94,14 +105,18 @@ export class ScreenWindow {
     return out;
   }
 
+  /** The largest video on the page right now, or undefined. */
+  private async largestVideo() {
+    try {
+      return (await probePage(this.page, this.rules.probePatterns)).flatMap((f) => f.videos).sort((a, b) => b.rect.w * b.rect.h - a.rect.w * a.rect.h)[0];
+    } catch {
+      return undefined;
+    }
+  }
+
   /** Source of the largest video right now (to recognise a *new* stream after a tune). */
   async currentSrc(): Promise<string | null> {
-    try {
-      const v = (await probePage(this.page, this.rules.probePatterns)).flatMap((f) => f.videos).sort((a, b) => b.rect.w * b.rect.h - a.rect.w * a.rect.h)[0];
-      return v?.src || null;
-    } catch {
-      return null;
-    }
+    return (await this.largestVideo())?.src || null;
   }
 
   /**
@@ -114,12 +129,7 @@ export class ScreenWindow {
     let lastCt: number | null = null;
     while (Date.now() < until) {
       if (!stillCurrent()) return { firstFrameAt, playingAt: null, outcome: 'superseded' };
-      let v;
-      try {
-        v = (await probePage(this.page, this.rules.probePatterns)).flatMap((f) => f.videos).sort((a, b) => b.rect.w * b.rect.h - a.rect.w * a.rect.h)[0];
-      } catch {
-        v = undefined;
-      }
+      const v = await this.largestVideo();
       if (v && v.src && v.src !== beforeSrc) {
         if (firstFrameAt === null && v.readyState >= 2) firstFrameAt = Date.now();
         if (lastCt !== null && v.currentTime > lastCt + 0.2 && !v.paused) return { firstFrameAt: firstFrameAt ?? Date.now(), playingAt: Date.now(), outcome: 'playing' };

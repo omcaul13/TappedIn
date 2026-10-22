@@ -11,7 +11,7 @@
 
 import type { EventKind, GameState } from '../engine/gameStore';
 import type { RankedCandidate } from '../engine/ranker';
-import type { GameSnapshot, LiveDetail, Phase, PlayKind, PlaySnap, TeamSnap } from '../engine/types';
+import type { GameSnapshot, LiveDetail, Phase, PlayKind, PlaySnap } from '../engine/types';
 import { basePhase, num, str, type Json } from '../espn/json';
 import { normalizedScore } from './football';
 import type { BreakSpec, CategorizablePlay, Excitement, InferContext, SportModule, SportPreset } from './types';
@@ -245,4 +245,3 @@ export function basketballLeague(l: BasketballLeague, synth: SportModule['synth'
   };
 }
 
-export type { TeamSnap };

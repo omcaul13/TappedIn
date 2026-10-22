@@ -1,12 +1,12 @@
-import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, mkdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { resolveChannel } from './channels';
-import { DATA_ROOT, loadOverrides, parseOverrides, PROJECT_ROOT, saveOverrides, SETTINGS_FILE, watchConfig, withOverrides, type Config, type SettingsOverrides } from './config';
+import { DATA_ROOT, loadOverrides, parseOverrides, PROJECT_ROOT, saveOverrides, SETTINGS_FILE, watchConfig, withOverrides, writeJsonAtomic, type Config, type SettingsOverrides } from './config';
 import { excitement } from './engine/audio';
 import type { ScreenState, UserAction } from './engine/director';
 import { channelNetworks, Engine, type TickResult } from './engine/engine';
 import type { GameView } from './engine/ranker';
-import { espnDateKey } from './espn/client';
+import { slateDateKey } from './espn/client';
 import { HighlightService } from './highlights/service';
 import { YouTubeClient } from './highlights/youtube';
 import { LiveSource, recordingDir } from './espn/source';
@@ -74,7 +74,7 @@ class Clock {
 
 const ACTIONS = new Set(['setHome', 'lock', 'unlock', 'force', 'goHome', 'skip', 'cancelAutoPick']);
 const FEED_MAX = 150;
-const etTime = (iso: string) => new Date(iso).toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit' });
+const fmtEt = (iso: string) => new Date(iso).toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit' });
 
 /** The top bar's height (electron/main.cjs TOP_BAR, --top in src/ui/style.css). */
 const TOP_BAR_PX = 36;
@@ -122,6 +122,8 @@ export class App {
   private feed: FeedItem[] = [];
   private labels = 0;
   private popupKeys = new Map<number, { key: string; ms: number }>();
+  /** What state() shows from disk (the services list, scanned guide rows, the diagnostics override): read once, dropped when they can change. */
+  private diskCache: { providers?: ReturnType<typeof listProviders>; scan?: DiscoveredChannel[]; override?: ReturnType<typeof readOverrideFile> } = {};
   private readonly highlights: HighlightService;
   private shell: Shell | null = null;
   private signin: SigninStatus | null = null;
@@ -170,7 +172,7 @@ export class App {
     if (opts.audioMode) this.engine.setAudioMode(opts.audioMode);
     this.clock = new Clock(opts.replay?.speed ?? 1);
     const logs = path.join(DATA_ROOT, 'logs');
-    const file = opts.replay ? path.join(logs, `replay-${opts.replay.date}.jsonl`) : dailyLogFile(DATA_ROOT);
+    const file = opts.replay ? path.join(logs, `replay-${opts.replay.date}.jsonl`) : () => dailyLogFile(DATA_ROOT);
     this.labelsFile = path.join(logs, opts.replay ? `labels-replay-${opts.replay.date}.jsonl` : 'labels.jsonl');
     this.log = new DecisionLog({ file, console: true });
     this.adapter = createAdapter(cfg.provider, { onWarning: (m) => this.info(m) });
@@ -264,11 +266,11 @@ export class App {
           error: (what, err) => this.info(`ESPN ${what} failed: ${err}`),
         },
         {
-          date: espnDateKey(),
+          date: () => slateDateKey(),
           interesting: () => this.engine.interestingGameIds(),
           onScreen: () => [...this.engine.relevantGameIds()],
           alsoPoll: () => (wantsAllSports(this.cfg.ticker) ? SPORTS.map((m) => m.id).filter((id) => !this.cfg.sports.enabled.includes(id)) : []),
-          recordDir: this.opts.record ? recordingDir(DATA_ROOT, `${espnDateKey()}-live`) : null,
+          recordDir: this.opts.record ? (date) => recordingDir(DATA_ROOT, `${date}-live`) : null,
         },
       );
       this.source.start();
@@ -291,6 +293,7 @@ export class App {
     const shell = this.shell!;
     const { browser, screens, spares } = await attachShell(this.cfg, shell.layout, 30_000, this.browser ?? undefined);
     this.browser = browser;
+    this.controller?.dispose(); // its views are gone; a tune it still has running must not report on the new ones
     this.controller = new WindowController(this.cfg, browser, null, this.controllerOpts(), this.controllerEvents());
     await this.controller.attach(screens, spares, (screen, view) => shell.present(screen, view));
     this.syncLayout();
@@ -326,6 +329,7 @@ export class App {
     saveOverrides(this.overrides);
     this.cfg = resolveConfig(this.fileCfg, this.overrides);
     this.adapter = createAdapter(id, { onWarning: (m) => this.info(m) });
+    this.diskCache = {};
     this.signin = null;
     await this.shell!.configure({ provider: this.adapter.config, screens: this.screenCount, spares: 0, signin: 'now' });
     await this.attachController();
@@ -377,7 +381,8 @@ export class App {
   /** Save a scanned lineup (and the raw guide rows, for the channel mapping editor) and use it at once. */
   private saveLineup(lineup: Config['channels'], rows: DiscoveredChannel[]): void {
     this.writeLineup(lineup);
-    writeFileSync(lineupFile(this.adapter.config.id, STATE_DIR).replace(/\.json$/, '.scan.json'), JSON.stringify(rows, null, 2));
+    writeJsonAtomic(lineupFile(this.adapter.config.id, STATE_DIR).replace(/\.json$/, '.scan.json'), rows);
+    this.diskCache = {};
     this.applyConfig();
   }
 
@@ -470,8 +475,13 @@ export class App {
     } catch (err) {
       return { ok: false, message: String(err instanceof Error ? err.message : err) };
     }
-    // Ticker settings merge one key at a time (each switch posts only what it changes).
-    this.overrides = { ...this.overrides, ...change, ...(change.ticker ? { ticker: { ...this.overrides.ticker, ...change.ticker } } : {}) };
+    // Ticker settings and per-sport sensitivities merge one key at a time (each control posts only what it changes).
+    this.overrides = {
+      ...this.overrides,
+      ...change,
+      ...(change.ticker ? { ticker: { ...this.overrides.ticker, ...change.ticker } } : {}),
+      ...(change.sportSensitivity ? { sportSensitivity: { ...this.overrides.sportSensitivity, ...change.sportSensitivity } } : {}),
+    };
     saveOverrides(this.overrides);
     this.applyConfig();
     this.info(`settings: ${Object.entries(change).map(([k, v]) => `${k} ${typeof v === 'object' ? JSON.stringify(v) : v}`).join(', ')} (saved in ${path.relative(DATA_ROOT, SETTINGS_FILE)})`);
@@ -483,6 +493,8 @@ export class App {
   private async post(p: string, body: Record<string, unknown>): Promise<PostResult> {
     const screen = Number(body.screen);
     const validScreen = Number.isInteger(screen) && screen >= 1 && screen <= this.screenCount;
+    // Service, setup and diagnostics actions can change provider files, lineups and overrides.
+    if (/^\/api\/(service|setup|diag)\//.test(p)) this.diskCache = {};
     switch (p) {
       case '/api/action': {
         const type = String(body.type);
@@ -553,9 +565,9 @@ export class App {
 
   private scanRows(): DiscoveredChannel[] {
     try {
-      return JSON.parse(readFileSync(lineupFile(this.adapter.config.id, STATE_DIR).replace(/\.json$/, '.scan.json'), 'utf8'));
+      return (this.diskCache.scan ??= JSON.parse(readFileSync(lineupFile(this.adapter.config.id, STATE_DIR).replace(/\.json$/, '.scan.json'), 'utf8')));
     } catch {
-      return [];
+      return (this.diskCache.scan = []);
     }
   }
 
@@ -665,7 +677,7 @@ export class App {
     const c = this.adapter.config;
     const values: Record<string, unknown> = {};
     for (const step of DIAG_STEPS) for (const f of fieldsFor(step, c)) values[f] = getPath(c, f);
-    return { providerId: c.id, providerName: c.name, status: c.status, results: this.diag.results, values, override: readOverrideFile(c.id), running: this.diag.running, appVersion: appVersion() };
+    return { providerId: c.id, providerName: c.name, status: c.status, results: this.diag.results, values, override: (this.diskCache.override ??= readOverrideFile(c.id)), running: this.diag.running, appVersion: appVersion() };
   }
 
   private async diagAction(action: string, body: Record<string, unknown>): Promise<PostResult> {
@@ -728,6 +740,7 @@ export class App {
   /** The provider's config changed (diagnostics fixes): rebuild the adapter and the window's views. */
   private async reloadProvider(): Promise<void> {
     this.adapter = createAdapter(this.adapter.config.id, { onWarning: (m) => this.info(m) });
+    this.diskCache = {};
     await this.shell!.configure({ provider: this.adapter.config, screens: this.screenCount, spares: this.shell!.layout.spares, signin: 'defer' });
     await this.attachController();
     this.pushState();
@@ -782,9 +795,8 @@ export class App {
   }
 
   private writeLineup(lineup: Config['channels']): void {
-    const file = lineupFile(this.adapter.config.id, STATE_DIR);
-    mkdirSync(path.dirname(file), { recursive: true });
-    writeFileSync(file, JSON.stringify(lineup, null, 2));
+    writeJsonAtomic(lineupFile(this.adapter.config.id, STATE_DIR), lineup);
+    this.diskCache = {};
   }
 
   /** First-run setup buttons. Long steps run in the background; the UI follows the state. */
@@ -839,7 +851,7 @@ export class App {
     const sc = screen > 0 ? this.engine.director.screens[screen - 1] : undefined;
     switch (key) {
       case 'panel':
-        void this.controller.togglePanel();
+        void this.controller.togglePanel().catch((e) => this.info(`control panel: ${e}`));
         return;
       case 'audioMode': {
         this.setSoundMode(this.engine.audio.mode === 'auto' ? 'manual' : 'auto');
@@ -849,9 +861,12 @@ export class App {
       case 'audio1':
       case 'audio2':
       case 'audio3':
-      case 'audio4':
-        this.focusAudio(Number(key.slice(-1)));
+      case 'audio4': {
+        // The keys are always 1–4; a smaller grid has no screen 3 or 4 (that would mute every screen).
+        const n = Number(key.slice(-1));
+        if (n <= this.screenCount) this.focusAudio(n);
         return;
+      }
     }
     if (!sc) return; // the keys below act on the tile they were pressed in
     if (key === 'lock') this.userAction({ type: sc.mode === 'LOCKED' ? 'unlock' : 'lock', screen });
@@ -1095,7 +1110,7 @@ export class App {
     const later = watchable
       .filter((v) => v.game.phase === 'PRE')
       .sort((a, b) => rank(a) - rank(b) || String(a.game.startTime).localeCompare(String(b.game.startTime)))
-      .map((v) => ({ id: v.game.id, sport: v.game.sport, label: v.game.shortName, detail: `${sportOf(v.game.sport).short} · ${v.game.startTime ? etTime(v.game.startTime) : ''} · ${v.channel!.name} ${v.channel!.number}` }));
+      .map((v) => ({ id: v.game.id, sport: v.game.sport, label: v.game.shortName, detail: `${sportOf(v.game.sport).short} · ${v.game.startTime ? fmtEt(v.game.startTime) : ''} · ${v.channel!.name} ${v.channel!.number}` }));
     return { title: home ? `Final: ${home.away.abbr} ${home.away.score}-${home.home.score} ${home.home.abbr}. Pick the next game` : 'Pick the next game', live, later };
   }
 
@@ -1123,7 +1138,7 @@ export class App {
       mode: this.mode,
       shell: this.opts.shell,
       setup: this.setupRunner?.view() ?? null,
-      providers: listProviders(),
+      providers: (this.diskCache.providers ??= listProviders()),
       service: this.serviceDTO(),
       diag: this.diagDTO(),
       provider: { id: this.adapter.config.id, name: this.adapter.config.name, shortName: this.adapter.config.shortName, status: this.adapter.config.status },

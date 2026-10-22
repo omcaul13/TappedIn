@@ -5,7 +5,7 @@ import type { Engine, TickResult } from './engine';
 // Rules the director must never break, checked after every tick in simulation and in the golden
 // replay test:
 //  1. No game on two screens at once unless the pick was flagged as the only option.
-//  2. No automatic switch within dwellSeconds of the previous switch on that screen.
+//  2. No automatic switch within dwellSeconds of the previous switch on that screen (unless the director marks it dwell-exempt).
 //  3. Every decision has a rule and at least one reason.
 //  4. Screens only tune to channels in your lineup.
 //  5. Fill-ins only happen while that screen's home game is in a break.
@@ -31,7 +31,7 @@ export class InvariantChecker {
       if (!d.switched) continue;
       const prev = this.lastSwitch.get(d.screen);
       const isFirst = d.rule === 'HOME_SYNC' || prev === undefined;
-      if (d.auto && !isFirst && now - prev! < this.cfg.director.dwellSeconds * 1000) fail(`S${d.screen} ${d.rule} only ${((now - prev!) / 1000).toFixed(0)}s after previous switch`);
+      if (d.auto && !isFirst && !d.dwellExempt && now - prev! < this.cfg.director.dwellSeconds * 1000) fail(`S${d.screen} ${d.rule} only ${((now - prev!) / 1000).toFixed(0)}s after previous switch`);
       this.lastSwitch.set(d.screen, now);
       if (d.duplicate && d.gameId) this.duplicateOk.set(d.screen, d.gameId);
       else this.duplicateOk.delete(d.screen);

@@ -28,12 +28,6 @@ export interface VersionInfo {
   webSocketDebuggerUrl: string;
 }
 
-export interface TargetInfo {
-  id: string;
-  type: string;
-  title: string;
-  url: string;
-}
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const endpoint = (cfg: Config) => `http://127.0.0.1:${cfg.chrome.debugPort}`;
@@ -45,11 +39,6 @@ export async function debugEndpoint(cfg: Config): Promise<VersionInfo | null> {
   } catch {
     return null;
   }
-}
-
-export async function listTargets(cfg: Config): Promise<TargetInfo[]> {
-  const res = await fetch(`${endpoint(cfg)}/json/list`, { signal: AbortSignal.timeout(3000) });
-  return (await res.json()) as TargetInfo[];
 }
 
 function spawnChrome(cfg: Config, args: string[]): void {

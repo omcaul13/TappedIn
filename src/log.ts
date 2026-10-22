@@ -1,6 +1,7 @@
 import { appendFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 import type { AudioDecision } from './engine/audio';
+import { etDay } from './espn/client';
 import type { Decision } from './engine/director';
 import type { AssessmentChange } from './engine/engine';
 import type { SwitchTiming } from './windows/timing';
@@ -43,8 +44,8 @@ export function formatEntry(e: LogEntry): string {
 }
 
 export interface DecisionLogOptions {
-  /** JSONL file to append to, or null for none. */
-  file: string | null;
+  /** JSONL file to append to (a function is asked on every write, so a daily file rolls over), or null for none. */
+  file: string | (() => string) | null;
   /** Print to the console. Game assessments are printed only for home/on-screen games. */
   console: boolean;
 }
@@ -52,29 +53,26 @@ export interface DecisionLogOptions {
 export class DecisionLog {
   private warned = false;
 
-  constructor(private readonly opts: DecisionLogOptions) {
-    if (opts.file) mkdirSync(path.dirname(opts.file), { recursive: true });
-  }
+  private dir: string | null = null;
+
+  constructor(private readonly opts: DecisionLogOptions) {}
 
   write(e: LogEntry): void {
-    if (this.opts.file) {
+    const file = typeof this.opts.file === 'function' ? this.opts.file() : this.opts.file;
+    if (file) {
       // A locked or full disk must not crash the app (this runs inside timers and IPC handlers).
       try {
-        appendFileSync(this.opts.file, JSON.stringify(e) + '\n');
+        if (this.dir !== path.dirname(file)) mkdirSync((this.dir = path.dirname(file)), { recursive: true });
+        appendFileSync(file, JSON.stringify(e) + '\n');
       } catch (err) {
-        if (!this.warned) console.warn(`could not write ${this.opts.file} (${err instanceof Error ? err.message : err}); some log lines are missing`);
+        if (!this.warned) console.warn(`could not write ${file} (${err instanceof Error ? err.message : err}); some log lines are missing`);
         this.warned = true;
       }
     }
     if (this.opts.console && (e.type !== 'assess' || e.relevant)) console.log(formatEntry(e));
   }
-
-  writeAll(entries: LogEntry[]): void {
-    for (const e of entries) this.write(e);
-  }
 }
 
 export function dailyLogFile(root: string, at = Date.now()): string {
-  const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(at);
-  return path.join(root, 'logs', `decisions-${day}.jsonl`);
+  return path.join(root, 'logs', `decisions-${etDay(at)}.jsonl`);
 }

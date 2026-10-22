@@ -124,7 +124,9 @@ export class Engine {
     for (const g of this.store.all()) {
       const a = this.assessments.get(g.id);
       // Hockey's power play comes from play-by-play: the scoreboard's situation has only the last play.
-      const game = g.playsLive && g.snap.phase === 'LIVE' ? { ...g.snap, live: g.playsLive } : g.snap;
+      // Play-by-play more than 2 minutes behind the scoreboard is no longer fetched: don't trust it.
+      const fresh = g.playsLive && g.snap.phase === 'LIVE' && g.dataUpdatedAt - (g.playsLiveAt ?? 0) <= 120_000;
+      const game = fresh ? { ...g.snap, live: g.playsLive! } : g.snap;
       if (a) out.set(g.id, { game, assessment: a, channel: this.channelFor(g.snap) });
     }
     // NFL Sunday windows: several games on CBS/FOX at once, and your station shows one.
@@ -183,6 +185,13 @@ export class Engine {
   tick(now: number): TickResult {
     const res = empty();
     const relevant = this.relevantGameIds();
+    // A session left running for days: finals off the scoreboard for 6 h (an earlier day's) are dropped.
+    for (const g of this.store.all()) {
+      if (g.snap.phase !== 'FINAL' || now - g.dataUpdatedAt < 6 * 3600_000 || relevant.has(g.id)) continue;
+      this.store.delete(g.id);
+      this.memory.delete(g.id);
+      this.assessments.delete(g.id);
+    }
     const snaps = this.store.all().map((g) => g.snap);
     this.tennis = snaps.some((g) => g.tennis) ? tennisChannelStatus(snaps.map((g) => ({ game: g, channel: this.channelFor(g)?.name ?? null })), this.programTitles) : { status: new Map(), shared: new Set() };
     const detectors = new Map<SportId, Detect>();

@@ -1,7 +1,7 @@
-import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
-import { DATA_ROOT, PROJECT_ROOT } from '../config';
+import { DATA_ROOT, PROJECT_ROOT, writeJsonAtomic } from '../config';
 import { createComcastAdapter } from './comcast/adapter';
 import { ComcastTuningSchema } from './comcast/tvapp';
 import { createUrlAdapter, UrlTuningSchema } from './url/adapter';
@@ -94,8 +94,7 @@ export function saveOverride(id: string, override: Record<string, unknown>, stat
   const { warnings } = previewOverride(id, override);
   if (warnings.length) throw new Error(`not saved: ${warnings.join('; ')}`);
   const file = path.join(stateDir, 'providers', `${id}.json`);
-  mkdirSync(path.dirname(file), { recursive: true });
-  writeFileSync(file, JSON.stringify(override, null, 2));
+  writeJsonAtomic(file, override);
   return file;
 }
 

@@ -4,17 +4,7 @@
 
 import type { GameSnapshot, SportId } from '../engine/types';
 import { sportOf } from '../sports';
-import { categorizeFootball, classifyFootballPlay, footballPhase, footballSummaryPlays, yardsToEndzoneFrom } from '../sports/football';
 import { clockSeconds, networksOf, str, team, num, type Json } from './json';
-
-export { networksOf } from './json';
-export { yardsToEndzoneFrom };
-/** Football's phase rules (college football was the only sport before src/sports/). */
-export const phaseOf = (statusName: string, state: string | null, detail: string) => footballPhase(statusName, state, detail);
-export const classifyPlay = classifyFootballPlay;
-/** @deprecated use `sportOf(sport).summaryPlays`; kept for football callers. */
-export const normalizeSummaryPlays = footballSummaryPlays;
-export { categorizeFootball };
 
 export function normalizeEvent(ev: Json, observedAt: number, sport: SportId = 'cfb'): GameSnapshot | null {
   if (ev?.id == null) return null;

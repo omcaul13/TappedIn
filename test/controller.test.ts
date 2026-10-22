@@ -112,6 +112,26 @@ describe('WindowController', () => {
     expect(c.streamLimit).toBe(3);
   });
 
+  it('a stream limit on the most exciting screen retunes it once, instead of lowering the limit every check', async () => {
+    const { c, fakes } = await controller(4);
+    c.setExcitement(new Map([[1, 10], [2, 20], [3, 30], [4, 40]]));
+    for (let s = 1; s <= 4; s++) c.execute(tune(s, 800 + s));
+    await flush();
+    for (const f of fakes) f.pending.shift()!();
+    await flush();
+    fakes[3].health = { state: 'STREAM_LIMIT', detail: 'too many devices' };
+    await c.tick();
+    await flush();
+    expect(c.streamLimit).toBe(3);
+    expect(fakes[3].tunes).toEqual([804, 804]); // S1 gave up its stream; S4 loads again
+    fakes[3].pending.shift()?.();
+    fakes[3].health = { state: 'PLAYING', detail: '' };
+    await flush();
+    await c.tick();
+    await c.tick();
+    expect(c.streamLimit).toBe(3);
+  });
+
   it('a slow health check is not overlapped by the next one', async () => {
     const { c, fakes } = await controller(2);
     for (let s = 1; s <= 2; s++) c.execute(tune(s, 800 + s));

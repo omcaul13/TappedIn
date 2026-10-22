@@ -127,3 +127,10 @@ describe('provider config', () => {
     expect(() => loadProviderConfig('nope')).toThrow(/unknown provider "nope"/);
   });
 });
+
+describe('compileRegex', () => {
+  it('drops g and y, which make a reused regex miss every other match', () => {
+    const re = compileRegex('/too many/gi');
+    expect([re.test('too many devices'), re.test('too many devices')]).toEqual([true, true]);
+  });
+});

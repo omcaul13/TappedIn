@@ -1,6 +1,7 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import path from 'node:path';
+import { readFileSync } from 'node:fs';
 import '../systemCa';
+import { writeJsonAtomic } from '../config';
+import { etDay } from '../espn/client';
 
 // Official full-game highlight packages from YouTube (Data API v3, your key in YT_API_KEY).
 // Each search costs 100 quota units (default daily quota 10,000), so: finished games only, one search
@@ -43,7 +44,7 @@ export interface SearchGame {
   finalSeenAt: number;
 }
 
-const dayKey = (t: number) => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(t);
+const dayKey = (t: number) => etDay(t);
 
 /** Does a result look like the official package for this game? */
 export function matchesGame(item: { title: string; channelTitle: string }, game: SearchGame, channels: string[]): boolean {
@@ -65,11 +66,6 @@ export class YouTubeClient {
     } catch {
       this.cache = { day: '', searches: 0, games: {} };
     }
-  }
-
-  /** Cached result, if any (never searches). */
-  cached(gameId: string): YouTubeClip | null {
-    return this.cache.games[gameId]?.clip ?? null;
   }
 
   get searchesToday(): number {
@@ -117,8 +113,7 @@ export class YouTubeClient {
   }
 
   private save(): void {
-    mkdirSync(path.dirname(this.opts.cacheFile), { recursive: true });
-    writeFileSync(this.opts.cacheFile, JSON.stringify(this.cache, null, 2));
+    writeJsonAtomic(this.opts.cacheFile, this.cache);
   }
 }
 

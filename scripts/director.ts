@@ -17,7 +17,7 @@ let cfg = loadConfig();
 const date = typeof flags.day === 'string' ? flags.day : espnDateKey();
 const engine = new Engine(cfg);
 if (flags.audio === 'auto' || flags.audio === 'manual') engine.setAudioMode(flags.audio);
-const log = new DecisionLog({ file: dailyLogFile(PROJECT_ROOT), console: true });
+const log = new DecisionLog({ file: () => dailyLogFile(PROJECT_ROOT), console: true });
 const now = () => Date.now();
 
 const record = (r: TickResult) => {
@@ -33,7 +33,7 @@ const source = new LiveSource(
     summary: (id, body, at) => engine.ingestSummary(id, body, at),
     error: (what, err) => log.write({ type: 'info', at: now(), text: `ESPN ${what} failed: ${err}` }),
   },
-  { date, interesting: () => engine.interestingGameIds(), recordDir: flags['no-record'] ? null : recordingDir(PROJECT_ROOT, `${date}-live`) },
+  { date: () => date, interesting: () => engine.interestingGameIds(), recordDir: flags['no-record'] ? null : (d) => recordingDir(PROJECT_ROOT, `${d}-live`) },
 );
 
 const stopWatching = watchConfig(

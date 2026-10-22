@@ -34,7 +34,10 @@ function readBody(req: IncomingMessage, limit = 16_384): Promise<string> {
     let data = '';
     req.on('data', (chunk) => {
       data += chunk;
-      if (data.length > limit) reject(new Error('body too large'));
+      if (data.length > limit) {
+        reject(new Error('body too large'));
+        req.destroy(); // stop reading (and holding) the rest
+      }
     });
     req.on('end', () => resolve(data));
     req.on('error', reject);
@@ -95,7 +98,7 @@ export function startServer(port: number, handlers: ServerHandlers): Promise<Loc
     if (url.pathname.startsWith('/tile/') && screen) return html(tilePage(screen));
     if (url.pathname.startsWith('/halftime/') && screen) return html(halftimePage(screen, handlers.cardSeconds()));
     if (url.pathname.startsWith('/picker/') && screen) return html(pickerPage(screen));
-    if (url.pathname.startsWith('/idle/') && screen) return html(idlePage(screen, url.searchParams.get('note') ?? 'Waiting for a home game. Pick one from this screen\'s game list.'));
+    if (url.pathname.startsWith('/idle/') && screen) return html(idlePage(screen));
     send(404, 'text/plain', 'not found');
   };
   // A request that throws gets an error back; unhandled, it would end the whole app.

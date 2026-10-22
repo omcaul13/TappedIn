@@ -8,10 +8,11 @@ import path from 'node:path';
 import { analyze, type LabelEntry } from '../src/analyze';
 import { parseFlags } from '../src/cli';
 import { loadConfig, PROJECT_ROOT } from '../src/config';
+import { etDay } from '../src/espn/client';
 import { clock, dailyLogFile, type LogEntry } from '../src/log';
 
 const { flags } = parseFlags(process.argv.slice(2));
-const day = typeof flags.day === 'string' ? flags.day : new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
+const day = typeof flags.day === 'string' ? flags.day : etDay();
 const logFile = typeof flags.log === 'string' ? flags.log : dailyLogFile(PROJECT_ROOT, Date.parse(`${day}T12:00:00-04:00`));
 const labelsFile = typeof flags.labels === 'string' ? flags.labels : path.join(PROJECT_ROOT, 'logs', 'labels.jsonl');
 
@@ -29,7 +30,7 @@ const readJsonl = <T>(f: string): T[] =>
         })
     : [];
 
-const sameDay = (at: number) => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(at) === day;
+const sameDay = (at: number) => etDay(at) === day;
 const log = readJsonl<LogEntry>(logFile);
 const labels = readJsonl<LabelEntry>(labelsFile).filter((l) => typeof flags.log === 'string' || sameDay(l.at));
 const r = analyze(labels, log, loadConfig());

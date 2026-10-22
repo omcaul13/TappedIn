@@ -24,7 +24,7 @@
     "partition": "persist:stream2",
     "userAgent": "chrome",
     "appUrl": "^https://webplayer\\.mystream2\\.com/",
-    "playerUrl": "/live/",
+    "playerUrl": "/\\/live\\//",
     "hideCss": ""
   },
   "signin": {

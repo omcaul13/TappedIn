@@ -57,4 +57,13 @@ describe('ranker', () => {
     const r = rankCandidates([blowoutRz, closeLate], { ...none, homeSport: 'nhl', otherSports: new Set(['cfb'] as const) });
     expect(r.ranked.map((x) => [x.view.game.id, x.tier])).toEqual([['close', 2], ['rz', 2]]);
   });
+
+  it('no home sport and several sports: the same order whatever order the games come in', () => {
+    const a = view(snap({ id: 'a', ...score(35, 7), period: 1, clockSec: 600, situation: rz }), 'LIVE', 849); // CFB red zone, low score
+    const b = view(snap({ id: 'b', ...score(14, 14), period: 4, clockSec: 60 }), 'LIVE', 850); // CFB tied late
+    const c = view(snap({ id: 'c', sport: 'nba', ...score(90, 84), period: 4, clockSec: 300 }), 'LIVE', 805);
+    const order = (vs: typeof a[]) => rankCandidates(vs, none).ranked.map((x) => x.view.game.id);
+    expect(order([a, b, c])).toEqual(order([b, c, a]));
+    expect(order([a, b, c])).toEqual(order([c, a, b]));
+  });
 });

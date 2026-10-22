@@ -1,7 +1,7 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Browser, BrowserContext, Page } from 'playwright-core';
-import type { Config } from '../config';
+import { writeJsonAtomic, type Config } from '../config';
 import type { Command } from '../engine/director';
 import { gridBounds, markerUrl, openWindow, setWindowBounds, workArea } from './chrome';
 import { ERROR_STATES, type StreamState } from './health';
@@ -83,6 +83,8 @@ export class WindowController {
   private limit: number;
   private focus = 1;
   private ticking = false;
+  /** Replaced by a new controller (the views were rebuilt): in-flight work must not act any more. */
+  private disposed = false;
 
   constructor(
     private cfg: Config,
@@ -305,6 +307,11 @@ export class WindowController {
     for (const screen of [...this.parked.keys()]) this.unpark(screen, 'stream limit');
   }
 
+  /** The views were rebuilt and a new controller took over: stop acting on the old ones. */
+  dispose(): void {
+    this.disposed = true;
+  }
+
   async close(): Promise<void> {
     await Promise.all(this.screens.map((s) => s.page.goto(markerUrl(`TappedIn screen ${s.id} (stopped)`)).catch(() => {})));
   }
@@ -325,7 +332,7 @@ export class WindowController {
   }
 
   private async kick(screen: number): Promise<void> {
-    if (this.running.has(screen)) return; // the running loop picks up the newest want
+    if (this.disposed || this.running.has(screen)) return; // the running loop picks up the newest want
     this.running.add(screen);
     let error: string | null = null;
     try {
@@ -342,7 +349,7 @@ export class WindowController {
     } finally {
       this.running.delete(screen);
     }
-    if (error) {
+    if (error && !this.disposed) {
       this.events.info(`S${screen} could not apply its channel: ${error}`);
       this.noteFailure(screen, 'UNKNOWN_ERROR', error, Date.now());
     }
@@ -359,6 +366,8 @@ export class WindowController {
       // With a free standby view the reel plays there and the game keeps playing underneath (muted),
       // so the 2nd half starts with an instant swap instead of a cold tune.
       if (this.standby && (await this.halftimeWithStandby(screen, sw))) return;
+      // Already on the reel with the home game parked underneath (a restore): keep both.
+      if (this.parked.has(screen) && sw.localUrl === `${base}/halftime/${screen}`) return;
       this.unpark(screen, 'halftime');
       return sw.showLocal(`${base}/halftime/${screen}`);
     }
@@ -541,8 +550,10 @@ export class WindowController {
     // A screen that failed before any video loaded (e.g. the guide wouldn't load) still retries.
     if (f?.failed && f.retryAt !== null && now >= f.retryAt && sw.render !== 'video') return this.retry(sw, now);
     if (sw.render !== 'video') return;
+    const tune = sw.lastTune;
     const h = await sw.checkHealth().catch(() => null);
-    if (!h) return;
+    // Stale by now: the view was swapped (standby), retuned, or this controller was replaced.
+    if (!h || this.disposed || this.running.has(sw.id) || this.screens[sw.id - 1] !== sw || sw.lastTune !== tune) return;
     if (h.state === 'PLAYING') {
       if (f?.failed) this.events.streamRecovered(sw.id);
       if (f) {
@@ -558,6 +569,7 @@ export class WindowController {
   }
 
   private noteFailure(screen: number, state: StreamState, detail: string, now: number): void {
+    if (this.disposed || !this.screens[screen - 1]) return;
     const f: Failure = this.failures.get(screen) ?? { state, attempts: 0, failed: false, retryAt: null };
     f.state = state;
     const advice = adviseOnStream(state, f.attempts, this.cfg.windows.errorRetrySeconds, this.shortName);
@@ -570,6 +582,12 @@ export class WindowController {
       this.events.limitLearned(this.limit, detail);
       this.failures.delete(screen);
       this.reallocate(true);
+      // Still allowed video (more exciting than the screen that gave up its stream): retune now that a
+      // stream is free. Left alone, its page keeps the limit message and every check lowers the limit again.
+      if (this.videoAllowed.has(screen)) {
+        this.applied.delete(screen);
+        void this.kick(screen);
+      }
       return;
     }
     if (advice.action === 'retry') {
@@ -629,8 +647,7 @@ export class WindowController {
   }
 
   private saveTargets(s: { targets: string[]; panel: string }): void {
-    mkdirSync(path.dirname(this.opts.stateFile), { recursive: true });
-    writeFileSync(this.opts.stateFile, JSON.stringify(s, null, 2));
+    writeJsonAtomic(this.opts.stateFile, s);
   }
 }
 

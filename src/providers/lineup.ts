@@ -1,7 +1,7 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
-import { ChannelSchema, type Config } from '../config';
+import { ChannelSchema, writeJsonAtomic, type Config } from '../config';
 import { matchLineup } from './networks';
 import type { ChannelRef, DiscoveredChannel } from './types';
 
@@ -61,7 +61,7 @@ export function upgradeLineup(providerId: string, stateDir: string): string[] {
   const added = Object.keys(matched).filter((k) => !(k in lineup));
   if (!added.length) return [];
   for (const k of added) lineup[k] = matched[k];
-  writeFileSync(lineupFile(providerId, stateDir), JSON.stringify(lineup, null, 2));
+  writeJsonAtomic(lineupFile(providerId, stateDir), lineup);
   return added.filter((k) => matched[k].number !== null);
 }
 

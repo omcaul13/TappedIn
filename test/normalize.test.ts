@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { resolveChannel } from '../src/channels';
-import { classifyPlay, normalizeEvent, normalizeScoreboard, normalizeSummaryPlays, phaseOf, yardsToEndzoneFrom } from '../src/espn/normalize';
+import { normalizeEvent, normalizeScoreboard } from '../src/espn/normalize';
+import { classifyFootballPlay as classifyPlay, footballPhase as phaseOf, footballSummaryPlays as normalizeSummaryPlays, yardsToEndzoneFrom } from '../src/sports/football';
 import { fixture, T0, testConfig } from './helpers';
 
 // Fixtures are real ESPN events captured on 2026-10-17 (npm run make-fixtures).

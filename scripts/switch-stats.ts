@@ -4,6 +4,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { parseFlags } from '../src/cli';
 import { PROJECT_ROOT } from '../src/config';
+import { espnDateKey } from '../src/espn/client';
 import { dailyLogFile, type LogEntry } from '../src/log';
 import { etTime } from '../src/sim';
 import { STAGES, summarize, type SwitchTiming } from '../src/windows/timing';
@@ -24,7 +25,7 @@ const entries = readFileSync(file, 'utf8')
       return [];
     }
   });
-const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(entries[0]?.at ?? Date.now()).replaceAll('-', '');
+const day = espnDateKey(new Date(entries[0]?.at ?? Date.now()));
 const since = typeof flags.since === 'string' ? etTime(day, flags.since) : 0;
 const decisions = entries.filter((e): e is Extract<LogEntry, { type: 'decision' }> => e.type === 'decision' && e.switched);
 const timings = entries

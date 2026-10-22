@@ -1,6 +1,7 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Page } from 'playwright-core';
+import { writeJsonAtomic } from '../config';
 import type { ChannelRef, ProviderAdapter, TuneOutcome, TuneTools } from '../providers/types';
 
 // Service-independent part of changing channels; the provider adapter does the site-specific part.
@@ -88,7 +89,6 @@ export class Tuner {
   }
 
   private save(): void {
-    mkdirSync(path.dirname(this.cacheFile), { recursive: true });
-    writeFileSync(this.cacheFile, JSON.stringify(this.cache, null, 2));
+    writeJsonAtomic(this.cacheFile, this.cache);
   }
 }

@@ -44,6 +44,7 @@ export function excitement(sc: ScreenState, views: Map<string, GameView>): { sco
 export function audioStep(prev: AudioState, screens: ScreenState[], views: Map<string, GameView>, now: number, cfg: AudioConfig): { state: AudioState; decision: AudioDecision | null } {
   const state = { ...prev, mode: prev.mode };
   if (state.held) return { state, decision: null }; // a screen is fullscreen: sound stays with it
+  if (state.focus === 0) return { state, decision: null }; // you muted every screen: auto mode leaves it muted
   if (state.mode !== 'auto' || now < state.pinnedUntil || now - state.lastChangeAt < cfg.autoDwellSeconds * 1000) return { state, decision: null };
   const scored = screens.map((sc) => ({ id: sc.id, ...excitement(sc, views) }));
   const current = scored.find((x) => x.id === state.focus);

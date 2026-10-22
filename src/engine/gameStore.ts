@@ -56,6 +56,8 @@ export interface GameState {
   lastPlay: LastPlay | null;
   /** Live situation read from play-by-play, for sports whose scoreboard doesn't carry it (hockey). */
   playsLive?: LiveDetail | null;
+  /** When playsLive was read (it goes stale once the game drops off the play-by-play fetches). */
+  playsLiveAt?: number;
 }
 
 export interface LastPlay {
@@ -101,6 +103,12 @@ export class GameStore {
 
   all(): GameState[] {
     return [...this.games.values()];
+  }
+
+  /** Forget a game (a final from an earlier day). */
+  delete(id: string): void {
+    this.games.delete(id);
+    this.seenPlays.delete(id);
   }
 
   /** Feed one scoreboard poll (already normalized). */
@@ -177,7 +185,10 @@ export class GameStore {
       this.addPlayEvents(g, { kind: p.kind, id: p.id, typeText: p.typeText, text: p.text, at, seenAt: now, order: p.seq, isTurnover: p.isTurnover, period: p.period }, 'pbp');
     }
     const fromPlays = sportOf(g.snap.sport).liveFromPlays;
-    if (fromPlays) g.playsLive = fromPlays(plays, g.snap);
+    if (fromPlays) {
+      g.playsLive = fromPlays(plays, g.snap);
+      g.playsLiveAt = now;
+    }
     // Inferred scoreboard events (score/timeout/quarter changes) are superseded by the real play,
     // which has a precise time; keeping both would make the play look like a resume after its own event.
     g.events = g.events.filter((e) => e.playId !== null || !this.hasPbpTwin(g, e));
