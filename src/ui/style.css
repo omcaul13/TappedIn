@@ -191,7 +191,7 @@ img { display: block; }
 
 /* ---- game dropdown ------------------------------------------------------------------------------ */
 .menu {
-  position: absolute; top: 46px; left: 10px; width: min(460px, calc(100% - 20px)); max-height: calc(100% - 56px);
+  position: absolute; top: 46px; left: 10px; width: min(520px, calc(100% - 20px)); max-height: calc(100% - 56px);
   display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line-strong); border-radius: 12px; box-shadow: var(--shadow);
   backdrop-filter: blur(10px); z-index: 20; overflow: hidden;
 }
@@ -203,7 +203,8 @@ img { display: block; }
 .menu .list { overflow: auto; padding: 0 6px 8px; }
 .menu h4 { margin: 8px 6px 4px; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); }
 .row {
-  width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; text-align: left; padding: 6px 8px; margin: 1px 0;
+  /* A fixed right column, so every row's scores line up whatever its network and pills. */
+  width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 168px; gap: 10px; align-items: center; text-align: left; padding: 6px 8px; margin: 1px 0;
   border-radius: 8px; border: 1px solid transparent; background: transparent;
 }
 .row:hover:not(:disabled) { background: rgba(168, 184, 162, 0.1); border-color: var(--line); }
@@ -213,7 +214,10 @@ img { display: block; }
 .row .side { display: flex; align-items: center; gap: 7px; font-weight: 700; font-size: 13px; white-space: nowrap; }
 .row .side .nm { color: var(--dim); font-weight: 500; overflow: hidden; text-overflow: ellipsis; }
 .row .side .sc { margin-left: auto; min-width: 22px; text-align: right; font-weight: 800; }
-.row .info { display: grid; justify-items: end; gap: 2px; font-size: 11.5px; color: var(--dim); white-space: nowrap; }
+.row .info { display: grid; justify-items: end; gap: 2px; font-size: 11.5px; color: var(--dim); white-space: nowrap; min-width: 0; }
+.row .info > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.row .info .pills { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 3px 5px; overflow: visible; }
+.row .info .pills:empty { display: none; }
 .row .info b { color: var(--text); font-weight: 700; }
 .row .rzpill { color: #fecaca; background: rgba(239, 68, 68, 0.25); border-radius: 4px; padding: 0 5px; font-weight: 800; font-size: 10px; }
 .row .onpill { color: var(--accent-hi); background: rgba(var(--accent-rgb), 0.16); border-radius: 4px; padding: 0 5px; font-weight: 700; font-size: 10px; }

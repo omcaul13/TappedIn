@@ -275,7 +275,7 @@ function GameRow({ g, current, tag, onPick, disabledReason }: { g: GameDTO; curr
         {g.tennis && <span class="tline">{tennisLine(g)}</span>}
         <b>{gameClock(g)}</b>
         <span>{g.channel ? network(g) : (g.unavailable ?? 'Not available')}</span>
-        <span>
+        <span class="pills">
           <ExcitementPill g={g} /> <WinChance g={g} /> {g.hot && <span class="rzpill">{g.hot.toUpperCase()}</span>} {sharedPill(g) && <span class="regpill" title={sharedPill(g)!.title}>{sharedPill(g)!.text}</span>} {g.tennis?.grandSlam && <span class="onpill">GS</span>} {tag && <span class="onpill">{tag}</span>}
         </span>
       </span>
