@@ -107,9 +107,27 @@ jobs:
               echo "TappedIn ($arch) did not start or did not load its settings"; exit 1
             fi
             echo "- $arch: started, settings loaded from Application Support" >> "$GITHUB_STEP_SUMMARY"
+            # The window must actually show the UI, not only serve it (a friend's Mac showed a black window).
+            sleep 15
+            mkdir -p smoke
+            screencapture -x "smoke/screen-$arch.png" || true
+            if node installer/mac/smoke-ui.mjs "$app" smoke "$arch"; then
+              echo "- $arch: the window shows the TappedIn UI" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "- $arch: **the window's UI did not render**" >> "$GITHUB_STEP_SUMMARY"; failed=1
+            fi
+            cp "$data/logs/launcher.log" "smoke/launcher-$arch.log" || true
             pkill -f "TappedIn.app/Contents" || true
             sleep 5
           done
+          [ -z "${failed:-}" ]
+
+      - name: Upload what the smoke test saw
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-smoke
+          path: smoke/
 
       - name: Upload the build
         uses: actions/upload-artifact@v4
