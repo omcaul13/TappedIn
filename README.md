@@ -65,9 +65,9 @@ When a screen's home game goes to a long break (by that sport's own detector), t
 1. **Same sport:** another live, in-play game of the same sport, by that sport's order (football: red zone, then closest, then later; others: hot moment, then the 0–100 excitement score).
 2. **A sport another screen is watching**, by the normalized excitement score.
 3. **Any other sport** the app follows, by the normalized excitement score.
-4. **Nothing in play:** stay on the home game (or, with `director.allowDuplicates`, a game another screen shows, flagged, as the last resort).
+4. **Nothing in play:** stay on the home game. Two screens never show the same game, unless you turn on Settings → Advanced → "Show a game on two screens when nothing else is live" (`director.allowDuplicates`, off by default); then another screen's game is the flagged last resort.
 
-The usual rules still hold: no game on two screens unless it's the only option, the dwell time, locked screens never switch, back home when the home game shows a new play, halftime/intermission reels. The normalized score is `100 × closeness × (0.35 + 0.65 × lateness) + a hot-moment bonus (+ overtime)`, with closeness scaled per sport (football 17 points, basketball 15, hockey 3 goals, baseball 5 runs), so a one-goal third period ranks near a one-score fourth quarter. Every decision logs its tier (invariant 6 checks that no fill-in skipped a better tier).
+The usual rules still hold: no game on two screens (unless you allow it, and only as the last resort), the dwell time, locked screens never switch, back home when the home game shows a new play, halftime/intermission reels. The normalized score is `100 × closeness × (0.35 + 0.65 × lateness) + a hot-moment bonus (+ overtime)`, with closeness scaled per sport (football 17 points, basketball 15, hockey 3 goals, baseball 5 runs), so a one-goal third period ranks near a one-score fourth quarter. Every decision logs its tier (invariant 6 checks that no fill-in skipped a better tier).
 
 
 | Service | Status | Changes channels by | Documented streams |

@@ -164,8 +164,8 @@ export const ConfigSchema = z.object({
       dwellSeconds: z.number().min(0).default(20),
       /** Move a fill-in that isn't in the red zone to a game that is. */
       upgradeFillInToRedZone: z.boolean().default(true),
-      /** Fill a break with a game already on another screen when nothing else is in play (false = stay on the commercial). */
-      allowDuplicates: z.boolean().default(true),
+      /** Fill a break with a game already on another screen when nothing else is in play (false, the default = stay on the commercial). */
+      allowDuplicates: z.boolean().default(false),
       /** Game-over pop-up: adopt the best live game as the new home after this long. */
       gameOverAutoPickSeconds: z.number().min(0).default(120),
       /** Keep showing a just-finished game this long (after the viewer sees the end) before the pop-up. */

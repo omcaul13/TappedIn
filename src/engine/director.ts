@@ -258,8 +258,8 @@ export function directorStep(prev: DirectorState, views: Map<string, GameView>, 
       }
       if (sc.gameOver?.autoPickAt != null && now >= sc.gameOver.autoPickAt) {
         let r = pick(sc);
-        // A new home is for good: before doubling up on another screen's game, take a free live game that's only in a commercial.
-        if (r.duplicate) {
+        // A new home is for good: before doubling up on another screen's game (or, with duplicates off, giving up), take a free live game that's only in a commercial.
+        if (!r.best || r.duplicate) {
           const free = pickBest(state.screens, sc, views, [], undefined, true);
           if (free.best && !free.duplicate) r = free;
         }
@@ -333,13 +333,14 @@ export function directorStep(prev: DirectorState, views: Map<string, GameView>, 
         const currentId = shownGameId(sc);
         const current = currentId ? views.get(currentId) : undefined;
         const { best, ranked, duplicate } = pick(sc, currentId ? [currentId] : []);
-        // Another screen went back to this game as its home: move off it if there's anything else.
-        const clash = currentId !== null && shownOnOtherScreen(state.screens, sc.id, currentId) && best !== null && !duplicate;
+        // Another screen went back to this game as its home: move off it if there's anything else, or (duplicates off) go home.
+        const clash = currentId !== null && shownOnOtherScreen(state.screens, sc.id, currentId) && (!cfg.allowDuplicates || (best !== null && !duplicate));
         const currentOk = current?.assessment.state === 'LIVE' && current.game.phase === 'LIVE' && !clash;
         if (!currentOk) {
           const otherScreen = clash ? state.screens.find((x) => x.id !== sc.id && shownGameId(x) === currentId)?.id : undefined;
           const why = clash ? `fill-in ${current?.game.shortName} is also on S${otherScreen}, and another game is available` : `fill-in ${current?.game.shortName ?? currentId} is ${current?.assessment.state ?? 'gone'}`;
-          if (dwellLeft(sc) > 0) {
+          // Two screens on one game don't wait out the dwell (with duplicates off).
+          if (dwellLeft(sc) > 0 && !(clash && !cfg.allowDuplicates)) {
             note(sc, 'HOLD_DWELL', `dwell-replace-${currentId}`, [`${why}; ${Math.ceil(dwellLeft(sc) / 1000)}s dwell left`]);
             continue;
           }
@@ -405,7 +406,7 @@ export function directorStep(prev: DirectorState, views: Map<string, GameView>, 
 // ---------------------------------------------------------------------------------------------
 // Your commands (bypass dwell)
 
-export function applyAction(prev: DirectorState, action: UserAction, views: Map<string, GameView>, now: number): StepResult {
+export function applyAction(prev: DirectorState, action: UserAction, views: Map<string, GameView>, now: number, allowDuplicates = false): StepResult {
   const state: DirectorState = structuredClone(prev);
   const commands: Command[] = [];
   const decisions: Decision[] = [];
@@ -474,6 +475,10 @@ export function applyAction(prev: DirectorState, action: UserAction, views: Map<
       const { best, duplicate } = pickBest(state.screens, sc, views, current ? [current] : []);
       if (!best) {
         record('USER_REJECTED', false, ['no other game is in play right now']);
+        break;
+      }
+      if (duplicate && !allowDuplicates) {
+        record('USER_REJECTED', false, ['every other game in play is already on another screen']);
         break;
       }
       if (sc.mode === 'GAME_OVER') commands.push({ type: 'hideGameOver', screen: sc.id });

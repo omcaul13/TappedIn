@@ -102,8 +102,8 @@ describe('director', () => {
     expect(w.showing(1)).toBe('h2'); // next-closest (4 pts), not c1 (tied but taken)
   });
 
-  it('duplicates only when nothing else is in play, and say so', () => {
-    const w = world();
+  it('with duplicates on: duplicates only when nothing else is in play, and say so', () => {
+    const w = world({ ...cfg, allowDuplicates: true });
     w.act({ type: 'setHome', screen: 1, gameId: 'h1' }, T0);
     w.act({ type: 'setHome', screen: 2, gameId: 'h2' }, T0);
     w.set('c1', 'BREAK', T0);
@@ -240,8 +240,8 @@ describe('director', () => {
     expect(w.screen(2).homeGameId).toBe('c1');
   });
 
-  it('game over: with every live game on another screen, the auto-pick still takes a duplicate (flagged)', () => {
-    const w = world();
+  it('game over, duplicates on: with every live game on another screen, the auto-pick takes a duplicate (flagged)', () => {
+    const w = world({ ...cfg, allowDuplicates: true });
     w.act({ type: 'setHome', screen: 1, gameId: 'h2' }, T0);
     w.act({ type: 'setHome', screen: 2, gameId: 'h1' }, T0);
     w.set('c1', 'FINAL', T0);
@@ -250,6 +250,30 @@ describe('director', () => {
     w.step(T0 + sec(120));
     const pick = w.step(T0 + sec(240));
     expect(pick.decisions.find((d) => d.screen === 2)).toMatchObject({ rule: 'AUTO_PICK', gameId: 'h2', duplicate: true });
+  });
+
+  it("game over, duplicates off (the default): the auto-pick never doubles another screen's game", () => {
+    const w = world();
+    w.act({ type: 'setHome', screen: 1, gameId: 'h2' }, T0);
+    w.act({ type: 'setHome', screen: 2, gameId: 'h1' }, T0);
+    w.set('c1', 'FINAL', T0);
+    w.set('c2', 'FINAL', T0);
+    w.set('h1', 'FINAL', T0 + sec(100));
+    w.step(T0 + sec(120));
+    const pick = w.step(T0 + sec(240));
+    expect(pick.decisions.find((d) => d.screen === 2)?.rule).toBe('NO_CANDIDATE');
+    expect(w.showing(2)).not.toBe('h2');
+  });
+
+  it("duplicates off: Skip won't jump to a game that is on another screen", () => {
+    const w = world();
+    w.act({ type: 'setHome', screen: 1, gameId: 'h1' }, T0);
+    w.act({ type: 'setHome', screen: 2, gameId: 'h2' }, T0);
+    w.set('c1', 'FINAL', T0);
+    w.set('c2', 'FINAL', T0);
+    const r = w.act({ type: 'skip', screen: 1 }, T0 + sec(5));
+    expect(r.decisions[0].rule).toBe('USER_REJECTED');
+    expect(w.showing(1)).toBe('h1');
   });
 
   it('picking from the pop-up sets the new home right away', () => {

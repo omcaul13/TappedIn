@@ -59,8 +59,8 @@
     // While filling in for a break, jump to a red-zone game if the fill-in isn't in the red zone.
     upgradeFillInToRedZone: true,
     // When nothing else is in play, fill a break with a game that's already on another screen (true),
-    // or stay on the home game's commercial (false). On 10/10 (simulated) ~20% of switches were duplicates.
-    allowDuplicates: true,
+    // or stay on the home game's commercial (false, the default: two screens never show the same game).
+    allowDuplicates: false,
     // Game-over pop-up: if you don't pick, adopt the best live game as the new home after this long.
     gameOverAutoPickSeconds: 120,
     // Stay on a just-finished game this long after you've seen the final play.

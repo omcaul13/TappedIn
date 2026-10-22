@@ -86,8 +86,8 @@ describe('3-tier fill-in order', () => {
     expect(d.some((x) => x.rule === 'NO_CANDIDATE')).toBe(true);
   });
 
-  it("another screen's game only as the flagged last resort (director.allowDuplicates, on by default)", () => {
-    const w = world();
+  it("with director.allowDuplicates on: another screen's game only as the flagged last resort", () => {
+    const w = world({ ...cfg, allowDuplicates: true });
     for (const id of ['nhlOther', 'cfbOther', 'nbaClutch'] as const) w.set(id, 'BREAK');
     w.set('nhlHome', 'BREAK');
     const d = tierOf(w.step(later))!;

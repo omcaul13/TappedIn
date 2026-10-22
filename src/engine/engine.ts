@@ -210,7 +210,7 @@ export class Engine {
 
   act(action: UserAction, now: number): TickResult {
     const res = empty();
-    const step = applyAction(this.director, action, this.views(), now);
+    const step = applyAction(this.director, action, this.views(), now, this.cfg.director.allowDuplicates);
     this.director = step.state;
     res.commands.push(...step.commands);
     res.decisions.push(...step.decisions);
