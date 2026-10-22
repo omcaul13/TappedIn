@@ -179,12 +179,12 @@ export function Screen({ st, sc, games, now, fullscreen, hiddenByFullscreen, can
 function Tag({ sc, home, on, onOther }: { sc: ScreenDTO; home?: GameDTO; on?: GameDTO; onOther: boolean }) {
   const parts: string[] = [];
   if (onOther && on) parts.push(`→ ${on.shortName}`);
-  if (sc.showingKind === 'halftime') parts.push('Halftime highlights');
   if (sc.render === 'data') parts.push(`Live data${sc.dataReason ? ` (${sc.dataReason})` : ''}`);
   if (sc.mode === 'LOCKED') parts.push('Locked');
   if (!parts.length && !sc.audio) return null;
+  // The reel page has its own HALFTIME bar on top and the clip's title at the bottom: sit just under the bar.
   return (
-    <div class="tag">
+    <div class={`tag${sc.showingKind === 'halftime' ? ' under-bar' : ''}`}>
       {home && <span class="sw" style={{ background: teamColor(home.home) }} />}
       {sc.audio && <SoundIcon on />}
       {parts.join(' · ')}

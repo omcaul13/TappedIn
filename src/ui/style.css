@@ -188,6 +188,7 @@ img { display: block; }
 .tag .sw { width: 7px; height: 7px; border-radius: 2px; }
 .tag svg { width: 12px; height: 12px; color: #86efac; }
 .ov:not(.hidden) .tag { opacity: 0; }
+.tag.under-bar { bottom: auto; top: 38px; }
 
 /* ---- game dropdown ------------------------------------------------------------------------------ */
 .menu {
