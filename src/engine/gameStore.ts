@@ -1,6 +1,6 @@
 import { sportOf } from '../sports';
 import type { InferContext } from '../sports/types';
-import type { GameSnapshot, LiveDetail, Phase, PlayKind, PlaySnap } from './types';
+import type { GameSnapshot, LiveDetail, Phase, PlayKind, PlaySnap, WinProbability } from './types';
 
 export type { PlayKind };
 
@@ -58,6 +58,9 @@ export interface GameState {
   playsLive?: LiveDetail | null;
   /** When playsLive was read (it goes stale once the game drops off the play-by-play fetches). */
   playsLiveAt?: number;
+  /** ESPN's win probability from the latest summary, and when it was read (stale the same way). */
+  winProb?: WinProbability | null;
+  winProbAt?: number;
 }
 
 export interface LastPlay {

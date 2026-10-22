@@ -1,4 +1,4 @@
-import type { Assessment, GameSnapshot, LiveDetail, SportFamily, SportId, TennisInfo } from '../engine/types';
+import type { Assessment, GameSnapshot, LiveDetail, SportFamily, SportId, TennisInfo, WinProbability } from '../engine/types';
 import { sportOf } from '../sports';
 
 // What the app window's UI and the local pages (data tiles, halftime, picker, control panel) see. Plain JSON.
@@ -48,6 +48,8 @@ export interface GameDTO {
   hot: string | null;
   /** 0–100, comparable across sports. */
   excitement: number;
+  /** ESPN's win probability (0–1) while in play, for games whose play-by-play is fetched; null otherwise. */
+  winProbability: WinProbability | null;
   assessment: Pick<Assessment, 'state' | 'score' | 'reasons' | 'since' | 'forecast'> | null;
 }
 
@@ -211,6 +213,7 @@ export function gameDTO(g: GameSnapshot, a: Assessment | undefined, channel: Gam
     tennis: g.tennis ?? null,
     hot: g.phase === 'LIVE' ? (x.hot?.label ?? null) : null,
     excitement: x.score,
+    winProbability: g.winProbability ?? null,
     assessment: a ? { state: a.state, score: a.score, reasons: a.reasons, since: a.since, forecast: a.forecast } : null,
   };
 }

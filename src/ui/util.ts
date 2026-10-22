@@ -93,6 +93,17 @@ export function substituteReason(sc: ScreenDTO, home: GameDTO | undefined, on: G
   return `${home.shortName} ${String(st ?? '').toLowerCase()}`;
 }
 
+/** The team ESPN favors and its chance to win (68 for 68%), or null when ESPN has no win probability. */
+export function winChance(g: GameDTO): { team: TeamDTO; pct: number } | null {
+  const wp = g.winProbability;
+  if (!wp) return null;
+  const away = 1 - wp.home - wp.tie;
+  return wp.home >= away ? { team: g.home, pct: Math.round(wp.home * 100) } : { team: g.away, pct: Math.round(away * 100) };
+}
+
+/** Excitement 0–100 as a level for its colour. */
+export const excitementLevel = (score: number) => (score >= 70 ? 'hot' : score >= 40 ? 'warm' : 'cool');
+
 export const scoreLine = (g: GameDTO) => `${g.away.abbr} ${g.away.score}–${g.home.score} ${g.home.abbr}`;
 
 /** Games still to watch today (not over). */

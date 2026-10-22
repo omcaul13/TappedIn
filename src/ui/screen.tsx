@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { BackIcon, FullscreenIcon, LockIcon, SoundIcon, SportIcon } from './icons';
-import { act, gameClock, mmss, network, pickReason, post, screenBadge, scoreLine, sharedPill, substituteReason, teamColor, tennisLine, watchableToday, type AppState, type GameDTO, type ScreenDTO, type SportDTO, type TeamDTO } from './util';
+import { act, excitementLevel, gameClock, mmss, network, pickReason, post, screenBadge, scoreLine, sharedPill, substituteReason, teamColor, tennisLine, watchableToday, winChance, type AppState, type GameDTO, type ScreenDTO, type SportDTO, type TeamDTO } from './util';
 
 // One screen's overlay: header (game dropdown, state badge, back-to-my-game, lock, sound) that hides
 // after a few seconds without mouse movement, plus cards drawn inside the screen (switching, game
@@ -135,6 +135,7 @@ export function Screen({ st, sc, games, now, fullscreen, hiddenByFullscreen, can
                   {gameClock(home)} · {network(home)}
                   {home.family === 'tennis' && home.channel?.regional === 'unconfirmed' ? ' · may show another court' : ''}
                 </span>
+                <WinChance g={home} />
               </>
             ) : (
               <span class="teams">Choose a game</span>
@@ -232,6 +233,30 @@ function SwitchingCard({ sc, games, now, home }: { sc: ScreenDTO; games: Map<str
   );
 }
 
+/** ESPN's win probability for a game in play: "BOS 68%" with a bar in the two teams' colours. */
+function WinChance({ g }: { g: GameDTO }) {
+  const w = winChance(g);
+  if (!w) return null;
+  const { home, tie } = g.winProbability!;
+  const away = Math.round((1 - home - tie) * 100);
+  return (
+    <span class="winchance" title={`Chance to win (ESPN): ${g.away.abbr} ${away}%, ${g.home.abbr} ${Math.round(home * 100)}%${tie > 0.005 ? `, tie ${Math.round(tie * 100)}%` : ''}`}>
+      <span class="wbar" style={{ background: `linear-gradient(90deg, ${teamColor(g.away)} ${away}%, ${teamColor(g.home)} ${away}%)` }} />
+      {w.team.abbr} {w.pct}%
+    </span>
+  );
+}
+
+/** How exciting a game in play is right now (0–100, the same score fill-ins are picked by). */
+function ExcitementPill({ g }: { g: GameDTO }) {
+  if (g.phase !== 'LIVE') return null;
+  return (
+    <span class={`xpill ${excitementLevel(g.excitement)}`} title="Excitement (0–100): how close and how late the game is, plus moments like the red zone or a power play">
+      {g.excitement}
+    </span>
+  );
+}
+
 function GameRow({ g, current, tag, onPick, disabledReason }: { g: GameDTO; current: boolean; tag?: string; onPick(): void; disabledReason?: string | null }) {
   const pre = g.phase === 'PRE';
   return (
@@ -251,7 +276,7 @@ function GameRow({ g, current, tag, onPick, disabledReason }: { g: GameDTO; curr
         <b>{gameClock(g)}</b>
         <span>{g.channel ? network(g) : (g.unavailable ?? 'Not available')}</span>
         <span>
-          {g.hot && <span class="rzpill">{g.hot.toUpperCase()}</span>} {sharedPill(g) && <span class="regpill" title={sharedPill(g)!.title}>{sharedPill(g)!.text}</span>} {g.tennis?.grandSlam && <span class="onpill">GS</span>} {tag && <span class="onpill">{tag}</span>}
+          <ExcitementPill g={g} /> <WinChance g={g} /> {g.hot && <span class="rzpill">{g.hot.toUpperCase()}</span>} {sharedPill(g) && <span class="regpill" title={sharedPill(g)!.title}>{sharedPill(g)!.text}</span>} {g.tennis?.grandSlam && <span class="onpill">GS</span>} {tag && <span class="onpill">{tag}</span>}
         </span>
       </span>
     </button>
@@ -323,8 +348,8 @@ function GameMenu({ st, sc, games, onClose, run, fill = false }: { st: AppState;
   const needle = q.trim().toLowerCase();
   const all = [...games.values()].filter(watchableToday);
   const match = (g: GameDTO) => !needle || `${g.name} ${g.shortName} ${g.away.abbr} ${g.home.abbr} ${g.networks.join(' ')} ${g.sportShort}`.toLowerCase().includes(needle);
-  const margin = (g: GameDTO) => Math.abs(g.home.score - g.away.score);
-  const liveOf = (list: GameDTO[]) => list.filter((g) => g.phase !== 'PRE').sort((a, b) => Number(!a.channel) - Number(!b.channel) || Number(!b.hot) - Number(!a.hot) || margin(a) - margin(b));
+  // Most exciting first (the score already counts closeness, lateness and hot moments).
+  const liveOf = (list: GameDTO[]) => list.filter((g) => g.phase !== 'PRE').sort((a, b) => Number(!a.channel) - Number(!b.channel) || b.excitement - a.excitement);
   const laterOf = (list: GameDTO[]) => list.filter((g) => g.phase === 'PRE').sort((a, b) => String(a.startTime).localeCompare(String(b.startTime)) || Number(!a.channel) - Number(!b.channel));
   const tagOf = (g: GameDTO) => {
     const homeOn = st.screens.find((o) => o.id !== sc.id && o.homeGameId === g.id);

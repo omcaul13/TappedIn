@@ -1094,10 +1094,10 @@ export class App {
     // The finished game's sport first, then the other sports in picker order.
     const own = home?.sport;
     const rank = (v: GameView) => (v.game.sport === own ? -1 : SPORTS.findIndex((m) => m.id === v.game.sport));
-    const margin = (v: GameView) => Math.abs(v.game.home.score - v.game.away.score);
+    const excitement = (v: GameView) => sportOf(v.game.sport).excitement(v.game).score;
     const live = watchable
       .filter((v) => v.game.phase === 'LIVE' || v.game.phase === 'HALFTIME')
-      .sort((a, b) => rank(a) - rank(b) || margin(a) - margin(b))
+      .sort((a, b) => rank(a) - rank(b) || excitement(b) - excitement(a))
       .map((v) => {
         const hot = sportOf(v.game.sport).excitement(v.game).hot;
         return {

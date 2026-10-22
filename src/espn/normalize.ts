@@ -2,9 +2,19 @@
 // and anything unrecognised degrades to "unknown" rather than throwing. The sport-specific parts
 // (phases, live situation, play-by-play) come from each sport's module in src/sports/.
 
-import type { GameSnapshot, SportId } from '../engine/types';
+import type { GameSnapshot, SportId, WinProbability } from '../engine/types';
 import { sportOf } from '../sports';
 import { clockSeconds, networksOf, str, team, num, type Json } from './json';
+
+/** The newest entry of a summary's `winprobability` list, or null when ESPN has none (or it doesn't look right). */
+export function winProbability(summary: Json): WinProbability | null {
+  const list = summary?.winprobability;
+  const last = Array.isArray(list) ? list.at(-1) : null;
+  const home = num(last?.homeWinPercentage);
+  if (home === null || home < 0 || home > 1) return null;
+  const tie = num(last?.tiePercentage) ?? 0;
+  return { home, tie: tie >= 0 && tie <= 1 ? tie : 0 };
+}
 
 export function normalizeEvent(ev: Json, observedAt: number, sport: SportId = 'cfb'): GameSnapshot | null {
   if (ev?.id == null) return null;

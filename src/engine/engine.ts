@@ -1,7 +1,8 @@
 import path from 'node:path';
 import { resolveChannel } from '../channels';
 import { directorSettings, PROJECT_ROOT, sportPreset, type Config } from '../config';
-import { normalizeScoreboard } from '../espn/normalize';
+import { normalizeScoreboard, winProbability } from '../espn/normalize';
+import type { Json } from '../espn/json';
 import { sportOf } from '../sports';
 import { marketTeams } from '../sports/markets';
 import { regionalStatus } from '../sports/nfl';
@@ -94,6 +95,8 @@ export class Engine {
     const g = this.store.get(gameId);
     if (!g) return;
     this.store.ingestPlays(gameId, sportOf(g.snap.sport).summaryPlays(body), now);
+    g.winProb = winProbability(body as Json);
+    g.winProbAt = now;
   }
 
   ingestPlays(gameId: string, plays: PlaySnap[], now: number): void {
@@ -125,8 +128,10 @@ export class Engine {
       const a = this.assessments.get(g.id);
       // Hockey's power play comes from play-by-play: the scoreboard's situation has only the last play.
       // Play-by-play more than 2 minutes behind the scoreboard is no longer fetched: don't trust it.
-      const fresh = g.playsLive && g.snap.phase === 'LIVE' && g.dataUpdatedAt - (g.playsLiveAt ?? 0) <= 120_000;
-      const game = fresh ? { ...g.snap, live: g.playsLive! } : g.snap;
+      const fresh = (at: number | undefined) => at !== undefined && g.dataUpdatedAt - at <= 120_000;
+      const pp = g.playsLive && g.snap.phase === 'LIVE' && fresh(g.playsLiveAt);
+      const wp = g.winProb && (g.snap.phase === 'LIVE' || g.snap.phase === 'HALFTIME') && fresh(g.winProbAt);
+      const game = pp || wp ? { ...g.snap, ...(pp ? { live: g.playsLive! } : {}), ...(wp ? { winProbability: g.winProb } : {}) } : g.snap;
       if (a) out.set(g.id, { game, assessment: a, channel: this.channelFor(g.snap) });
     }
     // NFL Sunday windows: several games on CBS/FOX at once, and your station shows one.

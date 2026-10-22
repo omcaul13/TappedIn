@@ -125,7 +125,18 @@ export interface GameSnapshot {
   live?: LiveDetail | null;
   /** Tennis: sets, games, server, tournament (every phase). */
   tennis?: TennisInfo;
+  /**
+   * ESPN's win probability after the latest play (0–1), from the play-by-play summary, so only for games
+   * whose summary is fetched (on screen, likely fill-ins) and only while in play. ESPN has none for the
+   * NHL, soccer or tennis.
+   */
+  winProbability?: WinProbability | null;
   observedAt: number;
+}
+
+export interface WinProbability {
+  home: number;
+  tie: number;
 }
 
 export type PlayKind = 'snap' | 'score' | 'pat' | 'kickoff' | 'timeout' | 'endPeriod' | 'admin';

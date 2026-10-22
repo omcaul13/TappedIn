@@ -56,6 +56,8 @@ What ESPN's data can and can't tell (and how the app copes):
 - **Each screen's game list starts with a sport:** a grid of sports with today's game count ("12 games · 4 live"); sports with no games today are greyed. Pick one, then a game. Below that sport's games, the other sports follow, grouped.
 - **Use for all screens:** tick it before picking a sport and every screen switches to its own game of that sport (the best ones nobody else is showing, like the startup pick). Locked screens keep their game. Change any screen afterward.
 - **Each screen's header** shows the sport (glyph + "NHL") next to the score and state badge. A screen remembers its sport for the next start.
+- **Excitement score:** every live game in a game list shows its excitement (0–100: how close and how late it is, plus moments like the red zone or a power play), and live games are listed most exciting first. It's the same score the app uses to pick fill-ins.
+- **Win probability:** a screen's header shows ESPN's chance to win for the game it's watching (`TENN 68%`, with a bar in the two teams' colours; hover for both teams). It comes from ESPN's play-by-play, which the app already reads for games on screen, so it's there for football, basketball and MLB; ESPN has none for the NHL, soccer or tennis.
 - **The "why" line** on a fill-in names the tier: `Showing UTAH 7–0 COLO · Same sport: red zone, 2:10 - 4th · ND @ BYU: timeout · ~1:49 left`, or `Other screen's sport (CFB): …`, or `Other sport (NBA): clutch time, 4th 1:30`.
 - **Game over:** the pop-up lists the same sport first, then the other sports, grouped.
 
