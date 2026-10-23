@@ -70,9 +70,13 @@ app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion');
 if (flag('no-dcomp')) app.commandLine.appendSwitch('disable-direct-composition');
 
 const send = (msg) => {
-  // Mac: the app's Node process can be gone before the window closes. Sending then throws, and Electron's
-  // error dialog keeps this process (and a black window, holding the debugging port) alive.
-  if (MAC && !process.connected) return;
+  // Mac: the app's Node process can be gone before the window closes. A send then fails (channel closed, or
+  // EPIPE while the channel still looks open); unhandled, Electron's error dialog keeps this process (and a
+  // black window, holding the debugging port) alive. With a callback, Node reports the failure there instead.
+  if (MAC && process.send) {
+    if (process.connected) process.send(msg, () => {});
+    return;
+  }
   if (process.send) process.send(msg);
   else console.log('[shell]', JSON.stringify(msg));
 };
