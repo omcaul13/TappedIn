@@ -37,6 +37,11 @@ function fail(text) {
       return '';
     }
   })();
+  // Hidden from the Dock, the launcher's dialog would open behind other windows (TappedIn's own included).
+  if (mac) {
+    app.dock.show();
+    app.focus({ steal: true });
+  }
   dialog.showMessageBoxSync({
     type: 'error',
     title: 'TappedIn',

@@ -283,11 +283,12 @@ export async function attachShell(cfg: Config, layout: ShellLayout, timeoutMs = 
   throw new Error('could not find the TappedIn window\'s video views');
 }
 
-async function debugPortOpen(port: number): Promise<boolean> {
+export async function debugPortOpen(port: number, platform: NodeJS.Platform = process.platform): Promise<boolean> {
   try {
     const res = await fetch(`http://127.0.0.1:${port}/json/version`, { signal: AbortSignal.timeout(800) });
     return res.ok;
-  } catch {
-    return false;
+  } catch (err) {
+    // Mac: a TappedIn window that hangs still holds the port without answering; only a refused connection means it's free.
+    return platform === 'darwin' && (err as { cause?: { code?: string } }).cause?.code !== 'ECONNREFUSED';
   }
 }
