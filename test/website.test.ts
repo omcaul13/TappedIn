@@ -305,4 +305,58 @@ describe('download functions', async () => {
     });
     expect((await feed('0.0.1', { DOWNLOADS: bucket({}) })).status).toBe(204);
   });
+
+  /** A stand-in for the D1 binding: just the statements lib/stats.js runs. */
+  function d1() {
+    const rows = new Map<string, number>();
+    const stmt = (sql: string, args: unknown[] = []) => ({
+      bind: (...a: unknown[]) => stmt(sql, a),
+      run: async () => {
+        if (sql.startsWith('INSERT')) rows.set(`${args[0]}|${args[1]}`, (rows.get(`${args[0]}|${args[1]}`) ?? 0) + 1);
+        return {};
+      },
+      all: async () => {
+        const by = (i: number) => {
+          const m = new Map<string, number>();
+          for (const [k, n] of rows) m.set(k.split('|')[i], (m.get(k.split('|')[i]) ?? 0) + n);
+          return [...m].map(([key, n]) => ({ [i ? 'file' : 'day']: key, n }));
+        };
+        return { results: sql.includes('GROUP BY file') ? by(1) : by(0) };
+      },
+    });
+    return { rows, prepare: (sql: string) => stmt(sql), batch: async (s: { run(): Promise<unknown> }[]) => Promise.all(s.map((x) => x.run())) };
+  }
+
+  it('counts each download once (not a resume, not a HEAD), and never breaks one when counting fails', async () => {
+    const STATS = d1();
+    const waits: Promise<unknown>[] = [];
+    const get = (init: RequestInit = {}) => onRequest({ request: new Request('https://tappedin.pages.dev/download/windows', init), env: { DOWNLOADS: bucket(), STATS }, waitUntil: (p: Promise<unknown>) => waits.push(p) });
+    await get();
+    await get({ headers: { range: 'bytes=0-3' } }); // a download manager's first piece
+    await get({ headers: { range: 'bytes=4-' } }); // ...and the rest: the same download
+    await get({ method: 'HEAD' });
+    await Promise.all(waits);
+    expect([...STATS.rows.values()].reduce((a, n) => a + n, 0)).toBe(2);
+    expect([...STATS.rows.keys()][0]).toMatch(/^\d{4}-\d{2}-\d{2}\|TappedIn-Setup-0\.1\.0-beta\.1\.exe$/);
+    const broken = { prepare: () => ({ bind: () => ({}) }), batch: async () => Promise.reject(new Error('D1 down')) };
+    const res = await onRequest({ request: new Request('https://tappedin.pages.dev/download/windows'), env: { DOWNLOADS: bucket(), STATS: broken }, waitUntil: () => {} });
+    expect(await res.text()).toBe(exe);
+  });
+
+  it('shows the counts at /stats only with the password', async () => {
+    const { onRequestGet: stats } = await site('functions/stats.js');
+    const STATS = d1();
+    STATS.rows.set('2026-10-24|TappedIn-Setup-0.1.4-beta.2.exe', 3);
+    STATS.rows.set('2026-10-24|TappedIn-0.1.4-beta.2.dmg', 2);
+    const page = (auth?: string, env: Record<string, unknown> = { STATS, STATS_PASSWORD: 'pw' }) => stats({ request: req('/stats', auth ? { headers: { authorization: auth } } : {}), env });
+    expect((await page()).status).toBe(401);
+    expect((await page(`Basic ${btoa('x:wrong')}`)).status).toBe(401);
+    expect((await page(undefined, {})).status).toBe(404); // not set up
+    const ok = await page(`Basic ${btoa('andrew:pw')}`);
+    expect(ok.status).toBe(200);
+    const html = await ok.text();
+    expect(html).toMatch(/<b>5<\/b>downloads/);
+    expect(html).toMatch(/<b>3<\/b>Windows/);
+    expect(html).toContain('TappedIn-0.1.4-beta.2.dmg');
+  });
 });

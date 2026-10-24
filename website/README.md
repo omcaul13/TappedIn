@@ -38,6 +38,16 @@ The Functions serve them under the site's own address, with resumable downloads:
 
 A missing object gives a 503 ("try again in a few minutes") or a 404 from `/api/latest`; the page then keeps its static text and links.
 
+## Download counts
+
+Every download through `/download/*` is counted once (the whole file, or a ranged download's first piece, never a resume or a HEAD) in a Cloudflare D1 database, one row per UTC day and file name, so counts split by platform and version. `/stats` shows them behind the browser's password prompt (any user name). Counting never slows or breaks a download, and without the setup below nothing is counted and `/stats` is a 404.
+
+One-time setup in the Cloudflare dashboard:
+1. **Storage & Databases → D1 → Create**, named `tappedin-stats` (the table is created on first use).
+2. **Workers & Pages → the site → Settings → Bindings → Add → D1 database**: variable name `STATS`, database `tappedin-stats`.
+3. **Settings → Variables and Secrets → Add**: type **Secret**, name `STATS_PASSWORD`, any password.
+4. Redeploy (Deployments → the latest → Retry deployment) so the binding takes effect.
+
 On every `v*` tag, `.github/workflows/release.yml` builds the signed installer, attaches it to the GitHub release, then uploads the Windows objects to R2; the Mac release workflow uploads the Mac ones when it's run for that tag (`gh workflow run release-mac.yml --ref v0.2.0`; it doesn't start on its own, so the site keeps the last Mac app until then). The site never needs editing for a new version.
 
 ## One-time setup (Cloudflare)

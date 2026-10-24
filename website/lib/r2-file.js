@@ -1,6 +1,7 @@
 // Shared by the /download/* Functions: streams one object from the private R2 bucket (binding DOWNLOADS) under the
-// site's own address. Range requests work, so an interrupted download can resume. Kept outside functions/ so Pages
-// doesn't make it a route.
+// site's own address. Range requests work, so an interrupted download can resume. Each download is counted once
+// (lib/stats.js). Kept outside functions/ so Pages doesn't make it a route.
+import { countDownload } from './stats.js';
 
 const unavailable = (what) =>
   new Response(`The TappedIn ${what} is not available right now. Please try again in a few minutes.`, {
@@ -9,13 +10,15 @@ const unavailable = (what) =>
   });
 
 /** GET/HEAD for the object `key`, saved as `await name()`; `what` names it in the 503 text. */
-export async function serveFile({ request, env }, { key, type, name, what }) {
+export async function serveFile(ctx, { key, type, name, what }) {
+  const { request, env } = ctx;
   if (request.method !== 'GET' && request.method !== 'HEAD') return new Response(null, { status: 405, headers: { allow: 'GET, HEAD' } });
   const meta = await env.DOWNLOADS.head(key);
   if (!meta) return unavailable(what);
+  const file = await name();
   const headers = new Headers({
     'content-type': type,
-    'content-disposition': `attachment; filename="${await name()}"`,
+    'content-disposition': `attachment; filename="${file}"`,
     'accept-ranges': 'bytes',
     etag: meta.httpEtag,
     'cache-control': 'no-cache',
@@ -31,6 +34,8 @@ export async function serveFile({ request, env }, { key, type, name, what }) {
   // shortcut: a release uploaded between head() and get() could mix versions in one ranged response; uploads are rare, add onlyIf etag checks if that ever matters.
   const obj = await env.DOWNLOADS.get(key, range ? { range } : undefined);
   if (!obj) return unavailable(what);
+  // One count per download: the whole file, or a ranged one's first piece (not its resumes).
+  if (!range || range.offset === 0) countDownload(ctx, file);
   if (!range) {
     headers.set('content-length', String(meta.size));
     return new Response(obj.body, { headers });
