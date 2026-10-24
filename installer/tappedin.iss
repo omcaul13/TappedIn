@@ -26,9 +26,11 @@ ArchitecturesInstallIn64BitMode=x64compatible
 OutputBaseFilename=TappedIn-Setup-{#AppVersion}
 Compression=lzma2/max
 SolidCompression=yes
-; Looks: Windows 11 style, light or dark like Windows itself, with the app's own artwork
-; (installer\make-wizard-images.ps1 draws it). Setup picks the image size that fits the screen's DPI.
-WizardStyle=modern dynamic windows11
+; Looks: always dark, on the app's own forest green (its --bg), title bar included and no divider lines,
+; with the app's artwork (installer\make-wizard-images.ps1 draws it). Setup picks the image size that fits
+; the screen's DPI. Inno adds "Click Next to continue..." after WelcomeLabel2 itself, so the text doesn't.
+WizardStyle=modern dark includetitlebar hidebevels
+WizardBackColor=#0b1a12
 WizardImageFile=wizard-164.png,wizard-246.png,wizard-410.png
 WizardSmallImageFile=wizard-small-55.png,wizard-small-83.png,wizard-small-138.png
 ; Fewer pages: a welcome, the folder only on a first install, then straight to installing.
@@ -43,7 +45,7 @@ VersionInfoProductName=TappedIn
 
 [Messages]
 WelcomeLabel1=Welcome to TappedIn
-WelcomeLabel2=Up to four games at once from the TV service you already have. When a game goes to a long commercial break, TappedIn switches that screen to the best other live game.%n%nThis installs TappedIn {#AppVersion} for you only: no administrator rights needed, and nothing else to install.%n%nClick Next to continue.
+WelcomeLabel2=Up to four games at once from the TV service you already have. When a game goes to a long commercial break, TappedIn switches that screen to the best other live game.%n%nThis installs TappedIn {#AppVersion} for you only: no administrator rights needed, and nothing else to install.
 FinishedHeadingLabel=TappedIn is ready
 FinishedLabel=TappedIn is installed. The first time it opens, a short setup signs you in to your TV service and checks your channels (about two minutes).
 
