@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { BackIcon, FullscreenIcon, LockIcon, SoundIcon, SportIcon } from './icons';
-import { act, excitementLevel, gameClock, mmss, network, pickReason, post, screenBadge, scoreLine, sharedPill, substituteReason, teamColor, tennisLine, watchableToday, winChance, type AppState, type GameDTO, type ScreenDTO, type SportDTO, type TeamDTO } from './util';
+import { act, excitementLevel, gameClock, gameOverOpen, mmss, network, pickReason, post, screenBadge, scoreLine, sharedPill, substituteReason, teamColor, tennisLine, watchableToday, winChance, type AppState, type GameDTO, type ScreenDTO, type SportDTO, type TeamDTO } from './util';
 
 // One screen's overlay: header (game dropdown, state badge, back-to-my-game, lock, sound) that hides
 // after a few seconds without mouse movement, plus cards drawn inside the screen (switching, game
@@ -110,7 +110,7 @@ export function Screen({ st, sc, games, now, fullscreen, hiddenByFullscreen, can
           </div>
         </div>
       )}
-      {sc.mode === 'GAME_OVER' && sc.picker && <GameOver st={st} sc={sc} games={games} now={now} run={run} />}
+      {gameOverOpen(sc) && <GameOver st={st} sc={sc} games={games} now={now} run={run} />}
       {empty && (
         <div class="card fillpick">
           <GameMenu st={st} sc={sc} games={games} onClose={() => {}} run={run} fill />

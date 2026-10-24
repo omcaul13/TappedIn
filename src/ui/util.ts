@@ -101,6 +101,9 @@ export function winChance(g: GameDTO): { team: TeamDTO; pct: number } | null {
   return wp.home >= away ? { team: g.home, pct: Math.round(wp.home * 100) } : { team: g.away, pct: Math.round(away * 100) };
 }
 
+/** The game-over picker is up: the game ended and its auto-pick countdown runs ("Not now" stops it and closes the picker). */
+export const gameOverOpen = (sc: ScreenDTO) => sc.mode === 'GAME_OVER' && !!sc.picker && sc.gameOverAutoPickAt != null;
+
 /** Excitement 0–100 as a level for its colour. */
 export const excitementLevel = (score: number) => (score >= 70 ? 'hot' : score >= 40 ? 'warm' : 'cool');
 
