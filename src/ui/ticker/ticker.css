@@ -65,7 +65,10 @@
 .bt .card.tennis .lg { border-radius: .2em; height: 1.1em; }
 .bt .card.tennis .lg img { object-fit: cover; }
 .bt .rk { flex: none; width: 1.3em; margin-right: .3em; font-size: .62em; font-weight: 600; color: var(--bt-dim); text-align: right; }
-.bt .ab { flex: 0 1 auto; min-width: 2.25em; font-size: 1.08em; font-weight: 700; letter-spacing: .03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* No ranked team in the card (pros, most college games): no rank column, so the score has room. */
+.bt .card:not(:has(.rk:not(:empty))) .rk { display: none; }
+/* min-width 0: in a tight card (ranked, 3-digit scores) the code shortens before the score runs into the status line. */
+.bt .ab { flex: 0 1 auto; min-width: 0; font-size: 1.08em; font-weight: 700; letter-spacing: .03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bt .ball { flex: none; width: .5em; height: .32em; margin-left: .2em; border-radius: 50%; background: var(--gold); transform: rotate(-20deg); opacity: 0; }
 .bt .card.tennis .ball, .bt .card.baseball .ball, .bt .card.basketball .ball { width: .36em; height: .36em; transform: none; }
 .bt .card.tennis .ball { background: #d4f046; }
