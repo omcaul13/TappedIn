@@ -87,7 +87,7 @@ The usual rules still hold: no game on two screens (unless you allow it, and onl
 | ESPN web player (ESPN Unlimited or a TV provider) | Experimental | an address per network | 3 |
 
 - **Tested:** used with a real account.
-- **Experimental:** built from the service's documentation and from open-source projects that drive the same web players, but nobody has tested it with a real account yet. If it doesn't work for you, the app's **Diagnostics** can usually fix it, and you can send the fix back: see [CONTRIBUTING.md](CONTRIBUTING.md).
+- **Experimental:** built from the service's documentation and from open-source projects that drive the same web players, but nobody has tested it with a real account yet. If it doesn't work for you, the app's **Diagnostics** can usually fix it, and its **Report a bug** button emails us the results.
 - **Not supported yet:**
   - Peacock: its games are one-off event streams, not channels, and its only live channel (local NBC, Premium Plus) has no known channel address.
   - Paramount+: its Premium live TV is one channel (your local CBS station), and its other sports are one-off event streams that are often not live.
@@ -197,7 +197,7 @@ For a service that doesn't work right (most likely an experimental one), from se
 
 **Fixing a step.** When a step fails, the settings it depends on (page addresses, selectors, patterns) appear right there. Change them and press **Save & retry**. Fixes are checked before saving and kept in `.state/providers/<id>.json`, on top of the built-in `config/providers/<id>.json`.
 
-**Sharing the fix.** **Report a bug** opens an email to the project owner with your service, the results and your fixes. It has no passwords, cookies or page text, and addresses are cut to the site and page. Send it so everyone gets the fix ([CONTRIBUTING.md](CONTRIBUTING.md)).
+**Sharing the fix.** **Report a bug** opens an email to the project owner with your service, the results and your fixes. It has no passwords, cookies or page text, and addresses are cut to the site and page. Send it so everyone gets the fix.
 
 ## Running it
 
@@ -452,3 +452,7 @@ test/                         vitest: forecast, break detector, director (incl. 
 - **Overlays:** a transparent view draws cleanly over the protected video. Hiding Xfinity's interface while the player is up leaves just the picture.
 - **Xfinity pages loading at the same moment** in one browser session can all end up on the same channel, so loads go one at a time.
 - **Stream delay:** the picture runs about 30 s behind real time and ESPN data about 25 s. A snap ESPN logged at 18:56:19 appeared on screen at about 18:56:49.
+
+## License
+
+Copyright (c) 2026 Andrew Bassett and Owen McAuliffe. TappedIn is source-available under the [PolyForm Strict License 1.0.0](LICENSE.md): you may use it for noncommercial purposes, but not change it, copy it into other work, or share it. We don't take code contributions; please send bug reports with **Report a bug** in the app's Diagnostics.

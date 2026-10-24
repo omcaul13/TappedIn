@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'preact/hooks';
 import schools from '../../config/schools.json';
 import type { ProviderSummary } from '../providers/types';
+import { REPORT_EMAIL } from '../setup/report';
 import type { SetupView } from '../setup/runner';
 import { post, type AppState } from './util';
 import { BrandGlyph } from './icons';
@@ -195,7 +196,7 @@ function Picker({ providers, run }: { providers: ProviderSummary[]; run(p: Promi
         {group('campus').map(row)}
         {group('consumer').length > 0 && <h5>TV streaming services</h5>}
         {group('consumer').map(row)}
-        {!list.length && <p class="note">No service matches. TappedIn supports the services listed when the search is empty; more can be added (see CONTRIBUTING.md).</p>}
+        {!list.length && <p class="note">No service matches. TappedIn supports the services listed when the search is empty; if yours is missing, email {REPORT_EMAIL} and tell us which one.</p>}
       </div>
       <div class="actions">
         <button class="btn" onClick={() => go('welcome')}>

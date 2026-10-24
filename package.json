@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "description": "TappedIn: a multi-game, multi-sport director for the TV service you already have",
+  "license": "UNLICENSED",
   "engines": {
     "node": ">=22"
   },
