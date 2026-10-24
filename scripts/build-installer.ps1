@@ -31,6 +31,10 @@ $zip = Join-Path $Build 'source.zip'
 & git archive --format=zip -o $zip HEAD
 if ($LASTEXITCODE -ne 0) { Stop-WithFix 'git archive failed.' 'Run this from a git checkout of TappedIn.' }
 Expand-Archive -LiteralPath $zip -DestinationPath $Stage -Force
+# The installed app says when a newer installer is on the site (electron/updates.cjs); a source checkout doesn't.
+# Single quotes only in the JS: Windows PowerShell 5.1 drops double quotes from a native program's arguments.
+& node -e 'const fs = require(''fs''); const f = process.argv[1]; const p = JSON.parse(fs.readFileSync(f, ''utf8'')); p.tappedin = { ...(p.tappedin || {}), winUpdates: ''notice'' }; fs.writeFileSync(f, JSON.stringify(p, null, 2) + String.fromCharCode(10));' (Join-Path $Stage 'package.json')
+if ($LASTEXITCODE -ne 0) { Stop-WithFix 'Could not turn on update notices in the staged package.json.' 'Check that Node.js works (node --version) and run this again.' }
 Write-Ok $Stage
 
 # 2. Dependencies -----------------------------------------------------------------------------------

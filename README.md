@@ -102,7 +102,7 @@ The usual rules still hold: no game on two screens (unless you allow it, and onl
    - Everything is included (its own Node and the video player, already signed for Widevine). You don't need Node, Python or a castLabs account.
 3. The first start opens **setup**: pick your service, sign in, and TappedIn checks your channels and how many streams your plan plays at once (about two minutes).
 
-To update, run a newer `TappedIn-Setup` the same way; your settings and sign-ins are kept. Uninstall from Windows Settings → Apps (it keeps the `.state` folder with your settings). If you edited `config\tappedin.config.json5`, an update saves your copy as `tappedin.config.json5.bak` next to it.
+To update, run a newer `TappedIn-Setup` the same way; your settings and sign-ins are kept. TappedIn says when a newer one is out (a message about 30 s after it starts, with a **Download** button). Uninstall from Windows Settings → Apps (it keeps the `.state` folder with your settings). If you edited `config\tappedin.config.json5`, an update saves your copy as `tappedin.config.json5.bak` next to it.
 
 **From source instead** (the zip or `git clone`): double-click **`Setup TappedIn.cmd`**. It installs Node.js and Python (only if you type **Y**), installs TappedIn's parts, walks you through castLabs' free EVS sign-up to sign the video player, checks everything, and adds Start menu and desktop shortcuts. Run **`Update TappedIn.cmd`** to update; it re-signs the player only when it changed. `npm run doctor` checks an install and says how to fix anything wrong.
 

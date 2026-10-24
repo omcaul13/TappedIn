@@ -433,7 +433,7 @@ function toggleFullscreen() {
  * UI's settings drawer, and Toggle Full Screen is the native one (its own Space), like the green button.
  */
 function macMenu() {
-  const { SITE_URL } = require('./mac-updates.cjs');
+  const { SITE_URL } = require('./updates.cjs');
   app.setAboutPanelOptions({ applicationName: 'TappedIn', applicationVersion: app.getVersion(), version: '' });
   return Menu.buildFromTemplate([
     {
@@ -535,12 +535,13 @@ app.whenReady().then(async () => {
   createViews();
   send({ type: 'ready', screens: SCREENS, spares: SPARES });
 
-  const macUpdates = MAC && (require('../package.json').tappedin || {}).macUpdates;
-  if (macUpdates) {
-    const { startUpdates } = require('./mac-updates.cjs');
+  // Set only in the installed apps (see updates.cjs); a source checkout never checks.
+  const updates = (require('../package.json').tappedin || {})[MAC ? 'macUpdates' : 'winUpdates'];
+  if (updates) {
+    const { startUpdates } = require('./updates.cjs');
     const log = (text) => send({ type: 'log', text });
     // After start-up has settled (sign-in, first tunes), so a dialog doesn't land in the middle of it.
-    setTimeout(() => startUpdates({ mode: macUpdates, version: app.getVersion(), win, log }).catch((err) => log(`update: ${err.message}`)), 30_000);
+    setTimeout(() => startUpdates({ mode: updates, platform: MAC ? 'mac' : 'windows', version: app.getVersion(), win, log }).catch((err) => log(`update: ${err.message}`)), 30_000);
   }
 });
 

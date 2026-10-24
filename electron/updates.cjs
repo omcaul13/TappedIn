@@ -1,8 +1,10 @@
-// Mac app updates (main.cjs loads this on macOS only). The Mac build writes
-// "tappedin": { "macUpdates": "auto" | "notice" } into the app's package.json:
-//  - auto: the app is Developer ID signed, so Squirrel.Mac (built into Electron) downloads the new version
-//    and installs it on restart. The site's /api/update/mac/<version> says whether there is one.
-//  - notice: the app is only ad-hoc signed, which Squirrel refuses; say a new version is out and link to it.
+// App updates. The builds write into the app's package.json:
+//  - Mac (installer/mac/build-mac.sh): "tappedin": { "macUpdates": "auto" | "notice" }
+//    - auto: the app is Developer ID signed, so Squirrel.Mac (built into Electron) downloads the new version
+//      and installs it on restart. The site's /api/update/mac/<version> says whether there is one.
+//    - notice: the app is only ad-hoc signed, which Squirrel refuses; say a new version is out and link to it.
+//  - Windows (scripts/build-installer.ps1): "tappedin": { "winUpdates": "notice" }: say a new installer is out
+//    and link to it (running it installs over this version).
 // A source checkout has neither and never checks.
 const SITE_URL = 'https://tappedin-4ot.pages.dev';
 
@@ -25,9 +27,16 @@ function isNewer(a, b) {
   return x.pre.localeCompare(y.pre, 'en', { numeric: true }) > 0;
 }
 
-async function startUpdates({ mode, version, win, log }) {
-  const { autoUpdater, dialog, shell } = require('electron');
-  if (mode === 'auto') {
+/** What the "new version" dialog says to do, per platform. */
+const HOW = {
+  mac: 'Download the new version, open it and drag TappedIn into Applications to replace this one. Your settings and sign-ins are kept.',
+  windows: 'Download the new installer and run it: it installs over this version. Your settings and sign-ins are kept.',
+};
+
+/** `electron` is a parameter only so tests can pass a stand-in. */
+async function startUpdates({ mode, platform, version, win, log, electron = require('electron') }) {
+  const { autoUpdater, dialog, shell } = electron;
+  if (mode === 'auto' && platform === 'mac') {
     autoUpdater.on('error', (err) => log(`update: ${err && err.message ? err.message : err}`));
     autoUpdater.on('update-downloaded', async (_e, _notes, name) => {
       const { response } = await dialog.showMessageBox(win, {
@@ -43,7 +52,7 @@ async function startUpdates({ mode, version, win, log }) {
     autoUpdater.setFeedURL({ url: `${SITE_URL}/api/update/mac/${encodeURIComponent(version)}` });
     autoUpdater.checkForUpdates();
   } else if (mode === 'notice') {
-    const latest = await fetch(`${SITE_URL}/api/latest?platform=mac`, { signal: AbortSignal.timeout(10_000) })
+    const latest = await fetch(`${SITE_URL}/api/latest${platform === 'mac' ? '?platform=mac' : ''}`, { signal: AbortSignal.timeout(10_000) })
       .then((r) => (r.ok ? r.json() : null))
       .catch(() => null);
     if (!latest || typeof latest.version !== 'string' || !isNewer(latest.version, version)) return;
@@ -54,9 +63,9 @@ async function startUpdates({ mode, version, win, log }) {
       defaultId: 0,
       cancelId: 1,
       message: `TappedIn ${latest.version} is available`,
-      detail: `You have ${version}. Download the new version, open it and drag TappedIn into Applications to replace this one. Your settings and sign-ins are kept.`,
+      detail: `You have ${version}. ${HOW[platform]}`,
     });
-    if (response === 0) await shell.openExternal(`${SITE_URL}/download/mac`);
+    if (response === 0) await shell.openExternal(`${SITE_URL}/download/${platform}`);
   }
 }
 
