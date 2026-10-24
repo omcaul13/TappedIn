@@ -18,7 +18,8 @@
 
 /* label block: brand, clock, date, live count (the window's drag handle) */
 .bt .label {
-  flex: none; width: var(--lw); height: 100%; padding: 0 .55em; position: relative; z-index: 3;
+  /* At least --lw, wider when the clock needs it ("TI 11:37 PM" overflowed into the first card). */
+  flex: none; min-width: var(--lw); height: 100%; padding: 0 .55em; position: relative; z-index: 3;
   display: flex; flex-direction: column; justify-content: center; gap: .18em;
   background: linear-gradient(180deg, #1f3d2b, #10271a); box-shadow: .25em 0 .7em rgba(0, 0, 0, .55);
   -webkit-app-region: drag;
@@ -26,7 +27,8 @@
 .bt .label .brand { display: flex; align-items: baseline; gap: .3em; font-weight: 800; font-size: 1.3em; line-height: .9; letter-spacing: .01em; white-space: nowrap; }
 .bt .label .brand .rz { color: var(--gold); }
 .bt .label .brand .clk { font-variant-numeric: tabular-nums; }
-.bt .label .date, .bt .label .state { font-size: .56em; font-weight: 600; letter-spacing: .07em; color: var(--bt-dim); white-space: nowrap; text-transform: uppercase; line-height: 1; overflow: hidden; text-overflow: ellipsis; }
+/* width 0 + min-width 100%: these lines take the label's width (and cut off) instead of widening it. */
+.bt .label .date, .bt .label .state { width: 0; min-width: 100%; font-size: .56em; font-weight: 600; letter-spacing: .07em; color: var(--bt-dim); white-space: nowrap; text-transform: uppercase; line-height: 1; overflow: hidden; text-overflow: ellipsis; }
 .bt .label .state { display: flex; align-items: center; gap: .4em; color: var(--bt-text); font-weight: 700; }
 .bt .label .state .warn { color: #fde68a; }
 .bt .label .state .bad { color: #fecaca; }

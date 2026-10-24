@@ -656,6 +656,21 @@ export class App {
         bg('stream test', this.shell.configure({ provider: this.adapter.config, screens: 4, spares: 0, signin: 'defer' }).then(() => this.attachController()).then(() => runner.resume(id)));
         return { ok: true };
       }
+      case 'screens': {
+        // How many screens the grid shows (setup's "How many screens?", changeable any time). Screens
+        // beyond the new count are dropped; added ones start empty, on their game picker.
+        const n = Number(body.n);
+        if (!Number.isInteger(n) || n < 1 || n > 4) return { ok: false, message: 'screens: 1 to 4' };
+        if (n === this.screenCount) return { ok: true };
+        this.setupState = { ...this.setupState, screens: n };
+        saveSetup(this.setupState);
+        this.screenCount = n;
+        this.engine.resizeScreens(n);
+        bg('screen change', this.shell.configure({ provider: this.adapter.config, screens: n, spares: this.shell.layout.spares, signin: 'defer' }).then(() => this.attachController()).then(() => this.resyncController()));
+        this.info(`screens: ${n}`);
+        this.pushState();
+        return { ok: true };
+      }
       case 'standby': {
         const n = Number(body.n);
         if (!Number.isInteger(n) || n < 0 || n > 2) return { ok: false, message: 'standby views: 0, 1 or 2' };

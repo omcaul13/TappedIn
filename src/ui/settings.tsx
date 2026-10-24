@@ -55,8 +55,20 @@ function Basic({ st, set, open }: { st: AppState; set: Set; open(page: 'advanced
   const s = st.settings;
   const t = s.ticker;
   const enabled = st.sports.filter((x) => x.enabled).map((x) => x.id);
+  const sv = st.service;
+  // Like setup's "How many screens?": no more than your plan played at once in the last stream test.
+  const maxScreens = sv.measuredStreams ? Math.min(4, sv.measuredStreams) : 4;
   return (
     <>
+      <h5>Screens</h5>
+      <div class="seg wide">
+        {[1, 2, 3, 4].map((n) => (
+          <button class={sv.screens === n ? 'on' : ''} disabled={n > maxScreens} title={n > maxScreens ? `Your plan played ${sv.measuredStreams} at once in the last test (Re-test streams in TV service)` : `Show ${n} screen${n === 1 ? '' : 's'}`} onClick={() => post('/api/service/screens', { n })}>
+            {n}
+          </button>
+        ))}
+      </div>
+
       <h5>Switching</h5>
       <div class="sens">
         {SENS.map((x) => (

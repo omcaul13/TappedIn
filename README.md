@@ -178,6 +178,8 @@ Xfinity On Campus signs itself in at every later start. Its On Campus sign-in pe
 
 ## Settings → TV service
 
+- **Screens** (at the top of Settings): show 1, 2, 3 or 4 screens any time, e.g. 3 on a night with few games. Up to what your plan played at once in the last stream test. Added screens start on their game picker.
+
 - **The service:** its status, how many streams played in the last test, and the screen count.
 - **Re-scan channels**, **Re-test streams**, **Log out** (clears only that service's sign-in), and **Diagnostics**.
 - **Standby views** (0–2): extra hidden streams that make switching instant. They're off by default because each one counts against your plan's stream limit.
