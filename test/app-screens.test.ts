@@ -15,13 +15,14 @@ describe('changing the screen count', () => {
     const app: any = Object.create(App.prototype);
     Object.assign(app, { cfg, engine: new Engine(cfg, 4), screenCount: 4, setupState: { screens: 4 }, setupRunner: null, adapter: { config: {} }, shell: { configure, layout: { spares: 1 } }, attachController: async () => {}, resyncController: () => {}, info: () => {}, pushState: () => {} });
 
-    expect(app.serviceAction('screens', { n: 3 })).toEqual({ ok: true });
+    // Through the same route the settings button posts to.
+    expect(await app.post('/api/service/screens', { n: 3 })).toEqual({ ok: true });
     expect(app.engine.director.screens.map((s: { id: number }) => s.id)).toEqual([1, 2, 3]);
     expect(configure).toHaveBeenCalledWith(expect.objectContaining({ screens: 3, spares: 1 }));
     expect(saved.at(-1)).toMatchObject({ screens: 3 });
 
-    expect(app.serviceAction('screens', { n: 5 }).ok).toBe(false);
-    expect(app.serviceAction('screens', { n: 0 }).ok).toBe(false);
+    expect((await app.post('/api/service/screens', { n: 5 })).ok).toBe(false);
+    expect((await app.post('/api/service/screens', { n: 0 })).ok).toBe(false);
     expect(app.screenCount).toBe(3);
   });
 });

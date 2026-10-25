@@ -541,6 +541,7 @@ export class App {
       case '/api/service/map':
       case '/api/service/streams':
       case '/api/service/standby':
+      case '/api/service/screens':
         return this.serviceAction(p.slice('/api/service/'.length), body);
       case '/api/setup/go':
       case '/api/setup/choose':
