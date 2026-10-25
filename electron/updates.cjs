@@ -55,7 +55,10 @@ async function startUpdates({ mode, platform, version, win, log, electron = requ
     const latest = await fetch(`${SITE_URL}/api/latest${platform === 'mac' ? '?platform=mac' : ''}`, { signal: AbortSignal.timeout(10_000) })
       .then((r) => (r.ok ? r.json() : null))
       .catch(() => null);
-    if (!latest || typeof latest.version !== 'string' || !isNewer(latest.version, version)) return;
+    if (!latest || typeof latest.version !== 'string' || !isNewer(latest.version, version)) {
+      log(`update: ${version} is current (the site has ${latest && typeof latest.version === 'string' ? latest.version : 'no version'})`);
+      return;
+    }
     log(`update: ${latest.version} is available (this is ${version})`);
     const { response } = await dialog.showMessageBox(win, {
       type: 'info',

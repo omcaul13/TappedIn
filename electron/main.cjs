@@ -536,12 +536,13 @@ app.whenReady().then(async () => {
   send({ type: 'ready', screens: SCREENS, spares: SPARES });
 
   // Set only in the installed apps (see updates.cjs); a source checkout never checks.
-  const updates = (require('../package.json').tappedin || {})[MAC ? 'macUpdates' : 'winUpdates'];
+  const pkg = require('../package.json');
+  const updates = (pkg.tappedin || {})[MAC ? 'macUpdates' : 'winUpdates'];
   if (updates) {
     const { startUpdates } = require('./updates.cjs');
     const log = (text) => send({ type: 'log', text });
     // After start-up has settled (sign-in, first tunes), so a dialog doesn't land in the middle of it.
-    setTimeout(() => startUpdates({ mode: updates, platform: MAC ? 'mac' : 'windows', version: app.getVersion(), win, log }).catch((err) => log(`update: ${err.message}`)), 30_000);
+    setTimeout(() => startUpdates({ mode: updates, platform: MAC ? 'mac' : 'windows', version: pkg.version, win, log }).catch((err) => log(`update: ${err.message}`)), 30_000);
   }
 });
 
