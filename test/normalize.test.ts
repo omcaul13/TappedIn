@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { resolveChannel } from '../src/channels';
 import { normalizeEvent, normalizeScoreboard } from '../src/espn/normalize';
 import { classifyFootballPlay as classifyPlay, footballPhase as phaseOf, footballSummaryPlays as normalizeSummaryPlays, yardsToEndzoneFrom } from '../src/sports/football';
+import { networksOf } from '../src/espn/json';
 import { fixture, T0, testConfig } from './helpers';
 
 // Fixtures are real ESPN events captured on 2026-10-17 (npm run make-fixtures).
@@ -58,6 +59,19 @@ describe('normalizeEvent on real ESPN quirks', () => {
     const a = resolveChannel(testConfig(), ev('streaming-only').networks);
     expect(a.available).toBe(false);
     if (!a.available) expect(a.reason).toMatch(/streaming only: ESPN\+/);
+  });
+
+  it("lists the teams' local channels before the national one, which is blacked out in their markets", () => {
+    // FLA @ BOS, 2026-11-08: NHL Network can't play in Boston; NESN has the game.
+    const comp = {
+      broadcasts: [{ market: 'national', names: ['NHL Net'] }, { market: 'home', names: ['Scripps Sports', 'NESN'] }],
+      geoBroadcasts: [{ type: { shortName: 'TV' }, market: { type: 'National' }, media: { shortName: 'NHL Net' } }, { type: { shortName: 'TV' }, market: { type: 'Home' }, media: { shortName: 'NESN' } }],
+    };
+    expect(networksOf(comp)).toEqual(['Scripps Sports', 'NESN', 'NHL Net']);
+    const cfg = { unavailable: [], channels: { 'NHL Network': { number: 822, aliases: ['NHL Net'] }, NESN: { number: 851, aliases: ['NESN'] } } };
+    expect(resolveChannel(cfg, networksOf(comp))).toMatchObject({ available: true, channel: 'NESN', number: 851 });
+    // Elsewhere the regional network isn't in the lineup, so the national one still wins.
+    expect(resolveChannel({ ...cfg, channels: { 'NHL Network': cfg.channels['NHL Network'] } }, networksOf(comp))).toMatchObject({ available: true, number: 822 });
   });
 });
 

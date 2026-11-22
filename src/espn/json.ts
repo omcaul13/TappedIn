@@ -27,11 +27,15 @@ export function networksOf(comp: Json): string[] {
     if (type && type !== 'TV' && type !== 'Streaming') return; // radio etc.
     if (str(g?.media?.shortName)) names.add(str(g.media.shortName)!);
   };
-  for (const b of comp?.broadcasts ?? []) {
+  // Teams' local channels first: in their markets the national cable simulcast (NHL Network, MLB
+  // Network, NBA TV) is blacked out, and a lineup only carries a team's regional network in-market.
+  const national = (b: Json) => String(b?.market?.type ?? b?.market ?? '').toLowerCase() === 'national';
+  const localFirst = (list: unknown) => (Array.isArray(list) ? [...list].sort((a, b) => Number(national(a)) - Number(national(b))) : []);
+  for (const b of localFirst(comp?.broadcasts)) {
     for (const n of b?.names ?? []) if (str(n)) names.add(str(n)!);
     addMedia(b);
   }
-  for (const g of comp?.geoBroadcasts ?? []) addMedia(g);
+  for (const g of localFirst(comp?.geoBroadcasts)) addMedia(g);
   return [...names];
 }
 
