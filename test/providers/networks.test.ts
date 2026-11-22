@@ -9,6 +9,11 @@ describe('network matching', () => {
     expect(normalizeGuideName('Big Ten Network HD')).toBe('big ten');
     expect(normalizeGuideName('ESPN2 (HD)')).toBe('espn2');
     expect(normalizeGuideName('The CW')).toBe('cw');
+    expect(normalizeGuideName('UniMás HD')).toBe('unimas');
+  });
+
+  it('matches accented guide names (Xfinity labels UniMás with the accent)', () => {
+    expect(matchLineup([row('UniMás HD', 817, { callSign: 'WUTFD' })]).UniMas.number).toBe(817);
   });
 
   it('has an entry for every channel key in the shipped config, with ESPN aliases', () => {

@@ -100,6 +100,8 @@ const EXCLUDE = new Set(['news', 'business', 'deportes', 'espanol', 'latino', 'w
 
 export function normalizeGuideName(s: string): string {
   return s
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '') // "UniMás" → "UniMas", not "unim s"
     .toLowerCase()
     .replace(/&/g, ' and ')
     .replace(/[^a-z0-9+]+/g, ' ')
